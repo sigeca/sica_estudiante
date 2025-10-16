@@ -1,0 +1,202 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'evento.dart';
+import 'portafolio.dart';
+
+class ApiService {
+  static Future<List<Evento>> fetchEventos(String idpersona) async {
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/evento/evento_flutter');
+    final response = await http.post(
+      url,
+      body: {
+        'idpersona': idpersona,
+      },
+    );
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      final List data = json['data'];
+      return data.map((e) => Evento.fromJson(e)).toList();
+    } else {
+      throw Exception('Error al cargar eventos');
+    }
+  }
+
+
+
+ static Future<Persona> fetchPersonaInfo(String idpersona) async {
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/persona/persona_flutter');
+    final response = await http.post(
+      url,
+      body: {
+        'idpersona': idpersona,
+      },
+    );
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      final data = json['data'];
+      return data.map((e) => Persona.fromJson(e)).toList();
+    } else {
+      throw Exception('Error al cargar persona');
+    }
+  }
+
+
+
+
+
+
+
+  static Future<List<Portafolio>> fetchPortafolio(String idpersona) async {
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/portafolio/portafolio_flutter?idpersona=$idpersona');
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      final List data = json['data'];
+      return data.map((e) => Portafolio.fromJson(e)).toList();
+    } else {
+      throw Exception('Error al cargar portafolio');
+    }
+  }
+
+static Future<List<SesionEvento>> fetchSesiones(String idevento) async {
+  final response = await http.post(
+    Uri.parse('https://educaysoft.org/sica/index.php/sesionevento/sesionevento_dataflutter'),
+    body: {'idevento': idevento},
+  );
+
+  if (response.statusCode == 200) {
+     final json = jsonDecode(response.body);
+     final List data = json['data'];
+     return data.map((e) => SesionEvento.fromJson(e)).toList();
+
+
+  } else {
+    throw Exception('Error al cargar sesiones');
+  }
+}
+
+static Future<List<Asistencia>> fetchAsistencias(String idevento, String idpersona) async {
+  final response = await http.post(
+    Uri.parse('https://educaysoft.org/sica/index.php/asistencia/asistencia_personaflutter'),
+    body: {'idevento': idevento,'idpersona': idpersona},
+  );
+
+  if (response.statusCode == 200) {
+     final json = jsonDecode(response.body);
+     final List data = json['data'];
+     return data.map((e) => Asistencia.fromJson(e)).toList();
+
+
+  } else {
+    throw Exception('Error al cargar sesiones');
+  }
+}
+
+
+
+static Future<List<Participacion>> fetchParticipaciones(String idevento, String idpersona) async {
+  final response = await http.post(
+    Uri.parse('https://educaysoft.org/sica/index.php/participacion/participacion_personaflutter'),
+    body: {'idevento': idevento,'idpersona': idpersona},
+  );
+
+  if (response.statusCode == 200) {
+     final json = jsonDecode(response.body);
+     final List data = json['data'];
+     return data.map((e) => Participacion.fromJson(e)).toList();
+
+
+  } else {
+    throw Exception('Error al cargar sesiones');
+  }
+}
+
+
+static Future<List<Nota>> fetchNotas(String idevento, String idpersona) async {
+  final response = await http.post(
+    Uri.parse('https://educaysoft.org/sica/index.php/participacion/participacion_persona2flutter'),
+    body: {'idevento': idevento,'idpersona': idpersona},
+  );
+
+  if (response.statusCode == 200) {
+     final json = jsonDecode(response.body);
+     final List data = json['data'];
+     return data.map((e) => Nota.fromJson(e)).toList();
+
+
+  } else {
+    throw Exception('Error al cargar sesiones');
+  }
+}
+
+
+
+static Future<List<Pago>> fetchPagos(String idevento, String idpersona) async {
+  final response = await http.post(
+    Uri.parse('https://educaysoft.org/sica/index.php/pagoevento/pagoevento_personaflutter'),
+    body: {'idevento': idevento,'idpersona': idpersona},
+  );
+
+  if (response.statusCode == 200) {
+     final json = jsonDecode(response.body);
+     final List data = json['data'];
+     return data.map((e) => Pago.fromJson(e)).toList();
+
+
+  } else {
+    throw Exception('Error al cargar sesiones');
+  }
+}
+
+
+
+
+
+
+
+
+
+ static Future<List<DocumentoPortafolio>> fetchDocumentosPortafolio(String idportafolio) async {
+    final response = await http.post(
+      Uri.parse('https://educaysoft.org/sica/index.php/documentoportafolio/documentoportafolio_dataflutter'),
+      body: {'idportafolio': idportafolio},
+    );
+
+    if (response.statusCode == 200) {
+     final json = jsonDecode(response.body);
+     final List data = json['data'];
+      return data.map((json) => DocumentoPortafolio.fromJson(json)).toList();
+    } else {
+      throw Exception('Error al obtener documentos');
+    }
+  }
+
+
+
+ static Future<List<Login>> login(String email, String password) async {
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/login/login_flutter');
+
+      final response = await http.post(url, body: {
+        'email': email.trim(),
+        'password': password,
+      });
+
+      if (response.statusCode == 200) {
+     final json = jsonDecode(response.body);
+     final List data = json['data'];
+    if (data is List && data.isNotEmpty) {
+      return data.map((json) => Login.fromJson(json)).toList();
+ } else {
+      return [];
+    }
+    } else {
+      throw Exception('Error de red o inesperado:');
+    }
+  }
+
+
+
+
+
+
+}
