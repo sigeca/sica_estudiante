@@ -7,7 +7,8 @@ import 'api_service.dart';
 
 class CarritoProductoPage extends StatefulWidget {
     final String idpersona;
-    const CarritoProductoPage({Key? key, required this.idpersona}) : super(key: key);
+  final String cedula;
+    const CarritoProductoPage({Key? key, required this.idpersona, required this.cedula}) : super(key: key);
 
     @override
     State<CarritoProductoPage> createState() => _CarritoProductoPageState();
@@ -15,6 +16,7 @@ class CarritoProductoPage extends StatefulWidget {
 
 class _CarritoProductoPageState extends State<CarritoProductoPage> {
     late Future<List<Producto>> _productosFuture;
+  late Future<Persona> _personaInfoFuture; // Added for person info
     final Map<int,int> _itemQuantities ={};
 
     @override
@@ -22,6 +24,7 @@ class _CarritoProductoPageState extends State<CarritoProductoPage> {
         super.initState();
         _productosFuture = ApiService.fetchProductosCarrito(widget.idpersona);
         //_productosFuture = ApiService.fetchProductosCarrito('1');
+    _personaInfoFuture = ApiService.fetchPersonaInfo(widget.idpersona); // Initialize person info fetch
 WidgetsBinding.instance.addPostFrameCallback((_) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -67,6 +70,82 @@ WidgetsBinding.instance.addPostFrameCallback((_) {
 
 
 
+// Reusing the _buildPersonaInfo method from EventoPage
+  Widget _buildPersonaInfo(Persona persona) {
+    final fotoUrl = "https://educaysoft.org/descargar2.php?archivo=${widget.cedula}.jpg";
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+      child: Column(
+        children: [
+          ClipOval(
+            child: Image.network(
+              fotoUrl,
+              width: 100,
+              height: 100,
+              fit: BoxFit.cover,
+              loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  width: 100,
+                  height: 100,
+                  alignment: Alignment.center,
+                  child: CircularProgressIndicator(
+                    value: loadingProgress.expectedTotalBytes != null
+                        ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                        : null,
+                  ),
+                );
+              },
+              errorBuilder: (BuildContext context, Object exception, StackTrace? stackTrace) {
+                return Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.person, size: 60, color: Colors.grey[600]),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            persona.lapersona,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 19, // Tamaño adecuado para un nombre
+              fontWeight: FontWeight.bold, // Letras resaltadas
+              color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black87, // Color del texto
+              shadows: [ // Efecto repujado/sombra sutil
+                Shadow(
+                  offset: Offset(1.5, 1.5),
+                  blurRadius: 2.0,
+                  color: Colors.black.withOpacity(0.35),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -82,7 +161,47 @@ WidgetsBinding.instance.addPostFrameCallback((_) {
         title: const Text('Productos en el carrito del vendedor'),
         backgroundColor: Colors.blue[700],
       ),  
-      body: FutureBuilder<List<Producto>>(
+      body: Column(
+          children: [
+              // 1. Información de la persona (FutureBuilder<Persona>)
+
+          FutureBuilder<Persona>(
+            future: _personaInfoFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Padding(
+                  padding: EdgeInsets.all(20.0),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              } else if (snapshot.hasError) {
+                print("Error FutureBuilder Persona (PortafolioPage): ${snapshot.error}");
+                return Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Center(
+                    child: Text(
+                      'No se pudo cargar la información del usuario.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.red[700]),
+                    ),
+                  ),
+                );
+              } else if (snapshot.hasData) {
+                return _buildPersonaInfo(snapshot.data!);
+              } else {
+                return const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Center(child: Text('No hay información del usuario disponible.')),
+                );
+              }
+            },
+          ),
+
+
+
+   // 2. La lista de productos (FutureBuilder<List<Producto>>)
+          Expanded( // Wrap the second FutureBuilder in Expanded so the GridView takes available space
+
+      child: FutureBuilder<List<Producto>>(
         future: _productosFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -202,6 +321,9 @@ WidgetsBinding.instance.addPostFrameCallback((_) {
             return const Center(child: Text('No hay artículos disponibles para este vendedor.'));
           }
         },
+      ),
+      ),
+        ],
       ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 20.0), // Ajuste para que no se superponga

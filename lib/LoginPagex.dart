@@ -1,9 +1,9 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
-// Agrega el paquete para la autenticación biométrica
 import 'package:local_auth/local_auth.dart';
-import 'package:flutter/services.dart'; // Necesario para PlatformException
-import 'evento.dart';
+import 'package:flutter/services.dart'; 
 import 'api_service.dart';
 
 class LoginPagex extends StatefulWidget {
@@ -19,154 +19,130 @@ class _LoginPagexState extends State<LoginPagex> {
   bool _loading = false;
   String? _errorMessage;
   
-  // 1. Inicializa LocalAuthentication
   final LocalAuthentication _localAuthentication = LocalAuthentication();
   bool _canCheckBiometrics = false;
   
-  List<Login> logins = [];
-
   @override
   void initState() {
     super.initState();
     _checkBiometrics();
-    _tryBiometricLoginOnStart();
+    // No llamamos a _tryBiometricLoginOnStart aquí para evitar doble login
+    // si el usuario viene de LoginPage.dart después de un error.
+    // El 'main.dart' decide si ir a '/login' o '/loginx'.
   }
   
-  // Función para verificar si el dispositivo soporta biometría
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   Future<void> _checkBiometrics() async {
-    bool canCheckBiometrics;
     try {
-      canCheckBiometrics = await _localAuthentication.canCheckBiometrics;
-      setState(() {
-        _canCheckBiometrics = canCheckBiometrics;
-      });
+      final canCheck = await _localAuthentication.canCheckBiometrics;
+      final isDeviceSupported = await _localAuthentication.isDeviceSupported();
+      if (mounted) {
+        setState(() {
+          _canCheckBiometrics = canCheck && isDeviceSupported;
+        });
+      }
     } on PlatformException catch (e) {
       print("Error al verificar biometría: $e");
-      canCheckBiometrics = false;
     }
   }
 
-  // Intenta el login biométrico automático si el usuario ya ha iniciado sesión
-  Future<void> _tryBiometricLoginOnStart() async {
-    final prefs = await SharedPreferences.getInstance();
-    final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-
-    if (isLoggedIn && _canCheckBiometrics) {
-      // Si ya hay una sesión y biometría disponible, intenta autenticar.
-      await _authenticateBiometrics();
-    }
-  }
-
-  // 3. Función para realizar la autenticación biométrica
-  Future<bool> _authenticateBiometrics() async {
+  Future<bool> _authenticateBiometrics({bool allowAlternative = false}) async {
     bool authenticated = false;
-    setState(() => _loading = true);
+    if (mounted) setState(() => _loading = true);
 
     try {
       authenticated = await _localAuthentication.authenticate(
-        localizedReason: 'Por favor, usa tu huella dactilar para iniciar sesión', // Mensaje que ve el usuario
-        options: const AuthenticationOptions(
+        localizedReason: 'Por favor, usa tu huella dactilar para iniciar sesión',
+        options: AuthenticationOptions(
           stickyAuth: true,
-          biometricOnly: false, // Permite PIN/Patrón como alternativa
+          biometricOnly: !allowAlternative, // true si viene del diálogo de setup
         ),
       );
     } on PlatformException catch (e) {
       print("Error de autenticación biométrica: $e");
+      String specificError = _getBiometricErrorMessage(e.code);
       
-      String specificError = 'Error de biometría desconocido.';
-      
-      // Agrega manejo de errores específico usando los códigos de error de local_auth
-      switch (e.code) {
-        case 'NotEnrolled':
-          specificError = 'No hay huellas o rostro configurado en el dispositivo.';
-          break;
-        case 'NotAvailable':
-          specificError = 'La biometría no está disponible en este dispositivo.';
-          break;
-        case 'PasscodeNotSet':
-          specificError = 'Debes configurar un PIN/Contraseña en el dispositivo primero.';
-          break;
-        case 'LockedOut':
-          specificError = 'Demasiados intentos fallidos. Usa tu PIN/contraseña.';
-          break;
-        case 'PermanentlyLockedOut':
-          specificError = 'La biometría ha sido bloqueada. Reinicia o usa la contraseña.';
-          break;
-        case 'auth_failed': // A veces es un mensaje de fallo genérico
-          specificError = 'Fallo al autenticar. Inténtalo de nuevo.';
-          break;
-        default:
-          specificError = 'Error de biometría: ${e.code}. Verifica tu configuración.';
-          break;
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _errorMessage = specificError;  
+        });
       }
-
-      setState(() {
-        _loading = false;
-        _errorMessage =specificError;  
-      });
       return false;
     }
 
-    setState(() => _loading = false);
+    if (mounted) setState(() => _loading = false);
 
     if (authenticated) {
-      // Después de la autenticación local exitosa, recupera las credenciales guardadas
       final prefs = await SharedPreferences.getInstance();
-      final savedEmail = prefs.getString('email');
-      final savedPassword = prefs.getString('password'); // ¡ATENCIÓN: Esto es INSEGURO!
-      
-      // Una vez que la biometría local es exitosa, se puede:
-      // A) Recuperar un token seguro (mejor opción, requiere flutter_secure_storage)
-      // B) Re-loguearse automáticamente con credenciales guardadas (opción INSEGURA)
-      // C) Usar la biometría como un paso después del login normal para guardarlo
-
-      // Implementaremos la opción C: Si la autenticación local es exitosa,
-      // usaremos el idpersona guardado para ir a Home, asumiendo que el login
-      // ya se hizo una vez y guardaste la sesión.
-      
       final idpersona = prefs.getString('idpersona');
-      if (idpersona != null) {
+      
+      if (idpersona != null && idpersona.isNotEmpty) {
          Navigator.pushReplacementNamed(context, '/home', arguments: idpersona);
       } else {
-        setState(() {
-          _errorMessage = 'No se encontraron datos de sesión para la biometría.';
-        });
+        if (mounted) {
+          setState(() {
+            _errorMessage = 'No se encontraron datos de sesión para la biometría. Inicia con contraseña.';
+          });
+        }
       }
     }
     return authenticated;
   }
+  
+  String _getBiometricErrorMessage(String code) {
+      switch (code) {
+        case 'NotEnrolled': return 'No hay huellas o rostro configurado en el dispositivo.';
+        case 'NotAvailable': return 'La biometría no está disponible en este dispositivo.';
+        case 'PasscodeNotSet': return 'Debes configurar un PIN/Contraseña en el dispositivo primero.';
+        case 'LockedOut': return 'Demasiados intentos fallidos. Usa tu PIN/contraseña.';
+        case 'PermanentlyLockedOut': return 'La biometría ha sido bloqueada. Reinicia o usa la contraseña.';
+        case 'auth_failed': return 'Fallo al autenticar. Inténtalo de nuevo.';
+        default: return 'Error de biometría: $code. Verifica tu configuración.';
+      }
+  }
 
-  Future<void> _saveUserSession(String email, String idpersona) async {
+
+  Future<void> _saveUserSession(String email, String idpersona, {bool biometricsEnabled = false}) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', true);
     await prefs.setString('email', email);
     await prefs.setString('idpersona', idpersona);
-    // Nota: Para un flujo de biometría completo, deberías guardar el token de
-    // sesión aquí usando un almacenamiento seguro (como flutter_secure_storage),
-    // no la contraseña.
+    await prefs.setBool('biometrics_enabled', biometricsEnabled);
   }
 
   Future<void> _login() async {
-    // ... Tu función _login original (autenticación por email/contraseña)
-    // Se mantiene igual. Solo asegúrate de que, en un login exitoso, 
-    // se guarde también la opción de biometría si el usuario lo desea.
-    setState(() {
-      _loading = true;
-      _errorMessage = null;
-    });
+    if (_emailController.text.trim().isEmpty || _passwordController.text.isEmpty) {
+      setState(() => _errorMessage = 'Introduce correo y contraseña.');
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _errorMessage = null;
+      });
+    }
 
     try {
-      setState(() => _loading = true);
-
       final logins = await ApiService.login(
         _emailController.text,
         _passwordController.text,
       );
-      final idpersona = logins[0].idpersona;
-      setState(() => _loading = false);
+      
+      if (logins.isNotEmpty) {
+        final idpersona = logins[0].idpersona;
+        
+        // Guardamos la sesión inicial SIN habilitar biometría todavía.
+        await _saveUserSession(_emailController.text.trim(), idpersona, biometricsEnabled: false);
 
-      if (idpersona != null) {
-        await _saveUserSession(_emailController.text.trim(), idpersona);
+        if (mounted) setState(() => _loading = false);
 
         // Preguntar al usuario si desea habilitar la biometría
         if (_canCheckBiometrics) {
@@ -176,22 +152,27 @@ class _LoginPagexState extends State<LoginPagex> {
         }
 
       } else {
-        setState(() {
-          _errorMessage = 'Credenciales incorrectas o datos no disponibles.';
-        });
+        if (mounted) {
+          setState(() {
+            _loading = false;
+            _errorMessage = 'Credenciales incorrectas o datos no disponibles.';
+          });
+        }
       }
     } catch (e) {
-      setState(() {
-        _loading = false;
-        _errorMessage = e.toString();
-      });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _errorMessage = e.toString().contains('Exception:') ? e.toString().replaceFirst('Exception: ', '') : 'Error: ${e.toString()}';
+        });
+      }
     }
   }
   
-  // Diálogo para configurar la biometría después del primer login
   void _showBiometricSetupDialog(String idpersona) {
     showDialog(
       context: context,
+      barrierDismissible: false, // Bloquea la salida con un toque fuera
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Habilitar Biometría'),
@@ -208,10 +189,13 @@ class _LoginPagexState extends State<LoginPagex> {
               child: const Text('Habilitar'),
               onPressed: () async {
                 Navigator.of(context).pop();
-                // Opcionalmente, puedes forzar una autenticación de confirmación aquí
-                final authenticated = await _authenticateBiometrics(); 
+                // Forzar una autenticación de confirmación para guardar la preferencia.
+                final authenticated = await _authenticateBiometrics(allowAlternative: true); 
+                
                 if (authenticated) {
-                    Navigator.pushReplacementNamed(this.context, '/home', arguments: idpersona);
+                    // Solo si la autenticación de confirmación es exitosa, guardamos 'biometrics_enabled: true'
+                    await _saveUserSession(_emailController.text.trim(), idpersona, biometricsEnabled:true);
+                    // El _authenticateBiometrics ya navega a /home si es exitoso.
                 } else {
                     // Si falla, aún lo llevamos a home, pero la opción no estará configurada
                     Navigator.pushReplacementNamed(this.context, '/home', arguments: idpersona);
@@ -234,7 +218,6 @@ class _LoginPagexState extends State<LoginPagex> {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                // ... (Tu código de título, subtítulo y logo) ...
                 const Text(
                   'SICA-ESTUDIANTE',
                   style: TextStyle(
@@ -272,6 +255,7 @@ class _LoginPagexState extends State<LoginPagex> {
                 TextField(
                   controller: _emailController,
                   decoration: const InputDecoration(labelText: 'Correo electrónico'),
+                  keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -283,6 +267,8 @@ class _LoginPagexState extends State<LoginPagex> {
                 if (_errorMessage != null)
                   Text(
                     _errorMessage!,
+                    // 💥💥 CORRECCIÓN AQUÍ 💥💥: textAlign es propiedad de Text, no de TextStyle
+                    textAlign: TextAlign.center, 
                     style: const TextStyle(color: Colors.red),
                   ),
                 ElevatedButton(
@@ -292,13 +278,30 @@ class _LoginPagexState extends State<LoginPagex> {
                       : const Text('Iniciar sesión'),
                 ),
                 
-                // 4. Agregar el botón de biometría si está disponible
+                // Botón para volver al login de biometría
+                const SizedBox(height: 24),
+                 TextButton(
+                  onPressed: _loading ? null : () {
+                    // Si el loginx es el login principal, este botón redirige a la opción biométrica
+                    Navigator.pushReplacementNamed(context, '/login');
+                  },
+                  child: const Text(
+                    'Usar Huella Dactilar',
+                    style: TextStyle(
+                      color: Colors.blueAccent,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+
+
+                // Botón de biometría manual si está disponible (útil si la sesión ya está guardada pero falló el login automático)
                 if (_canCheckBiometrics) ...[
                   const SizedBox(height: 24),
                   OutlinedButton.icon(
-                    onPressed: _loading ? null : _authenticateBiometrics,
+                    onPressed: _loading ? null : () => _authenticateBiometrics(allowAlternative: false),
                     icon: const Icon(Icons.fingerprint),
-                    label: const Text('Iniciar con Huella Dactilar'),
+                    label: const Text('Iniciar con Huella Dactilar (Sesión Guardada)'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.blueAccent,
                       side: const BorderSide(color: Colors.blueAccent),

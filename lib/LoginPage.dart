@@ -2,8 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // <<< AGREGAR
-
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -15,7 +14,8 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final LocalAuthentication auth = LocalAuthentication();
   bool _canCheckBiometrics = false;
-  String _authorized = 'No autenticado';
+  String _authorized = 'Esperando acción...'; // Mensaje inicial
+  bool _isLoading = false; // Estado de carga para el botón
 
   @override
   void initState() {
@@ -28,13 +28,23 @@ class _LoginPageState extends State<LoginPage> {
       final canCheck = await auth.canCheckBiometrics;
       final isDeviceSupported = await auth.isDeviceSupported();
 
-      setState(() {
-        _canCheckBiometrics = canCheck && isDeviceSupported;
-      });
+      if (mounted) {
+        setState(() {
+          _canCheckBiometrics = canCheck && isDeviceSupported;
+          // Si es compatible, invita al usuario a autenticar
+          if (_canCheckBiometrics) {
+            _authorized = 'Toca el botón para usar tu Huella Dactilar.';
+          } else {
+            _authorized = 'Dispositivo no compatible con biometría.';
+          }
+        });
+      }
     } catch (e) {
-      setState(() {
-        _authorized = 'Error al verificar biometría: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _authorized = 'Error al verificar biometría.';
+        });
+      }
     }
   }
 
@@ -46,6 +56,8 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
+    if (mounted) setState(() => _isLoading = true);
+
     try {
       final didAuthenticate = await auth.authenticate(
         localizedReason: 'Verifica tu identidad con la huella dactilar',
@@ -56,48 +68,51 @@ class _LoginPageState extends State<LoginPage> {
         ),
       );
 
-      setState(() {
-        _authorized = didAuthenticate ? 'Autenticación exitosa' : 'Falló la autenticación';
-      });
+      if (mounted) {
+        setState(() {
+          _authorized = didAuthenticate ? 'Autenticación exitosa' : 'Falló la autenticación';
+        });
+      }
 
       if (didAuthenticate) {
-        // Aquí rediriges al usuario al HomeScreen u otra pantalla
-    //    Navigator.pushReplacementNamed(context, '/home');
-// 2. RECUPERAR DATOS DE SESIÓN
         final prefs = await SharedPreferences.getInstance();
-        final idpersona = prefs.getString('idpersona'); 
+        final idpersona = prefs.getString('idpersona');
+        final isBiometricsEnabled = prefs.getBool('biometrics_enabled') ?? false;
 
-        if (idpersona != null) {
-          // 3. Redirigir y PASAR EL idpersona
+        if (idpersona != null && idpersona.isNotEmpty && isBiometricsEnabled) {
+          // Redirigir y PASAR EL idpersona
           Navigator.pushReplacementNamed(context, '/home', arguments: idpersona);
         } else {
-          // Si no hay idpersona guardado, informar al usuario que necesita un login completo
-          setState(() {
-            _authorized = 'Sesión expirada. Inicia con tu contraseña primero.';
-          });
+          // Si no hay sesión biométrica guardada
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No se encontraron datos de sesión. Inicia con contraseña.')),
+            const SnackBar(content: Text('No se encontraron datos de sesión biométrica. Inicia con contraseña.')),
           );
+          // Redirigir al login con credenciales.
+          Navigator.pushReplacementNamed(context, '/loginx');
         }
-
-
-
-
-
-
-
-
       }
     } catch (e) {
-      // Captura errores específicos de Android 13/14
+      String errorMessage = 'Error de biometría: ${e.toString()}';
+
+      // Captura errores específicos y evita el uso del diálogo del sistema si falló
       if (e.toString().contains('NotEnrolled')) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Debes registrar al menos una huella en tu dispositivo.')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error de biometría: ${e.toString()}')),
-        );
+        errorMessage = 'Debes registrar al menos una huella en tu dispositivo.';
+      } else if (e.toString().contains('PermanentlyLockedOut') || e.toString().contains('NotAvailable')) {
+         // Error crítico, redirigir al loginx
+         if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage)));
+            Navigator.pushReplacementNamed(context, '/loginx');
+            return; // Salir de la función
+         }
+      }
+
+      if (mounted) {
+        setState(() => _authorized = errorMessage);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage)));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -120,31 +135,31 @@ class _LoginPageState extends State<LoginPage> {
                 size: 100,
                 color: _authorized == 'Autenticación exitosa'
                     ? Colors.green
-                    : Colors.grey,
+                    : Colors.blueGrey, // Color más neutro
               ),
               const SizedBox(height: 30),
               Text(
                 _authorized,
                 style: const TextStyle(fontSize: 18),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 30),
+              // Botón con indicador de carga
               ElevatedButton.icon(
-                onPressed: _authenticate,
-                icon: const Icon(Icons.lock_open),
-                label: const Text('Usar huella dactilar'),
+                onPressed: _isLoading ? null : _authenticate,
+                icon: _isLoading 
+                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) 
+                    : const Icon(Icons.lock_open),
+                label: Text(_isLoading ? 'Autenticando...' : 'Usar huella dactilar'),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   textStyle: const TextStyle(fontSize: 18),
                 ),
               ),
 
-// 🌟🌟🌟 INICIO DE LA NUEVA OPCIÓN DE LOGIN 🌟🌟🌟
               const SizedBox(height: 30),
               TextButton(
-                onPressed: () {
-                  // **IMPORTANTE:** // Debes usar aquí la ruta que configuraste para tu LoginPagex.dart
-                  // o navegar directamente a la clase (si no usas rutas con nombre).
-          //        Navigator.pushReplacementNamed(context, '/login_credenciales'); 
+                onPressed: _isLoading ? null : () {
                  Navigator.pushReplacementNamed(context, '/loginx');
                 },
                 child: const Text(
@@ -155,11 +170,6 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ),
-              // 🌟🌟🌟 FIN DE LA NUEVA OPCIÓN DE LOGIN 🌟🌟🌟
-
-
-
-
             ],
           ),
         ),
@@ -167,4 +177,3 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
-

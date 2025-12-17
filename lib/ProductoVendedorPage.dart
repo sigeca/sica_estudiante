@@ -8,9 +8,11 @@ import 'CarritoProductoPage.dart';
 // Página para mostrar los artículos de un vendedor
 class ProductosVendedorPage extends StatefulWidget {
   final String idpersona;
+  final String cedula;
   final String idpersona1;
+  final String cedula1;
 
-  const ProductosVendedorPage({Key? key, required this.idpersona, required this.idpersona1}) : super(key: key);
+  const ProductosVendedorPage({Key? key, required this.idpersona,required this.cedula, required this.idpersona1, required this.cedula1}) : super(key: key);
 
   @override
   State<ProductosVendedorPage> createState() => _ProductosVendedorPageState();
@@ -18,12 +20,14 @@ class ProductosVendedorPage extends StatefulWidget {
 
 class _ProductosVendedorPageState extends State<ProductosVendedorPage> {
   late Future<List<Producto>> _productosFuture;
+  late Future<Persona> _personaInfoFuture; // Added for person info
   final Map<int, int> _itemQuantities = {};
 
   @override
   void initState() {
     super.initState();
     _productosFuture = ApiService.fetchProductosPorVendedor(widget.idpersona);
+    _personaInfoFuture = ApiService.fetchPersonaInfo(widget.idpersona); // Initialize person info fetch
   }
 
   void _incrementQuantity(int productoId) {
@@ -53,6 +57,73 @@ class _ProductosVendedorPageState extends State<ProductosVendedorPage> {
     );
   }
 
+// Reusing the _buildPersonaInfo method from EventoPage
+  Widget _buildPersonaInfo(Persona persona) {
+    final fotoUrl = "https://educaysoft.org/descargar2.php?archivo=${widget.cedula}.jpg";
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+      child: Column(
+        children: [
+          ClipOval(
+            child: Image.network(
+              fotoUrl,
+              width: 100,
+              height: 100,
+              fit: BoxFit.cover,
+              loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  width: 100,
+                  height: 100,
+                  alignment: Alignment.center,
+                  child: CircularProgressIndicator(
+                    value: loadingProgress.expectedTotalBytes != null
+                        ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                        : null,
+                  ),
+                );
+              },
+              errorBuilder: (BuildContext context, Object exception, StackTrace? stackTrace) {
+                return Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.person, size: 60, color: Colors.grey[600]),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            persona.lapersona,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 19, // Tamaño adecuado para un nombre
+              fontWeight: FontWeight.bold, // Letras resaltadas
+              color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black87, // Color del texto
+              shadows: [ // Efecto repujado/sombra sutil
+                Shadow(
+                  offset: Offset(1.5, 1.5),
+                  blurRadius: 2.0,
+                  color: Colors.black.withOpacity(0.35),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+
+
+
+
   @override
   Widget build(BuildContext context) {
     // Determinar el número de columnas basado en el ancho de la pantalla
@@ -65,8 +136,49 @@ class _ProductosVendedorPageState extends State<ProductosVendedorPage> {
         title: const Text('Artículos del vendedor'),
         backgroundColor: Colors.blue[700],
       ),
-      body: FutureBuilder<List<Producto>>(
-        future: _productosFuture,
+
+ 
+
+      body: Column(
+          children: [
+              // 1. Información de la persona (FutureBuilder<Persona>)
+          FutureBuilder<Persona>(
+            future: _personaInfoFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Padding(
+                  padding: EdgeInsets.all(20.0),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              } else if (snapshot.hasError) {
+                print("Error FutureBuilder Persona (PortafolioPage): ${snapshot.error}");
+                return Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Center(
+                    child: Text(
+                      'No se pudo cargar la información del usuario.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.red[700]),
+                    ),
+                  ),
+                );
+              } else if (snapshot.hasData) {
+                return _buildPersonaInfo(snapshot.data!);
+              } else {
+                return const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Center(child: Text('No hay información del usuario disponible.')),
+                );
+              }
+            },
+          ),
+
+
+
+   // 2. La lista de productos (FutureBuilder<List<Producto>>)
+          Expanded( // Wrap the second FutureBuilder in Expanded so the GridView takes available space
+            child: FutureBuilder<List<Producto>>(
+       future: _productosFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -186,6 +298,9 @@ class _ProductosVendedorPageState extends State<ProductosVendedorPage> {
           }
         },
       ),
+      ),
+        ],
+      ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 20.0), // Ajuste para que no se superponga
         child: FloatingActionButton.extended(
@@ -193,6 +308,7 @@ class _ProductosVendedorPageState extends State<ProductosVendedorPage> {
             // Lógica para navegar a la página del carrito
 
  final String compradorId = widget.idpersona1;
+ final String cedulaId = widget.cedula1;
 
   // Opcionalmente, para depuración, verifica si es null (no debería serlo si el diseño es correcto)
   if (compradorId == null) {
@@ -206,7 +322,7 @@ class _ProductosVendedorPageState extends State<ProductosVendedorPage> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => CarritoProductoPage(idpersona: compradorId),
+                                builder: (_) => CarritoProductoPage(idpersona: compradorId,cedula:cedulaId),
                               ),
                             );
 

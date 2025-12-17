@@ -1,23 +1,12 @@
 import 'package:flutter/material.dart';
-import 'api_service.dart'; 
-import 'evento.dart'; 
-import 'package:flutter_math_fork/flutter_math.dart'; 
+import 'api_service.dart'; // Asegúrate de tener este import si usas la API
+import 'evento.dart'; // O donde tengas la clase SesionEvento
+import 'package:flutter_math_fork/flutter_math.dart'; // Asegúrate de tener este paquete
 import 'ParticipacionScreen.dart';
 import 'PagoeventoScreen.dart';
 import 'PagoeventoPeople.dart';
 import 'AsistenciaScreen.dart';
-import 'SesionItem.dart'; 
-
-// ... (Otros imports si son necesarios)
-
-// --- FUNCIÓN DE AYUDA GLOBAL PARA EVITAR EL ERROR "INVALID DOUBLE" ---
-double safeDouble(String? value) {
-  if (value == null || value.trim().isEmpty) return 0.0;
-  // Reemplaza coma por punto para evitar errores (ej: "8,5" -> "8.5")
-  String sanitized = value.replaceAll(',', '.').trim();
-  return double.tryParse(sanitized) ?? 0.0;
-}
-
+import 'SesionItem.dart'; // <--- Agrega esta línea
 
 
 class EventoDetalleScreen extends StatefulWidget {
@@ -32,7 +21,14 @@ class EventoDetalleScreen extends StatefulWidget {
 }
 
 class _EventoDetalleScreenState extends State<EventoDetalleScreen> {
+  // Ajuste de índices:
+  // 0: Contenido (Syllabus)
+  // 1: Participante (Docente) / Asistencia (Estudiante)
+  // 2: Tomar Asistencia (Docente) / Participación (Estudiante)
+  // 3: Nota
+  // 4: Pago
   int _selectedIndex = 0;
+  // int numerosesion=0; // No necesario como campo de estado, se calcula en _buildContenido
 
   late Future<List<SesionEvento>> _contenidoFuture;
   late Future<List<Asistencia>> _asistenciaFuture;
@@ -40,13 +36,16 @@ class _EventoDetalleScreenState extends State<EventoDetalleScreen> {
   late Future<List<Participacion>> _participacionFuture;
   late Future<List<Nota>> _notaFuture;
   late Future<List<Pago>> _pagoFuture;
+// NUEVO: Future para obtener foto y nombre en esta pantalla
   late Future<Persona> _personaInfoFuture;
+
 
   final TextEditingController _searchController = TextEditingController();
   List<Participante> _allParticipantes = [];
   List<Participante> _filteredParticipantes = [];
   String _searchQuery = '';
 
+  // Variable para determinar si el usuario es docente ('6')
   bool get isDocente => widget.idtipogrupoparticipante == '6';
 
   @override
@@ -56,22 +55,28 @@ class _EventoDetalleScreenState extends State<EventoDetalleScreen> {
     _participanteFuture = ApiService.fetchParticipantes(widget.idevento);
     _asistenciaFuture = ApiService.fetchAsistencias(widget.idevento,widget.idpersona);
     _participacionFuture = ApiService.fetchParticipaciones(widget.idevento,widget.idpersona);
+// NUEVO: Inicializar información de persona
     _personaInfoFuture = ApiService.fetchPersonaInfo(widget.idpersona);
+
     _notaFuture = ApiService.fetchNotas(widget.idevento,widget.idpersona);
     _pagoFuture = ApiService.fetchPagos(widget.idevento,widget.idpersona);
-    _searchController.addListener(_onSearchChanged);
+   _searchController.addListener(_onSearchChanged);
 
+// Cargar los datos iniciales y configurar las listas
     _participanteFuture.then((participantes) {
-      if (mounted) { 
+      if (mounted) { // Asegurarse de que el widget todavía está en el árbol
         setState(() {
           _allParticipantes = participantes;
           _filteredParticipantes = participantes;
         });
       }
     });
+
+
   }
 
-  @override
+
+@override
   void dispose() {
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
@@ -79,7 +84,7 @@ class _EventoDetalleScreenState extends State<EventoDetalleScreen> {
   }
 
   void _onSearchChanged() {
-    if (_searchController.text == _searchQuery) return; 
+    if (_searchController.text == _searchQuery) return; // Evitar reconstrucciones innecesarias
 
     setState(() {
       _searchQuery = _searchController.text;
@@ -89,35 +94,34 @@ class _EventoDetalleScreenState extends State<EventoDetalleScreen> {
         _filteredParticipantes = _allParticipantes.where((participante) {
           final nombreLower = participante.nombres.toLowerCase();
           final queryLower = _searchQuery.toLowerCase();
-          final grupoletraLower = participante.grupoletra.toLowerCase(); 
+          final grupoletraLower = participante.grupoletra.toLowerCase(); // Opcional: buscar por cédula también
           return nombreLower.contains(queryLower) || grupoletraLower.contains(queryLower);
         }).toList();
       }
     });
   }
 
+
+
+
+
+
+
+
   List<Widget> _buildPages() {
     return [
       _buildContenido(),
        isDocente ? _buildParticipante() : _buildAsistencia(),
        isDocente ? _buildTomarAsistencia() : _buildParticipacion(),
-      // AQUI USAMOS EL WIDGET REUTILIZABLE OPTIMIZADO
-      NotasContenidoWidget(
-        notaFuture: _notaFuture,
-        personaInfoFuture: _personaInfoFuture,
-      ),
+      _buildNota(),
       _buildPago(),
     ];
   }
 
-  // ... [MANTENER _buildParticipante, _buildTomarAsistencia, _buildAsistencia, _buildAttendanceSummary, _buildContenido, _buildParticipacion, _buildPago IGUAL QUE EN TU CÓDIGO ORIGINAL] ...
-  // Para ahorrar espacio en la respuesta asumo que copias los métodos existentes aquí.
-  // Solo asegúrate de borrar el antiguo método _buildNota() y sus helpers (_calculateTotalPercentage, getIcon, etc) de esta clase principal
-  // ya que ahora viven en NotasContenidoWidget.
 
-  Widget _buildParticipante() {
-    // ... (Tu código existente)
-    return FutureBuilder<List<Participante>>(
+
+Widget _buildParticipante() {
+  return FutureBuilder<List<Participante>>(
     future: _participanteFuture,
     builder: (context, snapshot) {
       if (snapshot.connectionState == ConnectionState.waiting && _allParticipantes.isEmpty) {
@@ -230,6 +234,10 @@ class _EventoDetalleScreenState extends State<EventoDetalleScreen> {
                                         );
                                       },
                                     ),
+                                    
+
+
+
                                   ],
                                 ),
                               ],
@@ -257,8 +265,12 @@ class _EventoDetalleScreenState extends State<EventoDetalleScreen> {
       }
     },
   );
-  }
+}
 
+
+
+
+@override                                                                   
   Widget _buildTomarAsistencia() {
     return MaterialApp(
       title: 'tomar de Asistencia',
@@ -266,6 +278,8 @@ class _EventoDetalleScreenState extends State<EventoDetalleScreen> {
     );  
   }
 
+
+// New Function to calculate attendance stats
   Map<String, dynamic> _calculateAttendanceStats(List<Asistencia> asistencias) {
     int puntual = 0;
     int atrasado = 0;
@@ -291,7 +305,7 @@ class _EventoDetalleScreenState extends State<EventoDetalleScreen> {
           break;
         case 4:
           injustificada++;
-          weightedScore += 0.0; 
+          weightedScore += 0.0; // Injustificada tiene un valor de 0
           break;
       }
     }
@@ -308,8 +322,8 @@ class _EventoDetalleScreenState extends State<EventoDetalleScreen> {
     };
   }
 
-  Widget _buildAsistencia() {
-     return Column(
+Widget _buildAsistencia() {
+  return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Padding(
@@ -336,35 +350,36 @@ class _EventoDetalleScreenState extends State<EventoDetalleScreen> {
                   final tipo = int.tryParse(asistencia.idtipoasistencia ?? '0') ?? 0;
 
                   Color tarjetaColor;
-                  IconData leadingIcon; 
+                  IconData leadingIcon; // Variable para el icono
                   switch (tipo) {
-                    case 1: 
+                    case 1: // Puntual
                       tarjetaColor = Colors.green;
-                      leadingIcon = Icons.check_circle_outline; 
+                      leadingIcon = Icons.check_circle_outline; // Icono de asistencia puntual
                       break;
-                    case 2: 
+                    case 2: // Atrasado
                       tarjetaColor = Colors.yellow;
-                      leadingIcon = Icons.timer_off_outlined; 
+                      leadingIcon = Icons.timer_off_outlined; // Icono de llegada tarde
                       break;
-                    case 3: 
+                    case 3: // Falta Justificada
                       tarjetaColor = Colors.orange;
-                      leadingIcon = Icons.report_problem_outlined; 
+                      leadingIcon = Icons.report_problem_outlined; // Icono de falta justificada
                       break;
-                    case 4: 
+                    case 4: // Falta Injustificada
                       tarjetaColor = Colors.red;
-                      leadingIcon = Icons.cancel_outlined; 
+                      leadingIcon = Icons.cancel_outlined; // Icono de falta injustificada
                       break;
                     default:
                       tarjetaColor = Colors.grey.shade300;
-                      leadingIcon = Icons.question_mark_outlined; 
+                      leadingIcon = Icons.question_mark_outlined; // Icono por defecto
                   }
-                  
+
+                  // Color del texto si fondo es muy claro (amarillo)
                   final textColor = (tarjetaColor == Colors.yellow) ? Colors.black : Colors.white;
 
                   return Card(
                     color: tarjetaColor,
                     child: ListTile(
-                      leading: Icon(leadingIcon, color: textColor), 
+                      leading: Icon(leadingIcon, color: textColor), // Usando el icono dinámico
                       title: Text(
                         'Fecha: ${asistencia.fecha}',
                         style: TextStyle(color: textColor),
@@ -381,10 +396,12 @@ class _EventoDetalleScreenState extends State<EventoDetalleScreen> {
           },
         ),
       ),
+      // Nuevo widget para el footer de estadísticas
       _buildAttendanceSummary(),
     ],
   );
-  }
+}
+
 
   Widget _buildAttendanceSummary() {
     return FutureBuilder<List<Asistencia>>(
@@ -396,10 +413,11 @@ class _EventoDetalleScreenState extends State<EventoDetalleScreen> {
             child: Center(child: CircularProgressIndicator()),
           );
         } else if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
-          return const SizedBox.shrink(); 
+          return const SizedBox.shrink(); // No mostrar nada si no hay datos
         } else {
           final asistencias = snapshot.data!;
           final stats = _calculateAttendanceStats(asistencias);
+          final int total = stats['total'];
           final String porcentaje = stats['porcentaje'];
 
           return Container(
@@ -472,8 +490,10 @@ class _EventoDetalleScreenState extends State<EventoDetalleScreen> {
     );
   }
 
-  Widget _buildContenido() {
-    return FutureBuilder<List<SesionEvento>>(
+
+// WIDGET MEJORADO PARA CONTENIDO
+Widget _buildContenido() {
+  return FutureBuilder<List<SesionEvento>>(
     future: _contenidoFuture,
     builder: (context, snapshot) {
       if (snapshot.connectionState == ConnectionState.waiting) {
@@ -505,6 +525,7 @@ class _EventoDetalleScreenState extends State<EventoDetalleScreen> {
               child: ListView.builder(
                 itemCount: sesiones.length,
                 itemBuilder: (context, index) {
+                  // Aquí usamos el nuevo widget SesionItem
                   return SesionItem(
                     sesion: sesiones[index],
                     isDocente: isDocente,
@@ -517,19 +538,22 @@ class _EventoDetalleScreenState extends State<EventoDetalleScreen> {
       }
     },
   );
-  }
+}
 
-  Widget _buildParticipacion() {
-     return Column(
+
+
+Widget _buildParticipacion() {
+// Simulación de datos para la demostración
+   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Container(
         padding: const EdgeInsets.all(8.0),
-        color: Colors.blue, 
+        color: Colors.blue, // Puedes cambiar este color
         child: const Text(
           'Participación en el aula',
           style: TextStyle(
-            color: Colors.white, 
+            color: Colors.white, // Puedes cambiar este color
             fontWeight: FontWeight.bold,
             fontSize: 16.0,
           ),
@@ -549,8 +573,7 @@ class _EventoDetalleScreenState extends State<EventoDetalleScreen> {
                 itemCount: participaciones.length,
                 itemBuilder: (context, index) {
                   final participacion = participaciones[index];
-                  //final porcentaje = double.tryParse(participacion.porcentaje ?? '0') ?? 0.0;
-                  final porcentaje = safeDouble(participacion.porcentaje);
+                  final porcentaje = double.tryParse(participacion.porcentaje ?? '0') ?? 0.0;
                   final isNegativo = porcentaje < 0;
                   final backgroundColor = isNegativo ? Colors.red.shade200 : Colors.green.shade200;
                   final textColor = Colors.black87;
@@ -575,6 +598,9 @@ class _EventoDetalleScreenState extends State<EventoDetalleScreen> {
                                 Text('Porcentaje de participación: ${participacion.porcentaje}%', style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
                               ],
                             ),
+
+
+
                           ),
                         ],
                       ),
@@ -588,356 +614,191 @@ class _EventoDetalleScreenState extends State<EventoDetalleScreen> {
       ),
     ],
   );
-  }
 
-  Widget _buildPago() {
-    return Column( 
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Text(
-            "Financiamiento de actividades",
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        Expanded( 
-          child: FutureBuilder<List<Pago>>(
-            future: _pagoFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              } else if (snapshot.hasError) {
-                return Center(child: Text('Error: ${snapshot.error}'));
-              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return const Center(child: Text('No hay financiamientos para mostrar.'));
-              } else {
-                final pagoes = snapshot.data!;
-                return ListView.builder(
-                  itemCount: pagoes.length,
-                  itemBuilder: (context, index) {
-                    final pago = pagoes[index];
-                    final valor = safeDouble(pago.valor);
-                    final isNegativo = valor < 0;
-                    final textColor = isNegativo ? Colors.white : null;
-
-                    return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                      color: isNegativo ? Colors.orangeAccent : Theme.of(context).cardColor,
-                      elevation: 3,
-                      child: ListTile(
-                        leading: Icon( 
-                          Icons.favorite,
-                          color: Colors.red,
-                          size: 40,
-                        ),
-                        title: Text(
-                          'Fecha: ${pago.fecha}',
-                          style: TextStyle(
-                            color: textColor,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        subtitle: Column( 
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Motivo: ${pago.comentario}',
-                              style: TextStyle(
-                                color: textColor,
-                              ),
-                            ),
-                            const SizedBox(height: 4), 
-                            Text( 
-                              'Contribución: ${pago.valor}',
-                              style: TextStyle(
-                                color: textColor,
-                                fontWeight: FontWeight.w500, 
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                );
-              }
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final navItems = [
-         const BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Syllabus'),
-          BottomNavigationBarItem(
-            icon: isDocente ? const Icon(Icons.people) : const Icon(Icons.check_circle_outline),
-            label: isDocente ? 'Participante' : 'Asiste',
-          ),
-        BottomNavigationBarItem(
-          icon: isDocente ? const Icon(Icons.check_circle_outline) : const Icon(Icons.note_alt_outlined),
-          label: isDocente ? 'Asiste' : 'Participa',
-        ),
-          const BottomNavigationBarItem(icon: Icon(Icons.rate_review), label: 'Notas'),
-          const BottomNavigationBarItem(icon: Icon(Icons.attach_money), label: 'Pagos')
-    ];
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('Sesiones del Evento')),
-      body: _buildPages()[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        selectedItemColor: Colors.blue, 
-        unselectedItemColor: Colors.grey, 
-        backgroundColor: Colors.white, 
-        type: BottomNavigationBarType.fixed, 
-
-        items: navItems,
-      ),
-    );
-  }
 }
 
-// =============================================================================
-// ============  NUEVO WIDGET REUTILIZABLE PARA LAS NOTAS =======================
-// =============================================================================
-
-class NotasContenidoWidget extends StatelessWidget {
-  final Future<List<Nota>> notaFuture;
-  final Future<Persona> personaInfoFuture;
-
-  const NotasContenidoWidget({
-    Key? key,
-    required this.notaFuture,
-    required this.personaInfoFuture,
-  }) : super(key: key);
-
-  // Método para cálculo de porcentajes (Mantenido de tu lógica original)
+// Method to calculate the sum of percentages
   List<double> _calculateTotalPercentage(List<Nota> notas) {
-    double p11 = 0.0; double p12 = 0.0; double p21 = 0.0; double p22 = 0.0;
-    double t1 = 0.0; double t2 = 0.0;
-    double a1 = 0.0; double b1 = 0.0; double c1 = 0.0; double e1 = 0.0;
-    double a2 = 0.0; double b2 = 0.0; double c2 = 0.0; double e2 = 0.0;
-    double pa=0.03; double pb=0.015; double pc=0.015; double pe=0.04;
-
+    double p11 = 0.0;
+    double p12 = 0.0;
+    double p21 = 0.0;
+    double p22 = 0.0;
+    double t1 = 0.0;
+    double t2 = 0.0;
+    double p1 = 0.0;
+    double a1 = 0.0;
+    double b1 = 0.0;
+    double c1 = 0.0;
+    double e1 = 0.0;
+    double a2 = 0.0;
+    double b2 = 0.0;
+    double c2 = 0.0;
+    double e2 = 0.0;
+    double pa=0.03;
+    double pb=0.015;
+    double pc=0.015;
+    double pe=0.04;
     for (var nota in notas) {
-				double val = safeDouble(nota.porcentaje);
-      switch (nota.idmodoevaluacion) {
-        case '2': a1 += val; break;
-        case '3': b1 += val; break;
-        case '4': c1 += val; break;
-        case '5': e1 += val; break;
-        case '6': a2 += val; break;
-        case '7': b2 += val; break;
-        case '8': c2 += val; break;
-        case '9': e2 += val; break;
-        default:
-      }
+
+              switch (nota.idmodoevaluacion) {
+                case  '2': // Puntual
+                 a1 += double.tryParse(nota.porcentaje ?? '0') ?? 0.0;
+                  break;
+                case '3': // Atrasado
+                 b1 += double.tryParse(nota.porcentaje ?? '0') ?? 0.0;
+                  break;
+                case '4': // Falta Justificada
+                 c1 += double.tryParse(nota.porcentaje ?? '0') ?? 0.0;
+                  break;
+                case '5': // Evaluado
+                 e1 += double.tryParse(nota.porcentaje ?? '0') ?? 0.0;
+                  break;
+
+                case '6': // Puntual
+                 a2 += double.tryParse(nota.porcentaje ?? '0') ?? 0.0;
+                  break;
+                case '7': // Atrasado
+                 b2 += double.tryParse(nota.porcentaje ?? '0') ?? 0.0;
+                  break;
+                case '8': // Falta Justificada
+                 c2 += double.tryParse(nota.porcentaje ?? '0') ?? 0.0;
+                  break;
+                case '9': // Evaluado
+                 e2 += double.tryParse(nota.porcentaje ?? '0') ?? 0.0;
+                  break;
+                default:
+            }
     }
-    p11 = ((a1/2)+(b1/2)+(c1/2)+e1)/4;
-    p12 = (a1/2)*pa+(b1/2)*pb+(c1/2)*pc+e1*pe;
-    p21 = ((a2/2)+(b2/2)+(c2/2)+e2)/4;
-    p22 = (a2/2)*pa+(b2/2)*pb+(c2/2)*pc+e2*pe;
-    t1 =(p11+p21)/2;
-    t2 =(p12+p22)/2;
+      p11 = ((a1/2)+(b1/2)+(c1/2)+e1)/4;
+      p12 = (a1/2)*pa+(b1/2)*pb+(c1/2)*pc+e1*pe;
+      p21 = ((a2/2)+(b2/2)+(c2/2)+e2)/4;
+      p22 = (a2/2)*pa+(b2/2)*pb+(c2/2)*pc+e2*pe;
+      t1 =(p11+p21)/2;
+      t2 =(p12+p22)/2;
     return [t1,t2,p11,p12,p21,p22];
   }
 
-  Widget getIcon(Nota nota, bool isNegativo) {
-    switch (nota.idmodoevaluacion) {
-      case '1': return Icon(isNegativo ? Icons.sentiment_very_dissatisfied : Icons.sentiment_very_satisfied);
-      case '2': return const Icon(Icons.hearing);
-      case '3': return const Icon(Icons.biotech);
-      case '4': return const Icon(Icons.psychology);
-      case '5': return const Icon(Icons.assignment_turned_in);
-      case '6': return const Icon(Icons.hearing);
-      case '7': return const Icon(Icons.biotech);
-      case '8': return const Icon(Icons.psychology);
-      case '9': return const Icon(Icons.assignment_turned_in);
-      default: return const SizedBox.shrink();
-    }
-  }
 
-  Widget _buildStandardCard(Nota nota) {
-    final porcentaje = safeDouble(nota.porcentaje);
-    final ponderacion = safeDouble(nota.ponderacion);
-    final isNegativo = porcentaje < 0;
-    Color cardColor = isNegativo ? Colors.orange : Colors.white;
-    int idModo = int.tryParse(nota.idmodoevaluacion ?? '0') ?? 0;
-    
-    if (!isNegativo) {
-       switch (idModo) {
-          case 1: cardColor = Colors.blue[100]!; break;
-          case 2: cardColor = Colors.green[100]!; break;
-          case 3: cardColor = Colors.yellow[100]!; break;
-          case 4: cardColor = Colors.red[100]!; break;
-          case 5: cardColor = Colors.blue[100]!; break;
-          case 6: cardColor = Colors.green[100]!; break;
-          case 7: cardColor = Colors.yellow[100]!; break;
-          case 8: cardColor = Colors.red[100]!; break;
-          case 9: cardColor = Colors.blue[100]!; break;
-          default: cardColor = Colors.grey[200]!;
-       }
-    }
-    final textColor = isNegativo ? Colors.white : Colors.black87;
-
-    return Card(
-      color: cardColor,
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.4), shape: BoxShape.circle),
-                  child: getIcon(nota, isNegativo),
-                ),
-                Container(
-                  height: 25, width: 1.5,
-                  color: Colors.black26, margin: const EdgeInsets.symmetric(horizontal: 6),
-                ),
-                Expanded(
-                  child: Text(
-                    nota.modoevaluacion,
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: textColor),
-                    maxLines: 2, overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
+// Method to show the bottom sheet with the total percentage
+  void _showTotalPercentagePanel(BuildContext context, List<double> percentages ) {
+      // Access p1, p2, and total from the list
+  final double total = percentages[0];
+  final double p1 = percentages[1];
+  final double p2 = percentages[2];
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext bc) {
+        return Container(
+          height: 200, // You can adjust the height as needed
+          padding: const EdgeInsets.all(20.0),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
             ),
-            
-            Text(nota.fecha, style: TextStyle(fontSize: 9, color: textColor.withOpacity(0.7))),
-            const Divider(height: 6),
-           
-            Expanded(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text("Rendi. %", style: TextStyle(fontSize: 9, color: Colors.grey)),
-                      Text(
-                        nota.porcentaje + "%",
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black54),
-                      ),
-                    ],
-                  ),
-                  Container(width: 1, height: 40, color: Colors.indigo.withOpacity(0.3)),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text("Ptos", style: TextStyle(fontSize: 9, color: Colors.grey)),
-                      Text(
-                        ((double.tryParse(nota.porcentaje ?? '0') ?? 0.0) * (double.tryParse(nota.ponderacion ?? '0') ?? 0.0)).toStringAsFixed(2),
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigo),
-                      ),
-                    ],
-                  ),
-                ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              const Text(
+                'Sumatoria Total de Porcentajes:',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blueAccent,
+                ),
               ),
+              const SizedBox(height: 10),
+               Text(
+              'Primer parcial: ${p1.toStringAsFixed(2)}',
+              style: const TextStyle(fontSize: 18),
             ),
-             Text(
-                nota.comentario.isNotEmpty ? nota.comentario : "-",
-                style: TextStyle(fontSize: 9, fontStyle: FontStyle.italic, color: textColor),
-                textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildResumenCard(String titulo, List<Nota> todasLasNotas, String filtroParcial) {
-    double sumaPonderacion = 0;
-    double promedioPorcentaje = 0;
-    final List<double> calculatedPercentages = _calculateTotalPercentage(todasLasNotas);
-
-    if (filtroParcial == "1") {
-       promedioPorcentaje = calculatedPercentages[2]; 
-       sumaPonderacion = calculatedPercentages[3]; 
-    } else if (filtroParcial == "2") {
-       promedioPorcentaje = calculatedPercentages[4];
-       sumaPonderacion = calculatedPercentages[5]; 
-    }
-
-    return Card(
-      color: Colors.indigo.shade50,
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.indigo.shade200)),
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
             Text(
-              titulo.toUpperCase(),
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.indigo),
-              textAlign: TextAlign.center,
+              'Segundo parcial: ${p2.toStringAsFixed(2)}',
+              style: const TextStyle(fontSize: 18),
             ),
-            const Divider(color: Colors.indigoAccent),
-            Expanded(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text("Prom. %", style: TextStyle(fontSize: 9, color: Colors.grey)),
-                      Text(
-                        promedioPorcentaje.toStringAsFixed(0) + "%",
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black54),
-                      ),
-                    ],
-                  ),
-                  Container(width: 1, height: 40, color: Colors.indigo.withOpacity(0.3)),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text("Total Ptos", style: TextStyle(fontSize: 9, color: Colors.grey)),
-                      Text(
-                        sumaPonderacion.toStringAsFixed(2),
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigo),
-                      ),
-                    ],
-                  ),
-                ],
+            const SizedBox(height: 10),
+            Text(
+              'Sumatoria Final: ${total.toStringAsFixed(2)}',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: total < 0 ? Colors.red : Colors.green,
+                ),
               ),
-            )
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    const String latexFormula = r'P_x = \sum_{y=1}^{2}(A_x)_y \cdot p_a + \sum_{y=1}^{2}(B_x)_y \cdot p_b + \sum_{y=1}^{2}(C_x)_y \cdot p_c + \sum_{y=1}^{2}(E_x)_y \cdot p_e ';
+   Widget getIcon(nota,isNegativo) {
+
+
+  switch (nota.idmodoevaluacion) {
+    case '1':
+      return Icon(
+        isNegativo ? Icons.sentiment_very_dissatisfied : Icons.sentiment_very_satisfied,
+      );
+    case '2':
+      return Icon(
+        Icons.hearing,
+      );
+    case '3':
+      return Icon(
+        Icons.biotech,
+      );
+    case '4':
+      return Icon(
+        Icons.psychology,
+
+      );
+    case '5':
+      return Icon(
+        Icons.assignment_turned_in,
+      );
+    case '6':
+      return Icon(
+        Icons.hearing,
+      );
+    case '7':
+      return Icon(
+        Icons.biotech,
+      );
+    case '8':
+      return Icon(
+        Icons.psychology,
+      );
+    case '9':
+      return Icon(
+        Icons.assignment_turned_in,
+      );
+    default:
+      return SizedBox.shrink(); // widget vacío en caso de no coincidir
+  }
+}
+
+
+
+
+
+
+
+@override
+@override
+  Widget _buildNota() {
+    final String latexFormula = r'P_x = \sum_{y=1}^{2}(A_x)_y \cdot p_a + \sum_{y=1}^{2}(B_x)_y \cdot p_b + \sum_{y=1}^{2}(C_x)_y \cdot p_c + \sum_{y=1}^{2}(E_x)_y \cdot p_e ';
 
     return Scaffold(
+      // 1. ELIMINAR TÍTULO (Solo queda el botón de atrás y color)
         body: Column(
         children: [
-          // SECCIÓN DE FOTO DE PERFIL
+          // SECCIÓN DE FOTO DE PERFIL (Mantenemos tu diseño anterior)
           FutureBuilder<Persona>(
-            future: personaInfoFuture,
+            future: _personaInfoFuture,
             builder: (context, snapshot) {
               if (snapshot.hasData) {
                 final persona = snapshot.data!;
@@ -978,7 +839,7 @@ class NotasContenidoWidget extends StatelessWidget {
           // SECCIÓN DE NOTAS Y RESÚMENES
           Expanded(
             child: FutureBuilder<List<Nota>>(
-              future: notaFuture,
+              future: _notaFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -987,20 +848,34 @@ class NotasContenidoWidget extends StatelessWidget {
                 }
 
                 final notas = snapshot.data!;
+                
+                // --- LÓGICA DE GENERACIÓN DE TARJETAS ---
                 List<Widget> gridWidgets = [];
                 
+                // Calcular la Nota Final acumulada para la barra inferior
                 double notaFinalAcumulada1 = 0;
                 double notaFinalAcumulada2 = 0;
+
 
                  final List<double> calculatedPercentages = _calculateTotalPercentage(notas);
                  notaFinalAcumulada1=calculatedPercentages[0];
                  notaFinalAcumulada2=calculatedPercentages[1];
 
+
                 for (var nota in notas) {
+                  // 1. Crear Tarjeta Normal
                   gridWidgets.add(_buildStandardCard(nota));
+
+                  // Calcular valor para la suma final
+               //   double val = (double.tryParse(nota.porcentaje ?? '0') ?? 0.0) * (double.tryParse(nota.ponderacion ?? '0') ?? 0.0);
+               //   notaFinalAcumulada += val;
+
+                  // 2. Verificar si toca insertar Tarjeta de Resumen
+                  // Insertar después de E1
                   if (nota.modoevaluacion == "E1") {
                     gridWidgets.add(_buildResumenCard("Primer Parcial", notas, "1"));
                   }
+                  // Insertar después de E2
                   if (nota.modoevaluacion == "E2") {
                     gridWidgets.add(_buildResumenCard("Segundo Parcial", notas, "2"));
                   }
@@ -1019,7 +894,7 @@ class NotasContenidoWidget extends StatelessWidget {
                       ),
                     ),
                     
-                    // BARRA DE SUMATORIA FINAL
+                    // 3. BARRA DE SUMATORIA FINAL (Nueva franja inferior)
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
@@ -1035,20 +910,26 @@ class NotasContenidoWidget extends StatelessWidget {
                             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                           ),
 
+            // Centro: Promedio % | Raya | Total Ponderación
             Expanded(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
+                  // Columna Promedio
                   Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        notaFinalAcumulada1.toStringAsFixed(0) + "%", 
+                        notaFinalAcumulada1.toStringAsFixed(0) + "%", // Sin decimales el %
                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black54),
                       ),
                     ],
                   ),
+
+                  // Raya Vertical Central
                   Container(width: 1, height: 40, color: Colors.indigo.withOpacity(0.3)),
+
+                  // Columna Sumatoria
                   Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -1061,6 +942,15 @@ class NotasContenidoWidget extends StatelessWidget {
                 ],
               ),
             ),
+
+
+
+
+
+
+
+
+
                        ],
                       ),
                     )
@@ -1072,7 +962,7 @@ class NotasContenidoWidget extends StatelessWidget {
         ],
       ),
       
-      // BARRA DE FÓRMULA LATEX
+      // BARRA DE FÓRMULA (Mantenida al final)
       bottomNavigationBar: BottomAppBar(
         color: Colors.blueGrey.shade50,
         height: 60,
@@ -1093,11 +983,347 @@ class NotasContenidoWidget extends StatelessWidget {
       ),
     );
   }
+
+  // --- WIDGET AUXILIAR 1: Tarjeta de Nota Normal (Con tu diseño previo) ---
+  Widget _buildStandardCard(Nota nota) {
+    final porcentaje = double.tryParse(nota.porcentaje ?? '0') ?? 0.0;
+    final isNegativo = porcentaje < 0;
+    
+    // Color según ID (Simplificado para el ejemplo)
+    Color cardColor = isNegativo ? Colors.orange : Colors.white;
+    int idModo = int.tryParse(nota.idmodoevaluacion ?? '0') ?? 0;
+    if (!isNegativo) {
+       switch (idModo) {
+          case 1: cardColor = Colors.blue[100]!; break;
+          case 2: cardColor = Colors.green[100]!; break;
+          case 3: cardColor = Colors.yellow[100]!; break;
+          case 4: cardColor = Colors.red[100]!; break;
+          case 5: cardColor = Colors.blue[100]!; break;
+          case 6: cardColor = Colors.green[100]!; break;
+          case 7: cardColor = Colors.yellow[100]!; break;
+          case 8: cardColor = Colors.red[100]!; break;
+          case 9: cardColor = Colors.blue[100]!; break;
+          default: cardColor = Colors.grey[200]!;
+       }
+    }
+    final textColor = isNegativo ? Colors.white : Colors.black87;
+
+    return Card(
+      color: cardColor,
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Cabecera: Icono | Raya | Modo
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.4), shape: BoxShape.circle),
+                  child: getIcon(nota, isNegativo),
+                ),
+                Container(
+                  height: 25, width: 1.5,
+                  color: Colors.black26, margin: const EdgeInsets.symmetric(horizontal: 6),
+                ),
+                Expanded(
+                  child: Text(
+                    nota.modoevaluacion,
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: textColor),
+                    maxLines: 2, overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            
+            Text(nota.fecha, style: TextStyle(fontSize: 9, color: textColor.withOpacity(0.7))),
+            const Divider(height: 6),
+           
+            // Centro: Promedio % | Raya | Total Ponderación
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // Columna Promedio
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text("Rendi. %", style: TextStyle(fontSize: 9, color: Colors.grey)),
+                      Text(
+                        nota.porcentaje + "%", // Sin decimales el %
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black54),
+                      ),
+                    ],
+                  ),
+
+                  // Raya Vertical Central
+                  Container(width: 1, height: 40, color: Colors.indigo.withOpacity(0.3)),
+
+                  // Columna Sumatoria
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text("Ptos", style: TextStyle(fontSize: 9, color: Colors.grey)),
+                      Text(
+                        ((double.tryParse(nota.porcentaje ?? '0') ?? 0.0) * (double.tryParse(nota.ponderacion ?? '0') ?? 0.0)).toStringAsFixed(2),
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigo),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+
+
+
+            // Comentario
+             Text(
+                nota.comentario.isNotEmpty ? nota.comentario : "-",
+                style: TextStyle(fontSize: 9, fontStyle: FontStyle.italic, color: textColor),
+                textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- WIDGET AUXILIAR 2: Tarjeta de Resumen (NUEVO REQUERIMIENTO) ---
+  Widget _buildResumenCard(String titulo, List<Nota> todasLasNotas, String filtroParcial) {
+    // 1. Filtrar las notas que pertenecen a este parcial (contienen "1" o "2" en su modo)
+    // Ejemplo: "A1", "B1" contienen "1".
+//    final notasParcial = todasLasNotas.where((n) => n.modoevaluacion.contains(filtroParcial)).toList();
+
+
+
+    double sumaPonderacion = 0;
+    double sumaPorcentajes = 0;
+    double promedioPorcentaje=0;
+    final List<double> calculatedPercentages = _calculateTotalPercentage(todasLasNotas);
+
+
+
+// 2. Asignar dentro (sin escribir 'double' de nuevo)
+if (filtroParcial == "1") {
+   // Asumimos que calculatedPercentages es una lista válida
+   // Nota: Verifica si el índice es 0 o 1 dependiendo de cómo llenaste la lista
+   promedioPorcentaje = calculatedPercentages[2]; // Usualmente el primero es índice 0
+   sumaPonderacion = calculatedPercentages[3]; // Usualmente el primero es índice 0
+} else if (filtroParcial == "2") {
+   promedioPorcentaje = calculatedPercentages[4];
+   sumaPonderacion = calculatedPercentages[5]; // Usualmente el primero es índice 0
 }
 
-// =============================================================================
-// =================  ACTUALIZACIÓN DE NOTASPAGE ===============================
-// =============================================================================
+
+
+//    for (var n in notasParcial) {
+//      double p = double.tryParse(n.porcentaje ?? '0') ?? 0.0;
+//      double w = double.tryParse(n.ponderacion ?? '0') ?? 0.0;
+//      sumaPorcentajes += p;
+ //     sumaPonderacion += (p * w);
+ //   }
+
+//    double promedioPorcentaje = notasParcial.isNotEmpty ? sumaPorcentajes / notasParcial.length : 0.0;
+
+    return Card(
+      color: Colors.indigo.shade50, // Color distintivo
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.indigo.shade200)),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Título Superior
+            Text(
+              titulo.toUpperCase(),
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.indigo),
+              textAlign: TextAlign.center,
+            ),
+            const Divider(color: Colors.indigoAccent),
+            
+            // Centro: Promedio % | Raya | Total Ponderación
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // Columna Promedio
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text("Prom. %", style: TextStyle(fontSize: 9, color: Colors.grey)),
+                      Text(
+                        promedioPorcentaje.toStringAsFixed(0) + "%", // Sin decimales el %
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black54),
+                      ),
+                    ],
+                  ),
+
+                  // Raya Vertical Central
+                  Container(width: 1, height: 40, color: Colors.indigo.withOpacity(0.3)),
+
+                  // Columna Sumatoria
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text("Total Ptos", style: TextStyle(fontSize: 9, color: Colors.grey)),
+                      Text(
+                        sumaPonderacion.toStringAsFixed(2),
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigo),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            )
+
+
+          ],
+        ),
+      ),
+    );
+  }
+
+
+
+
+
+
+
+    Widget _buildPago() {
+    return Column( // 1. Widget principal como Columna para agregar el título
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Text(
+            "Financiamiento de actividades", // Título agregado
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        Expanded( // Para que el ListView ocupe el espacio restante
+          child: FutureBuilder<List<Pago>>(
+            future: _pagoFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return const Center(child: Text('No hay financiamientos para mostrar.'));
+              } else {
+                final pagoes = snapshot.data!;
+                return ListView.builder(
+                  itemCount: pagoes.length,
+                  itemBuilder: (context, index) {
+                    final pago = pagoes[index];
+                    final valor = double.tryParse(pago.valor ?? '0') ?? 0.0;
+                    final isNegativo = valor < 0;
+                    final textColor = isNegativo ? Colors.white : null;
+
+                    return Card(
+                      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      color: isNegativo ? Colors.orangeAccent : Theme.of(context).cardColor,
+                      elevation: 3,
+                      child: ListTile(
+                        leading: Icon( // 4. Icono de manos estrechándose
+                          Icons.favorite,
+                          color: Colors.red,
+                          size: 40,
+                        ),
+                        title: Text(
+                          'Fecha: ${pago.fecha}',
+                          style: TextStyle(
+                            color: textColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        subtitle: Column( // Para mostrar la información en múltiples líneas
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Motivo: ${pago.comentario}',
+                              style: TextStyle(
+                                color: textColor,
+                              ),
+                            ),
+                            const SizedBox(height: 4), // Pequeño espacio
+                            Text( // 2. Campo pago.valor en otra línea con etiqueta
+                              'Contribución: ${pago.valor}',
+                              style: TextStyle(
+                                color: textColor,
+                                fontWeight: FontWeight.w500, // Un poco más de énfasis
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+
+
+
+
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Definir los ítems del BottomNavigationBar una vez
+    // Indices: 0: Syllabus, 1: P/A, 2: A/P, 3: Notas, 4: Pagos
+    final navItems = [
+         const BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Syllabus'),
+          BottomNavigationBarItem(
+            icon: isDocente ? const Icon(Icons.people) : const Icon(Icons.check_circle_outline),
+            label: isDocente ? 'Participante' : 'Asiste',
+          ),
+        BottomNavigationBarItem(
+          icon: isDocente ? const Icon(Icons.check_circle_outline) : const Icon(Icons.note_alt_outlined),
+          label: isDocente ? 'Asiste' : 'Participa',
+        ),
+          const BottomNavigationBarItem(icon: Icon(Icons.rate_review), label: 'Notas'),
+          const BottomNavigationBarItem(icon: Icon(Icons.attach_money), label: 'Pagos')
+    ];
+
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Sesiones del Evento')),
+      body: _buildPages()[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        selectedItemColor: Colors.blue, // o cualquier color visible
+        unselectedItemColor: Colors.grey, // para los ítems no seleccionados
+        backgroundColor: Colors.white, // o el que estés usando de fondo
+        type: BottomNavigationBarType.fixed, // Usar tipo fijo para 5 ítems
+
+        items: navItems,
+      ),
+    );
+  }
+}
+
+
 
 class NotasPage extends StatefulWidget {
   final String idpersona;
@@ -1109,37 +1335,323 @@ class NotasPage extends StatefulWidget {
   _NotasPageState createState() => _NotasPageState();
 }
 
+
+
+
+// Debes crear esta página o una similar para la navegación
 class _NotasPageState extends State<NotasPage> {
-  late Future<List<Nota>> _notaFuture; // Renombrado de _notapFuture para consistencia
-  late Future<Persona> _personaInfoFuture; 
+  late Future<List<Nota>> _notapFuture;
+  late Future<Persona> _personaInfoFuture; // Added for person info
 
   @override
   void initState() {
-    super.initState();
-    // Usa fetchNotasAll si quieres todas, o fetchNotas si es específico. 
-    // Mantenemos fetchNotasAll como en tu original.
-    _notaFuture = ApiService.fetchNotasAll(widget.idevento,widget.idpersona);
-    _personaInfoFuture = ApiService.fetchPersonaInfo(widget.idpersona); 
+       super.initState();
+    _notapFuture = ApiService.fetchNotasAll(widget.idevento,widget.idpersona);
+    _personaInfoFuture = ApiService.fetchPersonaInfo(widget.idpersona); // Initialize person info fetch
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Calificaciones"),
+        title: Text("CAlificaciones"),
       ),
-      // Usamos el widget optimizado aquí también
-      body: NotasContenidoWidget(
-        notaFuture: _notaFuture,
-        personaInfoFuture: _personaInfoFuture,
-      ), 
+      body: Center(
+        child: _buildNota(), 
+      ),
     );
+  }
+
+// Reusing the _buildPersonaInfo method from EventoPage
+  Widget _buildPersonaInfo(Persona persona) {
+    final fotoUrl = "https://educaysoft.org/descargar2.php?archivo=${persona.cedula}.jpg";
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+      child: Column(
+        children: [
+          ClipOval(
+            child: Image.network(
+              fotoUrl,
+              width: 100,
+              height: 100,
+              fit: BoxFit.cover,
+              loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  width: 100,
+                  height: 100,
+                  alignment: Alignment.center,
+                  child: CircularProgressIndicator(
+                    value: loadingProgress.expectedTotalBytes != null
+                        ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                        : null,
+                  ),
+                );
+              },
+              errorBuilder: (BuildContext context, Object exception, StackTrace? stackTrace) {
+                return Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.person, size: 60, color: Colors.grey[600]),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            persona.lapersona,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 19, // Tamaño adecuado para un nombre
+              fontWeight: FontWeight.bold, // Letras resaltadas
+              color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black87, // Color del texto
+              shadows: [ // Efecto repujado/sombra sutil
+                Shadow(
+                  offset: Offset(1.5, 1.5),
+                  blurRadius: 2.0,
+                  color: Colors.black.withOpacity(0.35),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+
+
+   Widget getIcon(nota,isNegativo) {
+
+
+  switch (nota.idmodoevaluacion) {
+    case '1':
+      return Icon(
+        isNegativo ? Icons.sentiment_very_dissatisfied : Icons.sentiment_very_satisfied,
+      );
+    case '2':
+      return Icon(
+        Icons.hearing,
+      );
+    case '3':
+      return Icon(
+        Icons.biotech,
+      );
+    case '4':
+      return Icon(
+        Icons.psychology,
+
+      );
+    case '5':
+      return Icon(
+        Icons.assignment_turned_in,
+      );
+    case '6':
+      return Icon(
+        Icons.hearing,
+      );
+    case '7':
+      return Icon(
+        Icons.biotech,
+      );
+    case '8':
+      return Icon(
+        Icons.psychology,
+      );
+    case '9':
+      return Icon(
+        Icons.assignment_turned_in,
+      );
+    default:
+      return SizedBox.shrink(); // widget vacío en caso de no coincidir
   }
 }
 
-// ... (Resto de las clases: AsistenciaPage, TomaasistenciaPage, TemaDetalleScreen, etc. se mantienen igual)
 
 
+
+
+
+Widget _buildNota() {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+          decoration: BoxDecoration(
+            color: Colors.blue[700],
+            borderRadius: BorderRadius.circular(8.0),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              )
+            ],
+          ),
+          child: Text(
+            'Calificación de Actividades de aprendizaje',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+        ),
+      ),
+
+      // Información de la persona
+      FutureBuilder<Persona>(
+        future: _personaInfoFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Padding(
+              padding: EdgeInsets.all(20.0),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          } else if (snapshot.hasError) {
+            print("Error FutureBuilder Persona (PortafolioPage): ${snapshot.error}");
+            return Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Center(
+                child: Text(
+                  'No se pudo cargar la información del usuario.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.red[700]),
+                ),
+              ),
+            );
+          } else if (snapshot.hasData) {
+            return _buildPersonaInfo(snapshot.data!);
+          } else {
+            return const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Center(child: Text('No hay información del usuario disponible.')),
+            );
+          }
+        },
+      ),
+
+      // Lista de notas
+  Expanded(
+  child: FutureBuilder<List<Nota>>(
+    future: _notapFuture,
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Center(child: CircularProgressIndicator());
+      } else if (snapshot.hasError) {
+        return Center(child: Text('Error: ${snapshot.error}'));
+      } else {
+        final notaes = snapshot.data!;
+        return ListView.builder(
+          itemCount: notaes.length,
+          itemBuilder: (context, index) {
+            final nota = notaes[index];
+            final porcentaje = double.tryParse(nota.porcentaje ?? '0') ?? 0.0;
+            final isNegativo = porcentaje < 0;
+
+            // Función para obtener el color basado en el idmodoevaluacion
+            Color? getColorForId(int id) {
+              switch (id) {
+                case 1:
+                  return Colors.blue[100];
+                case 2:
+                  return Colors.green[100];
+                case 3:
+                  return Colors.yellow[100];
+                case 4:
+                  return Colors.red[100];
+                case 5:
+                  return Colors.purple[100];
+                case 6:
+                  return Colors.orange[100];
+                case 7:
+                  return Colors.pink[100];
+                case 8:
+                  return Colors.teal[100];
+                case 9:
+                  return Colors.cyan[100];
+                default:
+                  return null; // Color por defecto si no coincide
+              }
+            }
+
+            final cardColor = isNegativo
+                ? Colors.orange
+                : getColorForId(int.tryParse(nota.idmodoevaluacion ?? '0') ?? 0);
+
+            return Card(
+              color: cardColor,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+
+                child: Row(
+                children: [
+
+
+getIcon(nota,isNegativo),
+
+          const SizedBox(width: 12.0),
+
+               Expanded(
+               
+
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Fecha: ${nota.fecha}',
+                      style: TextStyle(color: isNegativo ? Colors.white : null),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Modo de evaluación: ${nota.modoevaluacion}',
+                      style: TextStyle(color: isNegativo ? Colors.white : null),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Rendimiento: ${nota.porcentaje}%',
+                      style: TextStyle(color: isNegativo ? Colors.white : null),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Comentario: ${nota.comentario}',
+                      style: TextStyle(color: isNegativo ? Colors.white : null),
+                    ),
+                  ],
+                ),
+                ),
+
+                  ],
+
+                ),
+
+
+
+              ),
+            );
+
+
+
+          },
+        );
+      }
+    },
+  ),
+),
+
+    ],
+  );
+}
+
+
+
+}
 
 // Debes crear esta página o una similar para la navegación
 class AsistenciaPage extends StatefulWidget {
@@ -1854,4 +2366,3 @@ Widget _buildDetailTile(BuildContext context, String label, String value, {bool 
     );
   }
 }
-

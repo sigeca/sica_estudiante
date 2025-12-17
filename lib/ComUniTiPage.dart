@@ -6,8 +6,9 @@ import 'ProductoVendedorPage.dart'; // Importa la nueva página de artículos
 
 class ComUniTiPage extends StatefulWidget {
   final String idpersona;
+  final String cedula;
 
-  const ComUniTiPage({Key? key, required this.idpersona}) : super(key: key);
+  const ComUniTiPage({Key? key, required this.idpersona, required this.cedula}) : super(key: key);
 
   @override
   State<ComUniTiPage> createState() => _ComUniTiPageState();
@@ -85,7 +86,8 @@ class _ComUniTiPageState extends State<ComUniTiPage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => ProductosVendedorPage(idpersona: vendedor.idpersona.toString(),idpersona1: widget.idpersona),
+                              builder: (context) => ProductosVendedorPage(idpersona: vendedor.idpersona.toString(),cedula:vendedor.cedula, idpersona1: widget.idpersona,cedula1: widget.cedula
+                            ),
                             ),
                           );
                         },

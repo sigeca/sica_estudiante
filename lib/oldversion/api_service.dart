@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart'; // 🎯 SOLUCIÓN: IMPORTAR ESTO
 import 'evento.dart';
 import 'portafolio.dart';
 
@@ -377,6 +376,7 @@ static Future<List<Tema>> fetchTema(String idtema) async {
   // 1. Obtener la lista de medicamentos de una persona
 static Future<List<Medicacion>> fetchMedicaciones(String idpersona) async {
     final url = Uri.parse('https://educaysoft.org/sica/index.php/medicacion/medicacion_personaflutter');
+    
     final response = await http.post(url, body: {'idpersona': idpersona});
 
     if (response.statusCode == 200) {
@@ -468,66 +468,28 @@ static Future<List<Medicacion>> fetchMedicaciones(String idpersona) async {
   }
 
   // Marcar o desmarcar un día
-  static Future<void> registrarCumplimiento(
-      String iddetallemedicacion, 
-      DateTime fechaHora, 
-      int cumplimiento
-      ) async {
-        final String fechaHoraString = DateFormat('yyyy-MM-dd HH:mm:ss').format(fechaHora);
-
+  static Future<void> registrarCumplimiento(String idDetalle, String fecha, int estado) async {
     final url = Uri.parse('https://educaysoft.org/sica/index.php/cumplimientomedicacion/save_flutter');
     
-    final response= await http.post(url, body: {
-      'iddetallemedicacion': iddetallemedicacion,
-      'fechahora': fechaHoraString,
-      'cumplimiento': cumplimiento.toString(), // 1 o 0
+    await http.post(url, body: {
+      'iddetallemedicacion': idDetalle,
+      'fecha': fecha,
+      'cumplimiento': estado.toString(), // 1 o 0
     });
-    if(response.statusCode != 200){
-        throw Exception('Error al registrar cumplimiento: ${response.body}');
-    }
-
   }
-
-
-
-  // 4. Eliminar un Signo Vital
-  static Future<void> eliminarCumplimiento(String iddetallemedicacion,DateTime fecha) async {
-
-        final String fechaString = DateFormat('yyyy-MM-dd').format(fecha);
-    final url = Uri.parse('https://educaysoft.org/sica/index.php/cumplimientomedicacion/delete_flutter');
-    
-    final response = await http.post(url, body: {
-      'iddetallemedicacion': iddetallemedicacion,
-      'fecha' : fechaString,
-    });
-
-    if (response.statusCode != 200) {
-      throw Exception('Error al eliminar signo vital');
-    }
-  }
- 
-
-
-
 
 
 // MODIFICADO: Ahora recibe idtipomedicacion en lugar de un string libre "tipo"
-static Future<String> registrarMedicacion(
-      String nombre, 
-      String fechadesde, 
-      String fechahasta, 
-      String idpersona, 
-      int idtipomedicacion, 
-      int idestadomedicacion) async {
-    
+  static Future<String> registrarMedicacion(String nombre,String fechadesde,String fechahasta,String idpersona, int idtipomedicacion) async {
     final url = Uri.parse('https://educaysoft.org/sica/index.php/medicacion/save_flutter');
+    
     final response = await http.post(url, body: {
       'nombre': nombre,
       'fechadesde': fechadesde,
       'fechahasta': fechahasta,
       'idpersona': idpersona,
-      'idtipomedicacion': idtipomedicacion.toString(),
-      'idestadomedicacion': idestadomedicacion.toString(),
+      'idtipomedicacion': idtipomedicacion.toString(), // Enviamos 1 o 2
+   //   'tipo': idtipomedicacion == 1 ? 'Farmacéutica' : 'Dietética', // Texto compatible
     });
 
     if (response.statusCode == 200) {
@@ -538,31 +500,7 @@ static Future<String> registrarMedicacion(
     }
   }
 
-// NUEVO: Método para actualizar
-  static Future<String> actualizarMedicacion(
-      String idmedicacion,
-      String nombre,
-      int idtipomedicacion,
-      int idestadomedicacion) async {
-
-    final url = Uri.parse('https://educaysoft.org/sica/index.php/medicacion/update_flutter');
-    final response = await http.post(url, body: {
-      'idmedicacion': idmedicacion,
-      'nombre': nombre,
-      'idtipomedicacion': idtipomedicacion.toString(),
-      'idestadomedicacion': idestadomedicacion.toString(),
-    });
-
-    if (response.statusCode == 200) {
-      final decoded = json.decode(response.body);
-      return decoded['status'] == true ? 'OK' : 'Error';
-    } else {
-      throw Exception('Error al actualizar medicación');
-    }
-  }
-
-
-// NUEVO: Función para traer signos vitales
+  // NUEVO: Función para traer signos vitales
   // Asegúrate de crear el endpoint 'signovital_dataflutter' en tu PHP similar a los otros
   static Future<List<SignoVital>> fetchSignosVitales(String idpersona) async {
     final url = Uri.parse('https://educaysoft.org/sica/index.php/signovital/signovital_dataflutter');
@@ -655,42 +593,9 @@ static Future<String> registrarMedicacion(
   // --- FIN DE CÓDIGO FALTANTE ---
 
 
-static Future<List<MedicamentoVista>> fetchMedicacion2(String idpersona) async {
-    try {
-    final url = Uri.parse('https://educaysoft.org/sica/index.php/medicacion/medicamentos_personaflutter');
-    final response = await http.post(url, body: {'idpersona': idpersona});
 
 
 
-    if (response.statusCode == 200) {
-      try {
-        final dynamic decoded = json.decode(response.body);
-        List<dynamic> data = [];
-
-        // 1. Verificamos si es un Mapa con clave 'data'
-        if (decoded is Map<String, dynamic>) {
-           // AQUÍ EL CAMBIO: Verificamos explícitamente que no sea null
-           if (decoded['data'] != null && decoded['data'] is List) {
-             data = decoded['data']; 
-           }
-        } 
-        // 2. O si es una Lista directa
-        else if (decoded is List) {
-           data = decoded;
-        }
-
-        return data.map((e) => Medicacion.fromJson(e)).toList();
-
-      } catch (e) {
-        print("Error parseando JSON: $e");
-        // Devolvemos lista vacía en vez de explotar la app, para que el usuario pueda seguir
-        return []; 
-      }
-    } else {
-      throw Exception('Error de conexión: ${response.statusCode}');
-    }
-
-}
 
 
 

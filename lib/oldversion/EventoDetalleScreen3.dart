@@ -1854,4 +1854,3 @@ Widget _buildDetailTile(BuildContext context, String label, String value, {bool 
     );
   }
 }
-

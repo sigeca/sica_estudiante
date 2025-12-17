@@ -1,21 +1,30 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'api_service.dart';
-import 'evento.dart';
-import 'splash_screen.dart';
+import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'api_service.dart'; // Asegúrate de que este archivo esté correcto
+import 'evento.dart';     // Asegúrate de que este archivo esté correcto
 import 'portafolio.dart';
-import 'EventoDetalleScreen.dart';
-import 'DocumentosPortafolioScreen.dart';
 import 'LoginPage.dart';
 import 'LoginPagex.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'ComUniTiPage.dart';
+import 'SaludPage.dart';
+import 'DocumentosPortafolioScreen.dart';
+import 'EventoDetalleScreen.dart';
+
 void main() async {
-WidgetsFlutterBinding.ensureInitialized();
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.clear(); // 🔥 Borra toda la sesión guardada
+  WidgetsFlutterBinding.ensureInitialized();
+  // El control de sesión inicial se maneja en SplashScreen
+  // Activa el modo de extremo a extremo (Edge-to-Edge)
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+// Opcional: Configura el estilo de las barras para que sean transparentes
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent, // Barra superior transparente
+    systemNavigationBarColor: Colors.transparent, // Barra inferior transparente
+    statusBarIconBrightness: Brightness.dark, // Iconos oscuros (o light según tu fondo)
+    systemNavigationBarIconBrightness: Brightness.dark,
+  ));
+
   runApp(const SicaApp());
 }
 
@@ -27,23 +36,95 @@ class SicaApp extends StatelessWidget {
     return MaterialApp(
       title: 'SICA',
       debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        primaryColor: Colors.blueAccent,
+        colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.blue).copyWith(secondary: Colors.tealAccent),
+      ),
       initialRoute: '/',
       routes: {
+        // La ruta inicial carga el splash screen
         '/': (context) => const SplashScreen(),
-        '/login': (context) => const LoginPage(),
-        '/loginx': (context) => const LoginPagex(),
+        '/login': (context) => const LoginPage(), // Login con Biometría
+        '/loginx': (context) => const LoginPagex(), // Login con Credenciales
         '/home': (context) {
           final args = ModalRoute.of(context)!.settings.arguments;
-  final idpersona = args is String ? args : '';
+          final idpersona = args is String ? args : '';
           return HomeScreen(idpersona: idpersona);
-
-
-
         },
       },
     );
   }
 }
+
+// ---------------------- NUEVA CLASE: SPLASH SCREEN ---------------------------------
+
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    // Retraso para mostrar el splash screen al menos 1 segundo
+    await Future.delayed(const Duration(seconds: 1)); 
+
+    final prefs = await SharedPreferences.getInstance();
+    final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+    final isBiometricsEnabled = prefs.getBool('biometrics_enabled') ?? false;
+    final idpersona = prefs.getString('idpersona');
+
+    if (!mounted) return;
+
+    if (isLoggedIn && idpersona != null && idpersona.isNotEmpty) {
+      // Si el usuario está logueado y tiene biometría habilitada
+      if (isBiometricsEnabled) {
+         // Redirigir a la pantalla de Login Biométrico para autenticación rápida
+        Navigator.pushReplacementNamed(context, '/login'); 
+      } else {
+        // Si está logueado pero sin biometría, ir directamente a Home (puede necesitar autenticación manual si la sesión expira)
+        Navigator.pushReplacementNamed(context, '/home', arguments: idpersona);
+      }
+    } else {
+      // Si no hay sesión, ir al login de credenciales (asumimos que es la ruta de inicio por defecto)
+      Navigator.pushReplacementNamed(context, '/loginx'); 
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Puedes colocar aquí el logo o un placeholder
+            Icon(Icons.school, size: 100, color: Colors.blueAccent), 
+            SizedBox(height: 20),
+            Text(
+              'SICA - Cargando...',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 40),
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.blueAccent),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------- HOME SCREEN (Mantenido sin cambios) ---------------------------------
 
 class HomeScreen extends StatefulWidget {
   final String idpersona;
@@ -57,22 +138,74 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   late List<Widget> _pages;
+Persona? _personaInfo; // Para almacenar la info de la persona
 
   @override
   void initState() {
     super.initState();
-    _pages = <Widget>[
-      EventoPage(idpersona: widget.idpersona),
-      PortafolioPage(idpersona: widget.idpersona),
-      ComUniTiPage(idpersona: widget.idpersona),
-    ];
+// 1. Obtener la información de la persona
+    _fetchPersonaData();
+
+//    _pages = <Widget>[
+  //    EventoPage(idpersona: widget.idpersona),
+  //    PortafolioPage(idpersona: widget.idpersona),
+  //    ComUniTiPage(idpersona: widget.idpersona),
+  //    ComUniTiPage(cedula: _personaInfo!.cedula), // Usar .cedula aquí
+  //  ];
   }
+Future<void> _fetchPersonaData() async {
+    try {
+      final persona = await ApiService.fetchPersonaInfo(widget.idpersona);
+      if (mounted) {
+        setState(() {
+          _personaInfo = persona;
+          // 2. Inicializar _pages después de obtener los datos
+          _pages = <Widget>[
+            EventoPage(idpersona: widget.idpersona),
+            PortafolioPage(idpersona: widget.idpersona),
+            // Pasar la cédula a ComUniTiPage
+            ComUniTiPage(idpersona: widget.idpersona,cedula: _personaInfo!.cedula), // Usar .cedula aquí
+            SaludPage(idpersona: widget.idpersona,cedula: _personaInfo!.cedula), // Usar .cedula aquí
+          ];
+        });
+      }
+    } catch (e) {
+      // Manejo de errores (por si la info de la persona falla)
+      print('Error al cargar info de persona en HomeScreen: $e');
+      if (mounted) {
+        setState(() {
+          // Inicializar _pages con un valor por defecto o la idpersona si falla la cédula
+           _pages = <Widget>[
+            EventoPage(idpersona: widget.idpersona),
+            PortafolioPage(idpersona: widget.idpersona),
+            ComUniTiPage(idpersona:widget.idpersona,cedula: widget.idpersona), // Asumir idpersona como fallback
+          ];
+        });
+      }
+    }
+  }
+
+
+
+
+
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
   }
+  
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear(); // Borra toda la sesión guardada
+
+    // Redirige al usuario a la pantalla de login principal.
+    if (mounted) {
+       Navigator.of(context).pushNamedAndRemoveUntil('/loginx', (Route<dynamic> route) => false);
+    }
+  }
+
 
   PreferredSizeWidget _buildHeader() {
     return AppBar(
@@ -81,11 +214,19 @@ class _HomeScreenState extends State<HomeScreen> {
           Image.network(
             'https://educaysoft.org/sica/images/logo.jpg',
             height: 40,
+            errorBuilder: (context, error, stackTrace) => const Icon(Icons.school, size: 40, color: Colors.white),
           ),
           const SizedBox(width: 10),
-          const Text('SICA - Educaysoft'),
+          const Text('SICA - Educaysoft', style: TextStyle(fontSize: 18)),
         ],
       ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.logout),
+          tooltip: 'Cerrar Sesión',
+          onPressed: _logout,
+        ),
+      ],
     );
   }
 
@@ -99,13 +240,29 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.event), label: 'Eventos'),
           BottomNavigationBarItem(icon: Icon(Icons.folder), label: 'Portafolio'),
           BottomNavigationBarItem(icon: Icon(Icons.storefront), label: 'ComUniTi'),
+          // --- AQUÍ ESTÁ TU NUEVA OPCIÓN ---
+          BottomNavigationBarItem(
+            icon: Icon(Icons.favorite, color: Colors.red), // Corazón Rojo
+            label: 'Salud',
+          ),
+// ---------------------------------
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Ajustes',
+          ),
+
         ],
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
+        selectedItemColor: Theme.of(context).primaryColor,
+        unselectedItemColor: Colors.grey,
+        type: BottomNavigationBarType.fixed,
       ),
     );
   }
 }
+
+// ---------------------- EVENTO PAGE (Mantenido sin cambios) ---------------------------------
 
 class EventoPage extends StatefulWidget {
   final String idpersona;
@@ -117,35 +274,24 @@ class EventoPage extends StatefulWidget {
 }
 
 class _EventoPageState extends State<EventoPage> {
-  late Future<List<Evento>> _eventos ;
-  late Future<Persona> _personaInfoFuture; // Para cargar los datos de la persona
+  late Future<Persona> _personaInfoFuture;
   late Future<List<Evento>> _eventosFuture;
-
-  bool cargando = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchEventos();
+    _fetchData();
+  }
+
+  void _fetchData() {
     _eventosFuture = ApiService.fetchEventos(widget.idpersona);
-        _personaInfoFuture = ApiService.fetchPersonaInfo(widget.idpersona); // Cargar datos de la persona
+    _personaInfoFuture = ApiService.fetchPersonaInfo(widget.idpersona); 
   }
-
-  void _fetchEventos() async {
-    setState(() => cargando = true);
-    try {
-      _eventos =  ApiService.fetchEventos(widget.idpersona);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Error al cargar: $e'),
-      ));
-    }
-    setState(() => cargando = false);
-  }
-
 
   Widget _buildPersonaInfo(Persona persona) {
-    final fotoUrl = "https://educaysoft.org/descargar2.php=${persona.cedula}.jpg";
+    final fotoUrl = "https://educaysoft.org/descargar2.php?archivo=${persona.cedula}.jpg";
+    // 🎯 LÍNEA AGREGADA PARA IMPRIMIR LA URL
+  print('EventoPage - URL de la foto de la persona: $fotoUrl');
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
@@ -188,21 +334,15 @@ class _EventoPageState extends State<EventoPage> {
             persona.lapersona,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 19, // Tamaño adecuado para un nombre
-              fontWeight: FontWeight.bold, // Letras resaltadas
-              color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black87, // Color del texto
-              shadows: [ // Efecto repujado/sombra sutil
+              fontSize: 19,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black87,
+              shadows: [
                 Shadow(
                   offset: Offset(1.5, 1.5),
                   blurRadius: 2.0,
                   color: Colors.black.withOpacity(0.35),
                 ),
-                // Opcional: una sombra clara para un efecto de relieve más pronunciado
-                // Shadow(
-                //   offset: Offset(-1.0, -1.0),
-                //   blurRadius: 1.0,
-                //   color: Colors.white.withOpacity(0.5),
-                // ),
               ],
             ),
           ),
@@ -211,32 +351,27 @@ class _EventoPageState extends State<EventoPage> {
     );
   }
 
-
-
-
-
   @override
   Widget build(BuildContext context) {
-  //  return cargando
-return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch, // Para que el título y la info de persona se centren si es necesario.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding( // Tu título existente
+        Padding(
           padding: const EdgeInsets.all(8.0),
           child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0), // Padding interno para el texto
+            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
             decoration: BoxDecoration(
-              color: Colors.blue[700], // Un azul un poco más oscuro para mejor contraste
+              color: Theme.of(context).primaryColor,
               borderRadius: BorderRadius.circular(8.0),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.15),
                   blurRadius: 4,
-                  offset: Offset(0,2),
+                  offset: const Offset(0,2),
                 )
               ]
             ),
-            child: Text(
+            child: const Text(
               'Eventos y cursos tomados',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
@@ -254,11 +389,9 @@ return Column(
                 child: Center(child: CircularProgressIndicator()),
               );
             } else if (snapshot.hasError) {
-              // Mostrar un mensaje de error más amigable o específico
-              print("Error FutureBuilder Persona: ${snapshot.error}");
               return Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: Center(child: Text('No se pudo cargar la información del usuario.', textAlign: TextAlign.center, style: TextStyle(color: Colors.red[700]))),
+                child: Center(child: Text('Error al cargar info de usuario: ${snapshot.error}', textAlign: TextAlign.center, style: TextStyle(color: Colors.red[700]))),
               );
             } else if (snapshot.hasData) {
               return _buildPersonaInfo(snapshot.data!);
@@ -271,25 +404,24 @@ return Column(
           },
         ),
 
-
-
-
-
-
     Expanded(
- child: FutureBuilder<List<Evento>>(
+      child: RefreshIndicator( 
+          onRefresh: () async {
+            setState(() {
+              _fetchData(); 
+            });
+          },
+          child: FutureBuilder<List<Evento>>(
             future: _eventosFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                // Si la info de persona ya cargó, quizás no quieras otro CicularProgressIndicator tan grande.
-                // Podría ser un return const SizedBox.shrink(); o un indicador más pequeño.
                 return const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.teal)));
               } else if (snapshot.hasError) {
                 return Center(child: Text('Error al cargar eventos: ${snapshot.error}', style: TextStyle(color: Colors.red[700])));
               } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
                 final eventos = snapshot.data!;
                 return ListView.builder(
-                  padding: const EdgeInsets.only(top: 8.0), // Espacio arriba de la lista
+                  padding: const EdgeInsets.only(top: 8.0),
                   itemCount: eventos.length,
                   itemBuilder: (context, index) {
                     final evento = eventos[index];
@@ -298,8 +430,8 @@ return Column(
                       elevation: 3,
                       child: ListTile(
                         leading: Icon(Icons.calendar_today, color: Theme.of(context).primaryColor),
-                        title: Text(evento.titulo, style: TextStyle(fontWeight: FontWeight.w600)),
-                        subtitle: Text('ID: ${evento.idevento}'), // Puedes añadir más detalles si los tienes
+                        title: Text(evento.titulo, style: const TextStyle(fontWeight: FontWeight.w600)),
+                        subtitle: Text('ID: ${evento.idevento}'),
                         trailing: IconButton(
                           icon: const Icon(Icons.open_in_new, color: Colors.blueAccent),
                           tooltip: "Ver detalles",
@@ -312,7 +444,7 @@ return Column(
                                   titulo: evento.titulo,
                                   idpersona: widget.idpersona,
                                   idtipogrupoparticipante: evento.idtipogrupoparticipante,
-   ),
+                                ),
                               ),
                             );
                           },
@@ -327,18 +459,14 @@ return Column(
               }
             },
           ),
+      ),
         ),
       ],
     );
   }
 }
 
-
-
-
-
-
-
+// ---------------------- PORTAFOLIO PAGE (Mantenido sin cambios) ---------------------------------
 
 class PortafolioPage extends StatefulWidget {
   final String idpersona;
@@ -350,32 +478,22 @@ class PortafolioPage extends StatefulWidget {
 }
 
 class _PortafolioPageState extends State<PortafolioPage> {
-  List<Portafolio> portafolios = [];
-  bool cargando = false;
-  late Future<Persona> _personaInfoFuture; // Added for person info
+  late Future<List<Portafolio>> _portafolioFuture;
+  late Future<Persona> _personaInfoFuture;
 
   @override
   void initState() {
     super.initState();
-    _fetchPortafolio();
-    _personaInfoFuture = ApiService.fetchPersonaInfo(widget.idpersona); // Initialize person info fetch
+    _fetchData();
+  }
+  
+  void _fetchData() {
+    _portafolioFuture = ApiService.fetchPortafolio(widget.idpersona);
+    _personaInfoFuture = ApiService.fetchPersonaInfo(widget.idpersona);
   }
 
-  void _fetchPortafolio() async {
-    setState(() => cargando = true);
-    try {
-      portafolios = await ApiService.fetchPortafolio(widget.idpersona);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Error al cargar: $e'),
-      ));
-    }
-    setState(() => cargando = false);
-  }
 
-  // Reusing the _buildPersonaInfo method from EventoPage
   Widget _buildPersonaInfo(Persona persona) {
-    //final fotoUrl = "https://educaysoft.org/repositorioeys/fotos/${persona.cedula}.jpg";
     final fotoUrl = 'https://educaysoft.org/descargar2.php?archivo=${persona.cedula}.jpg';
 
     return Padding(
@@ -419,14 +537,14 @@ class _PortafolioPageState extends State<PortafolioPage> {
             persona.lapersona,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 19, // Tamaño adecuado para un nombre
-              fontWeight: FontWeight.bold, // Letras resaltadas
-              color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black87, // Color del texto
-              shadows: [ // Efecto repujado/sombra sutil
+              fontSize: 19,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black87,
+              shadows: const [
                 Shadow(
                   offset: Offset(1.5, 1.5),
                   blurRadius: 2.0,
-                  color: Colors.black.withOpacity(0.35),
+                  color: Colors.black38,
                 ),
               ],
             ),
@@ -446,24 +564,24 @@ class _PortafolioPageState extends State<PortafolioPage> {
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
             decoration: BoxDecoration(
-              color: Colors.blue[700],
+              color: Theme.of(context).primaryColor,
               borderRadius: BorderRadius.circular(8.0),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.15),
                   blurRadius: 4,
-                  offset: Offset(0, 2),
+                  offset: const Offset(0, 2),
                 )
               ],
             ),
-            child: Text(
-              'Portafolios de la persona', // Changed title
+            child: const Text(
+              'Portafolios de la persona',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
             ),
           ),
         ),
-        // Section to display persona information
+        
         FutureBuilder<Persona>(
           future: _personaInfoFuture,
           builder: (context, snapshot) {
@@ -488,34 +606,61 @@ class _PortafolioPageState extends State<PortafolioPage> {
             }
           },
         ),
+        
         Expanded(
-          child: cargando
-              ? const Center(child: CircularProgressIndicator())
-              : ListView.builder(
-                  itemCount: portafolios.length,
-                  itemBuilder: (context, index) {
-                    final p = portafolios[index];
-                    return Card(
-                      child: ListTile(
-                        title: Text('Portafolio: ${p.idportafolio}'),
-                        subtitle: Text('${p.lapersona} - ${p.elperiodo}'),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.open_in_new),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => DocumentosPortafolioScreen(idportafolio: p.idportafolio),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
+          child: RefreshIndicator( 
+            onRefresh: () async {
+              setState(() {
+                _fetchData();
+              });
+            },
+            child: FutureBuilder<List<Portafolio>>(
+              future: _portafolioFuture,
+              builder: (context, snapshot) {
+                 if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    return Center(child: Text('Error al cargar portafolios: ${snapshot.error}', style: TextStyle(color: Colors.red[700])));
+                  } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                    final portafolios = snapshot.data!;
+                    return ListView.builder(
+                      itemCount: portafolios.length,
+                      itemBuilder: (context, index) {
+                        final p = portafolios[index];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                          elevation: 3,
+                          child: ListTile(
+                            leading: const Icon(Icons.folder_open, color: Colors.orange),
+                            title: Text('Portafolio: ${p.idportafolio}'),
+                            subtitle: Text('${p.lapersona} - ${p.elperiodo}'),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.open_in_new, color: Colors.blueAccent),
+                              tooltip: "Ver documentos",
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => DocumentosPortafolioScreen(idportafolio: p.idportafolio),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      },
                     );
-                  },
-                ),
+                  } else {
+                    return const Center(child: Text('No hay portafolios para mostrar.'));
+                  }
+              }
+            ),
+          ),
         ),
       ],
     );
   }
 }
+
+// Las clases 'ComUniTiPage', 'DocumentosPortafolioScreen', 'EventoDetalleScreen', 'Portafolio', 'Persona', etc., 
+// se asumen que están definidas en otros archivos (como 'portafolio.dart', 'evento.dart') o en archivos dedicados.
