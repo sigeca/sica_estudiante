@@ -579,6 +579,7 @@ class DetalleMedicacion {
   final String idmedicacion;
   final String elmedicamento;
   final String detalle;
+  final String detallemedicamento;
   final String fechadesde;
   final String fechahasta;
   final double porcentaje; // <-- NUEVO CAMPO
@@ -590,6 +591,7 @@ class DetalleMedicacion {
     required this.idmedicacion,
     required this.elmedicamento,
     required this.detalle,
+    required this.detallemedicamento,
     required this.fechadesde,
     required this.fechahasta,
     required this.porcentaje, // <-- Requerido
@@ -602,6 +604,7 @@ class DetalleMedicacion {
       idmedicacion: json['idmedicacion'].toString(),
       elmedicamento: json['elmedicamento'] ?? '',
       detalle: json['detalle'] ?? '',
+      detallemedicamento: json['detallemedicamento'] ?? '',
       fechadesde: json['fechadesde'] ?? '',
       fechahasta: json['fechahasta'] ?? '',
       // Leemos el porcentaje calculado por PHP. Si es null es 0.0
@@ -699,19 +702,34 @@ class SignoVital {
 }
 
 
+
+
 class MedicamentoVista {
   final String idMedicamento;
   final String nombre;
   final String detalle;
+  final String detallemedicamento;
+  int totalRegistros; // Nuevo campo
 
-  MedicamentoVista({required this.idMedicamento, required this.nombre, required this.detalle});
+  MedicamentoVista({
+    required this.idMedicamento, 
+    required this.nombre, 
+    required this.detalle,
+    required this.detallemedicamento,
+    this.totalRegistros = 1,
+  });
 
   factory MedicamentoVista.fromJson(Map<String, dynamic> json) {
     return MedicamentoVista(
       idMedicamento: json['idmedicamento'].toString(),
       nombre: json['elmedicamento'] ?? '',
       detalle: json['detalle'] ?? '',
+      detallemedicamento: json['detallemedicamento'] ?? '',
     );
   }
 }
+
+
+
+
 

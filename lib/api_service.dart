@@ -656,7 +656,6 @@ static Future<String> registrarMedicacion(
 
 
 static Future<List<MedicamentoVista>> fetchMedicacion2(String idpersona) async {
-    try {
     final url = Uri.parse('https://educaysoft.org/sica/index.php/medicacion/medicamentos_personaflutter');
     final response = await http.post(url, body: {'idpersona': idpersona});
 
@@ -679,7 +678,7 @@ static Future<List<MedicamentoVista>> fetchMedicacion2(String idpersona) async {
            data = decoded;
         }
 
-        return data.map((e) => Medicacion.fromJson(e)).toList();
+        return data.map((e) => MedicamentoVista.fromJson(e)).toList();
 
       } catch (e) {
         print("Error parseando JSON: $e");

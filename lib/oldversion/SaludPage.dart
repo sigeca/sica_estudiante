@@ -17,6 +17,7 @@ class SaludPage extends StatefulWidget {
 
 class _SaludPageState extends State<SaludPage> with SingleTickerProviderStateMixin {
   List<Medicacion> medicaciones = [];
+  List<MedicamentoVista> medicamentosVista = []; // Nueva lista para la vista medicacion2
   bool isLoading = true;
   late TabController _tabController;
 
@@ -24,11 +25,25 @@ class _SaludPageState extends State<SaludPage> with SingleTickerProviderStateMix
   static const Color primaryColor =  Colors.redAccent;
   static const Color secondaryColor = Colors.blueAccent;  
 
+
+// Controladores y variables para búsqueda
+  TextEditingController _searchController = TextEditingController();
+  String _searchQuery = "";
+  
+  // Listas filtradas que se mostrarán en la UI
+  List<Medicacion> _farmaceuticasFiltradas = [];
+  List<Medicacion> _dieteticasFiltradas = [];
+  List<MedicamentoVista> _vistaFiltrada = [];
+
+
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _cargarMedicaciones();
+    _tabController = TabController(length: 3, vsync: this);
+  //  _cargarMedicaciones();
+
+    _cargarTodo();
   }
 
   @override
@@ -135,8 +150,8 @@ class _SaludPageState extends State<SaludPage> with SingleTickerProviderStateMix
                       isExpanded: true,
                       underline: Container(height: 1, color: Colors.grey),
                       items: [
-                        DropdownMenuItem(child: Row(children: [Icon(Icons.local_pharmacy, color: primaryColor), SizedBox(width: 8), Text("Farmacéutica")]), value: 1),
-                        DropdownMenuItem(child: Row(children: [Icon(Icons.local_dining, color: Colors.green), SizedBox(width: 8), Text("Dietética")]), value: 2),
+                        DropdownMenuItem(child: Row(children: [Icon(Icons.local_dining, color: Colors.green), SizedBox(width: 8), Text("Dietética")]), value: 1),
+                        DropdownMenuItem(child: Row(children: [Icon(Icons.local_pharmacy, color: primaryColor), SizedBox(width: 8), Text("Farmacéutica")]), value: 2),
                       ],
                       onChanged: (val) => setStateDialog(() => _tipoSeleccionado = val!),
                     ),
@@ -150,8 +165,8 @@ class _SaludPageState extends State<SaludPage> with SingleTickerProviderStateMix
                       items: [
                         DropdownMenuItem(child: _buildEstadoChip("Activo", Colors.green), value: 1),
                         DropdownMenuItem(child: _buildEstadoChip("Suspendido", Colors.orange), value: 2),
-                        DropdownMenuItem(child: _buildEstadoChip("Finalizado", Colors.red), value: 3),
-                        DropdownMenuItem(child: _buildEstadoChip("En revisión", Colors.blue), value: 4),
+                        DropdownMenuItem(child: _buildEstadoChip("En revisión", Colors.red), value: 3),
+                        DropdownMenuItem(child: _buildEstadoChip("Finalizado", Colors.blue), value: 4),
                       ],
                       onChanged: (val) => setStateDialog(() => _estadoSeleccionado = val!),
                     ),
@@ -411,28 +426,53 @@ subtitle: Column( // 🎯 CAMBIAR a Column para poder apilar los widgets
                   final Color colorPorc = _getColorPorcentaje(d.porcentaje);
 
                   return ListTile(
-                    contentPadding: EdgeInsets.symmetric(horizontal: 20),
-                    leading: Icon(Icons.info_outline, size: 20, color: Colors.grey),
-                    title: Text(d.detalle),
-                    subtitle: Text("${d.fechadesde} ➔ ${d.fechahasta}"),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // CORRECCIÓN: Usar el valor real de DetalleMedicacion.porcentaje
-                        Text("${d.porcentaje.toStringAsFixed(0)} veces", 
-                            style: TextStyle(fontWeight: FontWeight.bold, color: colorPorc)),
-                        IconButton(
-                          icon: Icon(Icons.open_in_new),
-                          onPressed: () async {
-                            await Navigator.push(context, MaterialPageRoute(
-                                builder: (context) => CumplimientoPage(detalle: d, nombreMedicamento: item.nombre)));
-                            _cargarMedicaciones();
-                          },
-                        )
-                      ],
-                    ),
-                  );
-                }).toList(),
+  contentPadding: EdgeInsets.symmetric(horizontal: 20),
+  leading: Icon(Icons.info_outline, size: 20, color: Colors.grey),
+  // Usamos Column para apilar el nombre del medicamento y el detalle
+  title: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        d.elmedicamento, // El nombre que querías aumentar
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 15,
+          color: Colors.blueGrey[800]
+        ),
+      ),
+      Text(
+        d.detalle,
+        style: TextStyle(fontSize: 14, color: Colors.black87),
+      ),
+    ],
+  ),
+  subtitle: Text("${d.fechadesde} ➔ ${d.fechahasta}"),
+  trailing: Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Text(
+        "${d.porcentaje.toStringAsFixed(0)} veces",
+        style: TextStyle(fontWeight: FontWeight.bold, color: colorPorc),
+      ),
+      IconButton(
+        icon: Icon(Icons.open_in_new),
+        onPressed: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CumplimientoPage(
+                detalle: d,
+                nombreMedicamento: item.nombre,
+              ),
+            ),
+          );
+          _cargarMedicaciones();
+        },
+      )
+    ],
+  ),
+);
+               }).toList(),
               
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8.0),
@@ -507,9 +547,165 @@ Widget _buildLastTakenDate(String? dateString) {
 
 // ... Continúa con el resto de _SaludPageState ...
 
+// Función para aplicar el filtro manualmente
+  void _aplicarFiltro(String query) {
+    setState(() {
+      _searchQuery = query.toLowerCase();
+      
+      _farmaceuticasFiltradas = medicaciones
+          .where((m) => m.idtipomedicacion == 1 && m.nombre.toLowerCase().contains(_searchQuery))
+          .toList();
+
+      _dieteticasFiltradas = medicaciones
+          .where((m) => m.idtipomedicacion == 2 && m.nombre.toLowerCase().contains(_searchQuery))
+          .toList();
+
+      _vistaFiltrada = medicamentosVista
+          .where((m) => m.nombre.toLowerCase().contains(_searchQuery) || 
+                         m.detallemedicamento.toLowerCase().contains(_searchQuery))
+          .toList();
+    });
+  }
 
 
 
+Future<void> _cargarTodo() async {
+    try {
+      // Cargamos ambos sets de datos
+      final resMedicaciones = await ApiService.fetchMedicaciones(widget.idpersona);
+      
+      // Simulación de llamada a la vista medicacion2 (Debes tener este endpoint en ApiService)
+      final resVista = await ApiService.fetchMedicacion2(widget.idpersona); 
+
+      if (mounted) {
+        setState(() {
+          medicaciones = resMedicaciones;
+          
+// --- NUEVA LÓGICA DE AGRUPACIÓN Y CONTEO ---
+        Map<String, MedicamentoVista> agrupados = {};
+        for (var item in resVista) {
+          if (agrupados.containsKey(item.idMedicamento)) {
+            agrupados[item.idMedicamento]!.totalRegistros += 1;
+          } else {
+            agrupados[item.idMedicamento] = item;
+          }
+        }
+        medicamentosVista = agrupados.values.toList();
+        // ------------------------------------------
+
+          // Filtrar duplicados por idMedicamento
+//          final ids = <String>{};
+ //         medicamentosVista = resVista;
+          //medicamentosVista = resVista.where((m) => ids.add(m.idMedicamento)).toList();
+        // Inicializar listas filtradas al cargar por primera vez
+     //     _aplicarFiltro("");
+
+// IMPORTANTE: Inicializar las listas filtradas con los datos completos
+        _farmaceuticasFiltradas = medicaciones.where((m) => m.idtipomedicacion == 1).toList();
+        _dieteticasFiltradas = medicaciones.where((m) => m.idtipomedicacion == 2).toList();
+        _vistaFiltrada = List.from(medicamentosVista);
+
+
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
+  // --- NUEVA VISTA: LISTADO DE MEDICAMENTOS (VISTA 2) ---
+  Widget _buildListaMedicamentosVista(List<MedicamentoVista> lista) {
+    if (lista.isEmpty) {
+      return Center(child: Text("No hay medicamentos registrados en el historial."));
+    }
+
+    return ListView.builder(
+      padding: EdgeInsets.all(12),
+      itemCount: lista.length,
+      itemBuilder: (context, index) {
+        final med = lista[index];
+        // URL de imagen solicitada
+        final urlImagen = "https://educaysoft.org/descargar.php?archivo=medicamentos/medicamento${med.idMedicamento}.jpg";
+
+        return Card(
+          elevation: 2,
+          margin: EdgeInsets.only(bottom: 10),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Imagen del medicamento
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    urlImagen,
+                    width: 80,
+                    height: 80,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      width: 80, height: 80, color: Colors.grey[200],
+                      child: Icon(Icons.image_not_supported, color: Colors.grey),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 15),
+                // Información textual
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        med.nombre,
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blue[900]),
+                      ),
+// INDICADOR DE TOTAL
+                    Container(
+                      margin: EdgeInsets.symmetric(vertical: 4),
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.blue[50],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        "Registrado ${med.totalRegistros} ${med.totalRegistros == 1 ? 'vez' : 'veces'}",
+                        style: TextStyle(fontSize: 12, color: Colors.blue[800], fontWeight: FontWeight.w600),
+                      ),
+                    ),
+
+                      Text(
+                        med.detallemedicamento,
+                        style: TextStyle(fontSize: 14, color: Colors.black87),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+// BOTÓN PARA VER EN HISTORIAL
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: () {
+                          // Cambia a la pestaña de Farmacéutica (índice 1)
+                          _tabController.animateTo(1);
+                          // Opcional: Podrías filtrar la lista de farmacéuticas aquí si fuera necesario
+                        },
+                        icon: Icon(Icons.history, size: 18),
+                        label: Text("Ver en Farmacia"),
+                        style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                      ),
+                    )
+
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
 
 
@@ -532,13 +728,13 @@ Widget _buildLastTakenDate(String? dateString) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
 appBar: AppBar(
-        elevation: 0,
+        elevation:2,
         backgroundColor: Colors.yellowAccent, // Fondo Amarillo brillante
         title: Row(children: [
           CircleAvatar(backgroundImage: NetworkImage(fotoUrl), radius: 18),
           SizedBox(width: 10),
           // CORRECCIÓN 1: Cambiar el color del texto del título a oscuro
-          Text("Mi Salud(Medicación)", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+          Text("Mi Salud", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
         ]),
         actions: [
           IconButton(
@@ -550,20 +746,61 @@ appBar: AppBar(
             },
           )
         ],
-        bottom: TabBar(
+// --- SECCIÓN DE BÚSQUEDA ---
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(110.0), // Aumentamos el alto para el buscador
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                child: Container(
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: _aplicarFiltro,
+                    decoration: InputDecoration(
+                      hintText: "Buscar medicamento...",
+                      prefixIcon: Icon(Icons.search, color: Colors.grey),
+                      suffixIcon: _searchController.text.isNotEmpty 
+                        ? IconButton(
+                            icon: Icon(Icons.clear), 
+                            onPressed: () {
+                              _searchController.clear();
+                              _aplicarFiltro("");
+                            }) 
+                        : null,
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(vertical: 10),
+                    ),
+                  ),
+                ),
+              ),
+
+
+
+         TabBar(
           controller: _tabController,
           // CORRECCIÓN 3: Cambiar el color del indicador de la pestaña a oscuro
           indicatorColor: Colors.black,
-          indicatorWeight: 3,
+       //   indicatorWeight: 3,
           // CORRECCIÓN 4: Cambiar el color de los textos y íconos de las pestañas a oscuro
           labelColor: Colors.black, // Color para el texto (label) de la pestaña seleccionada
           unselectedLabelColor: Colors.black54, // Color para el texto de las pestañas no seleccionadas
           labelStyle: TextStyle(fontWeight: FontWeight.bold),
+          isScrollable: true, // Para que quepan bien las 3 pestañas
           tabs: [
             Tab(icon: Icon(Icons.local_pharmacy), text: "💊 Farmacéutica"), 
+            Tab(icon: Icon(Icons.list_alt), text: "📋 Medicamentos"), 
             Tab(icon: Icon(Icons.restaurant_menu), text: "🥦 Dietética"), 
           ],
         ),
+       ],
+      ),
+      ),
       ),
 
 
@@ -572,8 +809,14 @@ appBar: AppBar(
         : TabBarView(
             controller: _tabController,
             children: [
-              _buildListaMedicamentos(farmaceuticas, false), 
-              _buildListaMedicamentos(dieteticas, true),     
+              _buildListaMedicamentos(_farmaceuticasFiltradas, false), 
+              _buildListaMedicamentosVista(_vistaFiltrada), // Usa _vistaFiltrada
+              _buildListaMedicamentos(_dieteticasFiltradas, true),
+
+
+          //    _buildListaMedicamentosVista(), // NUEVA
+         //     _buildListaMedicamentos(farmaceuticas, false), 
+         //     _buildListaMedicamentos(dieteticas, true),     
             ],
           ),
       floatingActionButton: FloatingActionButton.extended(
