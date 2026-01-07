@@ -538,6 +538,78 @@ static Future<String> registrarMedicacion(
     }
   }
 
+
+
+// MODIFICADO: Ahora recibe idtipoalimentacion en lugar de un string libre "tipo"
+static Future<String> registrarAlimentacion(
+      String nombre, 
+      String fechadesde, 
+      String fechahasta, 
+      String idpersona, 
+      int idtipoalimentacion, 
+      int idestadoalimentacion) async {
+    
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/alimentacion/save_flutter');
+    final response = await http.post(url, body: {
+      'nombre': nombre,
+      'fechadesde': fechadesde,
+      'fechahasta': fechahasta,
+      'idpersona': idpersona,
+      'idtipoalimentacion': idtipoalimentacion.toString(),
+      'idestadoalimentacion': idestadoalimentacion.toString(),
+    });
+
+    if (response.statusCode == 200) {
+      final decoded = json.decode(response.body);
+      return decoded['status'] == true ? 'OK' : 'Error';
+    } else {
+      throw Exception('Error al guardar medicación');
+    }
+  }
+
+
+
+
+
+// MODIFICADO: Ahora recibe idtipomedicacion en lugar de un string libre "tipo"
+static Future<String> registrarEjercitacion(
+      String nombre, 
+      String fechadesde, 
+      String fechahasta, 
+      String idpersona, 
+      int idtipoejercitacion, 
+      int idestadoejercitacion) async {
+    
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/ejercitacion/save_flutter');
+    final response = await http.post(url, body: {
+      'nombre': nombre,
+      'fechadesde': fechadesde,
+      'fechahasta': fechahasta,
+      'idpersona': idpersona,
+      'idtipoejercitacion': idtipoejercitacion.toString(),
+      'idestadoejercitacion': idestadoejercitacion.toString(),
+    });
+
+    if (response.statusCode == 200) {
+      final decoded = json.decode(response.body);
+      return decoded['status'] == true ? 'OK' : 'Error';
+    } else {
+      throw Exception('Error al guardar medicación');
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
 // NUEVO: Método para actualizar
   static Future<String> actualizarMedicacion(
       String idmedicacion,
@@ -560,6 +632,59 @@ static Future<String> registrarMedicacion(
       throw Exception('Error al actualizar medicación');
     }
   }
+
+
+// NUEVO: Método para actualizar
+  static Future<String> actualizarAlimentacion(
+      String idalimentacion,
+      String nombre,
+      int idtipoalimentacion,
+      int idestadoalimentacion) async {
+
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/alimentacion/update_flutter');
+    final response = await http.post(url, body: {
+      'idalimentacion': idalimentacion,
+      'nombre': nombre,
+      'idtipoalimentacion': idtipoalimentacion.toString(),
+      'idestadoalimentacion': idestadoalimentacion.toString(),
+    });
+
+    if (response.statusCode == 200) {
+      final decoded = json.decode(response.body);
+      return decoded['status'] == true ? 'OK' : 'Error';
+    } else {
+      throw Exception('Error al actualizar medicación');
+    }
+  }
+
+
+
+
+// NUEVO: Método para actualizar
+  static Future<String> actualizarEjercitacion(
+      String idejercitacion,
+      String nombre,
+      int idtipoejercitacion,
+      int idestadoejercitacion) async {
+
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/ejercitacion/update_flutter');
+    final response = await http.post(url, body: {
+      'idejercitacion': idejercitacion,
+      'nombre': nombre,
+      'idtipoejercitacion': idtipoejercitacion.toString(),
+      'idestadoejercitacion': idestadoejercitacion.toString(),
+    });
+
+    if (response.statusCode == 200) {
+      final decoded = json.decode(response.body);
+      return decoded['status'] == true ? 'OK' : 'Error';
+    } else {
+      throw Exception('Error al actualizar medicación');
+    }
+  }
+
+
+
 
 
 // NUEVO: Función para traer signos vitales
@@ -695,11 +820,437 @@ static Future<List<MedicamentoVista>> fetchMedicacion2(String idpersona) async {
 
 
 
+static Future<List<AlimentoVista>> fetchAlimentacion2(String idpersona) async {
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/alimentacion/alimentos_personaflutter');
+    final response = await http.post(url, body: {'idpersona': idpersona});
+
+
+
+    if (response.statusCode == 200) {
+      try {
+        final dynamic decoded = json.decode(response.body);
+        List<dynamic> data = [];
+
+        // 1. Verificamos si es un Mapa con clave 'data'
+        if (decoded is Map<String, dynamic>) {
+           // AQUÍ EL CAMBIO: Verificamos explícitamente que no sea null
+           if (decoded['data'] != null && decoded['data'] is List) {
+             data = decoded['data']; 
+           }
+        } 
+        // 2. O si es una Lista directa
+        else if (decoded is List) {
+           data = decoded;
+        }
+
+        return data.map((e) => AlimentoVista.fromJson(e)).toList();
+
+      } catch (e) {
+        print("Error parseando JSON: $e");
+        // Devolvemos lista vacía en vez de explotar la app, para que el usuario pueda seguir
+        return []; 
+      }
+    } else {
+      throw Exception('Error de conexión: ${response.statusCode}');
+    }
+
+}
 
 
 
 
 
+
+static Future<List<EjercicioVista>> fetchEjercitacion2(String idpersona) async {
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/ejercitacion/ejercicios_personaflutter');
+    final response = await http.post(url, body: {'idpersona': idpersona});
+
+
+
+    if (response.statusCode == 200) {
+      try {
+        final dynamic decoded = json.decode(response.body);
+        List<dynamic> data = [];
+
+        // 1. Verificamos si es un Mapa con clave 'data'
+        if (decoded is Map<String, dynamic>) {
+           // AQUÍ EL CAMBIO: Verificamos explícitamente que no sea null
+           if (decoded['data'] != null && decoded['data'] is List) {
+             data = decoded['data']; 
+           }
+        } 
+        // 2. O si es una Lista directa
+        else if (decoded is List) {
+           data = decoded;
+        }
+
+        return data.map((e) => EjercicioVista.fromJson(e)).toList();
+
+      } catch (e) {
+        print("Error parseando JSON: $e");
+        // Devolvemos lista vacía en vez de explotar la app, para que el usuario pueda seguir
+        return []; 
+      }
+    } else {
+      throw Exception('Error de conexión: ${response.statusCode}');
+    }
+
+}
+
+
+
+
+
+
+
+
+// Dentro de la clase ApiService en lib/api_service.dart
+
+static Future<List<Alimentacion>> fetchAlimentaciones(String idpersona) async {
+  // Usamos el nombre exacto de la variable de URL que tengas en tu ApiService (ej. baseUrl o BASE_URL)
+
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/alimentacion/alimentacion_personaflutter');
+    final response = await http.post(url, body: {'idpersona': idpersona});
+
+    if (response.statusCode == 200) {
+      print("DEBUG SICA: fetchAlimentaciones BODY: ${response.body}"); // 1. Ver qué llega
+      try {
+        final dynamic decoded = json.decode(response.body);
+        print("DEBUG SICA: decoded type: ${decoded.runtimeType}"); // 2. Ver tipo de dato
+
+        List<dynamic> data = [];
+
+        // 1. Verificamos si es un Mapa con clave 'data'
+        if (decoded is Map<String, dynamic>) {
+           print("DEBUG SICA: Es MAP. Contiene data? ${decoded.containsKey('data')}");
+           // AQUÍ EL CAMBIO: Verificamos explícitamente que no sea null
+           if (decoded['data'] != null && decoded['data'] is List) {
+             data = decoded['data']; 
+             print("DEBUG SICA: Data extraída del mapa. Count: ${data.length}");
+           } else {
+             print("DEBUG SICA: Data es null o no es lista: ${decoded['data']}");
+           }
+        } 
+        // 2. O si es una Lista directa
+        else if (decoded is List) {
+           print("DEBUG SICA: Es LIST directamente");
+           data = decoded;
+        } else {
+           print("DEBUG SICA: No es ni Map ni List. Es ${decoded.runtimeType}");
+        }
+
+        final result = data.map((e) {
+          try {
+             return Alimentacion.fromJson(e);
+          } catch(innerE) {
+             print("DEBUG SICA: Error parseando item individual: $innerE\nItem: $e");
+             rethrow; 
+          }
+        }).toList();
+        
+        print("DEBUG SICA: Resultado final parseado count: ${result.length}");
+        return result;
+
+      } catch (e, stack) {
+        print("Error parseando JSON Alimentacion: $e");
+        print(stack);
+        // Devolvemos lista vacía en vez de explotar la app, para que el usuario pueda seguir
+        return []; 
+      }
+    } else {
+      throw Exception('Error de conexión: ${response.statusCode}');
+    }
+ 
+ 
+}
+
+
+static Future<List<AlimentoVista>> fetchCatalogoAlimentos(String idpersona) async {
+  // Cambiar la URL para que apunte al método del controlador PHP
+  final response = await http.post(
+    Uri.parse('https://educaysoft.org/sica/index.php/alimentacion/alimento_personaflutter'),
+    body: {'idpersona': idpersona},
+  );
+
+  if (response.statusCode == 200) {
+    final decoded = json.decode(response.body);
+    final List data = decoded['data']; // El PHP envuelve todo en "data"
+    return data.map((e) => AlimentoVista.fromJson(e)).toList();
+  } else {
+    throw Exception('Error al cargar catálogo');
+  }
+}
+
+
+
+
+static Future<List<EjercicioVista>> fetchCatalogoEjercicios(String idpersona) async {
+
+final url = Uri.parse('https://educaysoft.org/sica/index.php/ejercitacion/get_ejercicios_flutter?idpersona=$idpersona');
+  final response = await http.get(url);
+
+//  final response = await http.get(Uri.parse('https://educaysoft.org/sica/index.php/ejercitacion/get_catalogo_ejercicios.php'));
+  if (response.statusCode == 200) {
+    List jsonResponse = json.decode(response.body);
+    return jsonResponse.map((data) => EjercicioVista.fromJson(data)).toList();
+  } else {
+    throw Exception('Error al cargar catálogo');
+  }
+}
+
+
+// 2. Corregir Catálogo de Medicamentos (Si no lo tenías)
+static Future<List<MedicamentoVista>> fetchCatalogoMedicamentos(String idpersona) async {
+  final url = Uri.parse('https://educaysoft.org/sica/index.php/medicacion/get_medicamentos_flutter?idpersona=$idpersona');
+  final response = await http.get(url);
+
+  if (response.statusCode == 200) {
+    final List<dynamic> jsonResponse = jsonDecode(response.body);
+    return jsonResponse.map((data) => MedicamentoVista.fromJson(data)).toList();
+  } else {
+    throw Exception('Error al cargar medicamentos');
+  }
+}
+
+
+
+
+
+
+
+
+
+
+//static Future<Map<String, bool>> fetchCumplimientosAlimentacion(String iddetalle) async {
+static Future<List<Cumplimiento>> fetchCumplimientosAlimentacion(String iddetalle) async {
+//  final response = await http.get(Uri.parse('https://educaysoft.org/sica/index.php/cumplimientoalimentacion/get_cumplimientos_alim.php?iddetalle=$iddetalle'));
+
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/cumplimientoalimentacion/get_cumplimientos_flutter');
+    final response = await http.post(url, body: {'iddetallealimentacion': iddetalle});
+
+    if (response.statusCode == 200) {
+      final decoded = json.decode(response.body);
+      if (decoded['data'] != null) {
+        return (decoded['data'] as List).map((e) => Cumplimiento.fromJson(e)).toList();
+      }
+      return [];
+    } else {
+      throw Exception('Error al cargar cumplimientos');
+    }
+  }
+
+
+  // Marcar o desmarcar un día
+  static Future<void> registrarCumplimientoAlimentacion(
+      String iddetallealimentacion, 
+      DateTime fechaHora, 
+      int cumplimiento
+      ) async {
+        final String fechaHoraString = DateFormat('yyyy-MM-dd HH:mm:ss').format(fechaHora);
+
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/cumplimientoalimentacion/save_flutter');
+    
+    final response= await http.post(url, body: {
+      'iddetallealimentacion': iddetallealimentacion,
+      'fechahora': fechaHoraString,
+      'cumplimiento': cumplimiento.toString(), // 1 o 0
+    });
+    if(response.statusCode != 200){
+        throw Exception('Error al registrar cumplimiento: ${response.body}');
+    }
+
+  }
+
+
+
+
+
+
+
+
+
+static Future<List<Ejercitacion>> fetchEjercitaciones(String idpersona) async {
+  // Usamos el nombre exacto de la variable de URL que tengas en tu ApiService (ej. baseUrl o BASE_URL)
+
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/ejercitacion/ejercitacion_personaflutter');
+    final response = await http.post(url, body: {'idpersona': idpersona});
+
+    if (response.statusCode == 200) {
+      print("DEBUG SICA: fetchEjercitaciones BODY: ${response.body}"); // 1. Ver qué llega
+      try {
+        final dynamic decoded = json.decode(response.body);
+        print("DEBUG SICA: decoded type: ${decoded.runtimeType}"); // 2. Ver tipo de dato
+
+        List<dynamic> data = [];
+
+        // 1. Verificamos si es un Mapa con clave 'data'
+        if (decoded is Map<String, dynamic>) {
+           print("DEBUG SICA: Es MAP. Contiene data? ${decoded.containsKey('data')}");
+           // AQUÍ EL CAMBIO: Verificamos explícitamente que no sea null
+           if (decoded['data'] != null && decoded['data'] is List) {
+             data = decoded['data']; 
+             print("DEBUG SICA: Data extraída del mapa. Count: ${data.length}");
+           } else {
+             print("DEBUG SICA: Data es null o no es lista: ${decoded['data']}");
+           }
+        } 
+        // 2. O si es una Lista directa
+        else if (decoded is List) {
+           print("DEBUG SICA: Es LIST directamente");
+           data = decoded;
+        } else {
+           print("DEBUG SICA: No es ni Map ni List. Es ${decoded.runtimeType}");
+        }
+
+        final result = data.map((e) {
+          try {
+             return Ejercitacion.fromJson(e);
+          } catch(innerE) {
+             print("DEBUG SICA: Error parseando item individual: $innerE\nItem: $e");
+             rethrow; 
+          }
+        }).toList();
+        
+        print("DEBUG SICA: Resultado final parseado count: ${result.length}");
+        return result;
+
+      } catch (e, stack) {
+        print("Error parseando JSON Ejercitacion: $e");
+        print(stack);
+        // Devolvemos lista vacía en vez de explotar la app, para que el usuario pueda seguir
+        return []; 
+      }
+    } else {
+      throw Exception('Error de conexión: ${response.statusCode}');
+    }
+ 
+ 
+}
+
+
+  // 4. Guardar el detalle (Dosis)
+  static Future<void> registrarDetalleEjercitacion(
+        String idmedicacion, String detalle, String fechadesde, String fechahasta) async {
+
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/detallemedicacion/save_flutter');
+    
+    final response = await http.post(url, body: {
+      'idmedicacion': idmedicacion,
+      'detalle': detalle,
+      'fechadesde': fechadesde,
+      'fechahasta': fechahasta,
+    });
+
+    if (response.statusCode != 200) {
+      throw Exception('Error al guardar detalle de medicación');
+    }
+  }
+
+
+
+  // Marcar o desmarcar un día
+  static Future<void> registrarCumplimientoEjercitacion(
+      String iddetalleejercitacion, 
+      DateTime fechaHora, 
+      int cumplimiento
+      ) async {
+        final String fechaHoraString = DateFormat('yyyy-MM-dd HH:mm:ss').format(fechaHora);
+
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/cumplimientoejercitacion/save_flutter');
+    
+    final response= await http.post(url, body: {
+      'iddetalleejercitacion': iddetalleejercitacion,
+      'fechahora': fechaHoraString,
+      'cumplimiento': cumplimiento.toString(), // 1 o 0
+    });
+    if(response.statusCode != 200){
+        throw Exception('Error al registrar cumplimiento: ${response.body}');
+    }
+
+  }
+
+
+
+
+
+
+
+//static Future<Map<String, bool>> fetchCumplimientosEjercitacion(String iddetalle) async {
+static Future<List<Cumplimiento>> fetchCumplimientosEjercitacion(String iddetalle) async {
+  //final response = await http.get(Uri.parse('https://educaysoft.org/sica/index.php/cumplimientoejercitacion/get_cumplimientos_flutter?iddetalle=$iddetalle'));
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/cumplimientoejercitacion/get_cumplimientos_flutter');
+    final response = await http.post(url, body: {'iddetalleejercitacion': iddetalle});
+
+    if (response.statusCode == 200) {
+      final decoded = json.decode(response.body);
+      if (decoded['data'] != null) {
+        return (decoded['data'] as List).map((e) => Cumplimiento.fromJson(e)).toList();
+      }
+      return [];
+    } else {
+      throw Exception('Error al cargar cumplimientos');
+    }
+  }
+
+
+
+static Future<bool> eliminarProductoCarrito(String idpersona, int idproducto) async {
+  final url = Uri.parse('https://educaysoft.org/sica/index.php/carritoproducto/eliminar_carrito.php'); // Cambia por tu URL real
+  try {
+    final response = await http.post(url, body: {
+      'idpersona': idpersona,
+      'idproducto': idproducto.toString(),
+    });
+    return response.statusCode == 200;
+  } catch (e) {
+    return false;
+  }
+}
+
+
+static Future<bool> procesarPagoCarrito(String idpersona, List<Map<String, dynamic>> items) async {
+  final url = Uri.parse('https://educaysoft.org/tu_endpoint_pago.php'); 
+  try {
+    final response = await http.post(url, body: {
+      'idpersona': idpersona,
+      'productos': jsonEncode(items),
+    });
+    return response.statusCode == 200;
+  } catch (e) {
+    return false;
+  }
+}
+
+
+
+static Future<bool> addProductoCarrito({
+  required String idpersona,
+  required int idproducto,
+  required int cantidad,
+  required double precio,
+}) async {
+  final url = Uri.parse('https://educaysoft.org/sica/index.php/carritoproducto/save_flutter');
+  
+  try {
+    final response = await http.post(url, body: {
+      'idpersona': idpersona,
+      'idproducto': idproducto.toString(),
+      'cantidad': cantidad.toString(),
+      'precio': precio.toString(),
+    });
+
+print("RESPUESTA BRUTA DEL SERVIDOR: ${response.body}");
+
+    if (response.statusCode == 200) {
+      final decoded = json.decode(response.body);
+      return decoded['status'] == true;
+    }
+    return false;
+  } catch (e) {
+    print("Error en añadirProductoCarrito: $e");
+    return false;
+  }
+}
 
 
 

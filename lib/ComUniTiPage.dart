@@ -122,7 +122,7 @@ class _ComUniTiPageState extends State<ComUniTiPage> {
                                     ),
                                     const SizedBox(height: 5),
                                     const Text(
-                                      'Ver artículos',
+                                      'Ver productos',
                                       style: TextStyle(fontSize: 12, color: Colors.blue),
                                     ),
                                   ],

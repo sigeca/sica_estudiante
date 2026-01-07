@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'evento.dart';
 import 'api_service.dart';
 import 'CarritoProductoPage.dart';
 
-// Página para mostrar los artículos de un vendedor
 class ProductosVendedorPage extends StatefulWidget {
   final String idpersona;
   final String cedula;
   final String idpersona1;
   final String cedula1;
 
-  const ProductosVendedorPage({Key? key, required this.idpersona,required this.cedula, required this.idpersona1, required this.cedula1}) : super(key: key);
+  const ProductosVendedorPage({
+    Key? key, 
+    required this.idpersona, 
+    required this.cedula, 
+    required this.idpersona1, 
+    required this.cedula1
+  }) : super(key: key);
 
   @override
   State<ProductosVendedorPage> createState() => _ProductosVendedorPageState();
@@ -20,14 +23,67 @@ class ProductosVendedorPage extends StatefulWidget {
 
 class _ProductosVendedorPageState extends State<ProductosVendedorPage> {
   late Future<List<Producto>> _productosFuture;
-  late Future<Persona> _personaInfoFuture; // Added for person info
+  late Future<Persona> _personaInfoFuture;
   final Map<int, int> _itemQuantities = {};
 
   @override
   void initState() {
     super.initState();
     _productosFuture = ApiService.fetchProductosPorVendedor(widget.idpersona);
-    _personaInfoFuture = ApiService.fetchPersonaInfo(widget.idpersona); // Initialize person info fetch
+    _personaInfoFuture = ApiService.fetchPersonaInfo(widget.idpersona);
+  }
+
+  // --- LÓGICA DE ZOOM (Basada en EjercicioCatalogoPage) ---
+  void _mostrarZoomImagen(BuildContext context, String url, String nombre) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(10),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            InteractiveViewer( // Permite pellizcar para hacer zoom
+              panEnabled: true,
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.network(
+                  url,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return const Center(child: CircularProgressIndicator(color: Colors.white));
+                  },
+                  errorBuilder: (_, __, ___) => Container(
+                    color: Colors.white,
+                    padding: const EdgeInsets.all(20),
+                    child: const Icon(Icons.image_not_supported, size: 100, color: Colors.grey),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 10,
+              right: 10,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+            Positioned(
+              bottom: 20,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(20)),
+                child: Text(nombre, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            )
+          ],
+        ),
+      ),
+    );
   }
 
   void _incrementQuantity(int productoId) {
@@ -46,298 +102,182 @@ class _ProductosVendedorPageState extends State<ProductosVendedorPage> {
     });
   }
 
-  void _addToCart(Producto producto, int quantity) {
-    // Implementa la lógica para agregar el artículo y la cantidad al carrito
-    // Por ejemplo, puedes usar un proveedor de estado o una lista global
+  void _addToCart(Producto producto, int quantity) async {
+// Mostramos un indicador de carga si fuera necesario
+  
+  bool exito = await ApiService.addProductoCarrito(
+    idpersona: widget.idpersona1, // ID de la persona que compra
+    idproducto: producto.idproducto,
+    cantidad: quantity,
+    precio: double.parse(producto.precio.toString()), // Asegurar que sea double
+  );
+
+  if (exito) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${producto.elproducto} (x$quantity) agregado al carrito'),
-        duration: const Duration(seconds: 2),
+        content: Text('✅ ${producto.elproducto} (x$quantity) añadido al carrito'),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.green.shade800,
+      ),
+    );
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('❌ Error al conectar con el servidor'),
+        backgroundColor: Colors.red,
       ),
     );
   }
 
-// Reusing the _buildPersonaInfo method from EventoPage
-  Widget _buildPersonaInfo(Persona persona) {
-    final fotoUrl = "https://educaysoft.org/descargar2.php?archivo=${widget.cedula}.jpg";
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-      child: Column(
-        children: [
-          ClipOval(
-            child: Image.network(
-              fotoUrl,
-              width: 100,
-              height: 100,
-              fit: BoxFit.cover,
-              loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Container(
-                  width: 100,
-                  height: 100,
-                  alignment: Alignment.center,
-                  child: CircularProgressIndicator(
-                    value: loadingProgress.expectedTotalBytes != null
-                        ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                        : null,
-                  ),
-                );
-              },
-              errorBuilder: (BuildContext context, Object exception, StackTrace? stackTrace) {
-                return Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.person, size: 60, color: Colors.grey[600]),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            persona.lapersona,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 19, // Tamaño adecuado para un nombre
-              fontWeight: FontWeight.bold, // Letras resaltadas
-              color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black87, // Color del texto
-              shadows: [ // Efecto repujado/sombra sutil
-                Shadow(
-                  offset: Offset(1.5, 1.5),
-                  blurRadius: 2.0,
-                  color: Colors.black.withOpacity(0.35),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
   }
-
-
-
-
-
 
   @override
   Widget build(BuildContext context) {
-    // Determinar el número de columnas basado en el ancho de la pantalla
-    final screenWidth = MediaQuery.of(context).size.width;
-    final crossAxisCount = screenWidth > 600 ? 5 : 2; // 5 columnas para pantallas anchas, 2 para estrechas
-    final childAspectRatio = screenWidth > 600 ? 0.6 : 0.7; // Ajustar la relación de aspecto
-
-    return Scaffold(
+return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        title: const Text('Artículos del vendedor'),
-        backgroundColor: Colors.blue[700],
+        title: const Text('Productos del Vendedor', style: TextStyle(fontSize: 16)),
+      backgroundColor: const Color(0xFFF5F7FA),
+        elevation: 0,
       ),
-
- 
-
-      body: Column(
-          children: [
-              // 1. Información de la persona (FutureBuilder<Persona>)
+    body: Column(
+        children: [
+          // Sección de perfil simplificada (Estilo EjercitacionGestionPage)
           FutureBuilder<Persona>(
             future: _personaInfoFuture,
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Padding(
-                  padding: EdgeInsets.all(20.0),
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              } else if (snapshot.hasError) {
-                print("Error FutureBuilder Persona (PortafolioPage): ${snapshot.error}");
-                return Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Center(
-                    child: Text(
-                      'No se pudo cargar la información del usuario.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.red[700]),
-                    ),
-                  ),
-                );
-              } else if (snapshot.hasData) {
-                return _buildPersonaInfo(snapshot.data!);
-              } else {
-                return const Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Center(child: Text('No hay información del usuario disponible.')),
-                );
-              }
+              if (!snapshot.hasData) return const SizedBox.shrink();
+              final persona = snapshot.data!;
+              final fotoUrl = "https://educaysoft.org/descargar2.php?archivo=${widget.cedula}.jpg";
+              return Container(
+                padding: const EdgeInsets.all(16),
+                color: Colors.white,
+                child: Row(
+                  children: [
+                    CircleAvatar(radius: 25, backgroundImage: NetworkImage(fotoUrl)),
+                    const SizedBox(width: 12),
+                    Text(persona.lapersona, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  ],
+                ),
+              );
             },
           ),
-
-
-
-   // 2. La lista de productos (FutureBuilder<List<Producto>>)
-          Expanded( // Wrap the second FutureBuilder in Expanded so the GridView takes available space
+          Expanded(
             child: FutureBuilder<List<Producto>>(
-       future: _productosFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-            final productos = snapshot.data!;
-            return GridView.builder(
-              padding: const EdgeInsets.all(10),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: crossAxisCount,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                childAspectRatio: childAspectRatio,
-              ),
-              itemCount: productos.length,
-              itemBuilder: (context, index) {
-                final producto = productos[index];
-                final fotoUrl = "https://educaysoft.org/descargar3.php?archivo=producto${producto.idproducto}.jpg";
-                final quantity = _itemQuantities[producto.idproducto] ?? 1;
+              future: _productosFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(child: Text("Sin productos"));
+                }
 
-                return Card(
-                  elevation: 5,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15.0),
-                  ),
-                  child: InkWell(
-                    onTap: () {
-                      // Opcional: Lógica para ver detalles del artículo
-                    },
-                    borderRadius: BorderRadius.circular(15.0),
-                    child: Column(
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: ClipRRect(
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(15.0)),
-                            child: Image.network(
-                              fotoUrl,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              errorBuilder: (context, error, stackTrace) => const Icon(Icons.shopping_bag, size: 80, color: Colors.grey),
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 3,
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  producto.elproducto,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  producto.detalle,
-                                  style: const TextStyle(fontSize: 10, color: Colors.grey),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Precio: \$${producto.precio.toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: Colors.green,
+                return ListView.builder(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: snapshot.data!.length,
+                  itemBuilder: (context, index) {
+                    final prod = snapshot.data![index];
+                    final fotoUrl = "https://educaysoft.org/descargarproducto.php?archivo=producto${prod.idproducto}.jpg";
+                    final quantity = _itemQuantities[prod.idproducto] ?? 1;
+
+                    return Card(
+                      elevation: 0,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: Colors.grey.withOpacity(0.2)),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Imagen con detección de toque para Zoom
+                            GestureDetector(
+                              onTap: () => _mostrarZoomImagen(context, fotoUrl, prod.elproducto),
+                              child: Stack(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.network(
+                                      fotoUrl,
+                                      width: 100,
+                                      height: 100,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Container(
+                                        width: 100, height: 100,
+                                        color: Colors.grey[100],
+                                        child: const Icon(Icons.shopping_bag, color: Colors.grey),
+                                      ),
+                                    ),
                                   ),
-                                ),
-                                const Spacer(),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.remove_circle_outline, size: 24),
-                                      onPressed: () => _decrementQuantity(producto.idproducto),
+                                  const Positioned(
+                                    right: 4,
+                                    bottom: 4,
+                                    child: CircleAvatar(
+                                      radius: 12,
+                                      backgroundColor: Colors.black45,
+                                      child: Icon(Icons.zoom_in, size: 14, color: Colors.white),
                                     ),
-                                    Text(
-                                      '$quantity',
-                                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.add_circle_outline, size: 24),
-                                      onPressed: () => _incrementQuantity(producto.idproducto),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton.icon(
-                                    onPressed: () => _addToCart(producto, quantity),
-                                    icon: const Icon(Icons.shopping_cart, size: 18),
-                                    label: const Text('Añadir'),
+                                  )
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(prod.elproducto, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                  Text(prod.detalle, style: TextStyle(fontSize: 12, color: Colors.grey[600]), maxLines: 2),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text('\$${prod.precio.toStringAsFixed(2)}',style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green)),
+                                      Text('Cantidad: ${prod.stock.toStringAsFixed(2)}',style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green)),
+                                      // Selector de cantidad
+                                      Row(
+                                        children: [
+                                          IconButton(icon: const Icon(Icons.remove_circle_outline), onPressed: () => _decrementQuantity(prod.idproducto)),
+                                          Text('$quantity', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                          IconButton(icon: const Icon(Icons.add_circle_outline), onPressed: () => _incrementQuantity(prod.idproducto)),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  ElevatedButton.icon(
+                                    onPressed: () => _addToCart(prod, quantity),
+                                    icon: const Icon(Icons.add_shopping_cart, size: 16),
+                                    label: const Text("AÑADIR"),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blue,
+                                      minimumSize: const Size(double.infinity, 36),
+                                      backgroundColor: Colors.blue.shade700,
                                       foregroundColor: Colors.white,
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
+                    );
+                  },
                 );
               },
-            );
-          } else {
-            return const Center(child: Text('No hay artículos disponibles para este vendedor.'));
-          }
-        },
-      ),
-      ),
+            ),
+          ),
         ],
       ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 20.0), // Ajuste para que no se superponga
-        child: FloatingActionButton.extended(
-          onPressed: () {
-            // Lógica para navegar a la página del carrito
-
- final String compradorId = widget.idpersona1;
- final String cedulaId = widget.cedula1;
-
-  // Opcionalmente, para depuración, verifica si es null (no debería serlo si el diseño es correcto)
-  if (compradorId == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Error: ID de comprador no disponible.')),
-    );
-    return; // Detener la navegación si el ID es nulo
- }
-
-
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => CarritoProductoPage(idpersona: compradorId,cedula:cedulaId),
-                              ),
-                            );
-
-
-
-          //  ScaffoldMessenger.of(context).showSnackBar(
-           //   const SnackBar(content: Text('Navegando al carrito de compras...')),
-           //1 );
-          },
-          icon: const Icon(Icons.shopping_cart_checkout),
-          label: const Text('Ver Carrito'),
-          backgroundColor: Colors.orange,
-        ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Navigator.push(context, MaterialPageRoute(
+          builder: (_) => CarritoProductoPage(idpersona: widget.idpersona1, cedula: widget.cedula1))),
+        icon: const Icon(Icons.shopping_cart_checkout),
+        label: const Text('VER CARRITO'),
+        backgroundColor: Colors.orange.shade800,
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }

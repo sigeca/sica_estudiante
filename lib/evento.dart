@@ -523,6 +523,7 @@ class Producto {
   final String idinstitucion;
   final String lainstitucion;
   final double precio; // Campo de precio
+  final double stock; // Campo de precio
 
   Producto({
     required this.idproducto,
@@ -533,6 +534,7 @@ class Producto {
     required this.idinstitucion,
     required this.lainstitucion,
     required this.precio,
+    required this.stock,
   });
 
   factory Producto.fromJson(Map<String, dynamic> json) {
@@ -545,6 +547,7 @@ class Producto {
       idinstitucion: json['idinstitucion'].toString(),
       lainstitucion: json['lainstitucion'],
       precio: double.tryParse(json['precio'].toString()) ?? 0.0,
+      stock: double.tryParse(json['stock'].toString()) ?? 0.0,
     );
   }
 }
@@ -630,6 +633,7 @@ class DetalleMedicacion {
 class Medicacion {
   final String idmedicacion;
   final String nombre;
+  final String lamedicacion;
   final String? tipo;
   final int idtipomedicacion;
   final int idestadomedicacion; // NUEVO
@@ -641,6 +645,7 @@ class Medicacion {
   Medicacion({
     required this.idmedicacion,
     required this.nombre,
+    required this.lamedicacion,
     this.tipo,
     required this.idtipomedicacion,
     required this.idestadomedicacion,
@@ -663,6 +668,7 @@ class Medicacion {
       idmedicacion: json['idmedicacion'].toString(),
       // Mapeo flexible para nombre (por si la vista o tabla cambian)
       nombre: json['lamedicacion'] ?? json['nombre'] ?? 'Sin nombre',
+      lamedicacion: json['lamedicacion'] ?? json['nombre'] ?? 'Sin nombre',
       tipo: json['eltipomedicacion'] ?? json['tipo'] ?? '',
       idtipomedicacion: int.tryParse(json['idtipomedicacion'].toString()) ?? 1,
       // Valores por defecto si vienen nulos
@@ -705,14 +711,14 @@ class SignoVital {
 
 
 class MedicamentoVista {
-  final String idMedicamento;
+  final String idmedicamento;
   final String nombre;
   final String detalle;
   final String detallemedicamento;
   int totalRegistros; // Nuevo campo
 
   MedicamentoVista({
-    required this.idMedicamento, 
+    required this.idmedicamento, 
     required this.nombre, 
     required this.detalle,
     required this.detallemedicamento,
@@ -721,7 +727,7 @@ class MedicamentoVista {
 
   factory MedicamentoVista.fromJson(Map<String, dynamic> json) {
     return MedicamentoVista(
-      idMedicamento: json['idmedicamento'].toString(),
+      idmedicamento: json['idmedicamento'].toString(),
       nombre: json['elmedicamento'] ?? '',
       detalle: json['detalle'] ?? '',
       detallemedicamento: json['detallemedicamento'] ?? '',
@@ -730,6 +736,348 @@ class MedicamentoVista {
 }
 
 
+
+
+// 1. Modifica la clase Alimentacion existente
+class Alimentacion {
+  final String idalimentacion;
+  final String nombre;
+  final String laalimentacion;
+  final String? tipo;
+  final int idtipoalimentacion;
+  final int idestadoalimentacion; // NUEVO
+   final String fechadesde;
+  final String fechahasta;
+  final String elestadoalimentacion; // NUEVO
+  List<DetalleAlimentacion> detalles;
+
+  Alimentacion({
+    required this.idalimentacion,
+    required this.nombre,
+    required this.laalimentacion,
+    this.tipo,
+    required this.idtipoalimentacion,
+    required this.idestadoalimentacion,
+    required this.elestadoalimentacion,
+    required this.detalles,
+    required this.fechadesde,
+    required this.fechahasta,
+
+  });
+
+  factory Alimentacion.fromJson(Map<String, dynamic> json) {
+    List<DetalleAlimentacion> listaDetalles = [];
+    if (json['detalles'] != null) {
+      listaDetalles = (json['detalles'] as List)
+          .map((i) => DetalleAlimentacion.fromJson(i))
+          .toList();
+    }
+
+    return Alimentacion(
+      idalimentacion: json['idalimentacion'].toString(),
+      // Mapeo flexible para nombre (por si la vista o tabla cambian)
+      nombre: json['laalimentacion'] ?? json['nombre'] ?? 'Sin nombre',
+      laalimentacion: json['laalimentacion'] ?? json['nombre'] ?? 'Sin nombre',
+      tipo: json['eltipoalimentacion'] ?? json['tipo'] ?? '',
+      idtipoalimentacion: int.tryParse(json['idtipoalimentacion'].toString()) ?? 1,
+      // Valores por defecto si vienen nulos
+      idestadoalimentacion: int.tryParse(json['idestadoalimentacion'].toString()) ?? 1,
+      elestadoalimentacion: json['elestadoalimentacion'] ?? 'Activo',
+      fechadesde: json['fechadesde'] ?? '',
+      fechahasta: json['fechahasta'] ?? '',
+      detalles: listaDetalles,
+    );
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// En lib/evento.dart
+/*
+class Alimentacion {
+  final String idalimentacion;
+  final String laalimentacion;
+  final String idpersona;
+  final List<DetalleAlimentacion> detalles;
+
+  Alimentacion({
+    required this.idalimentacion,
+    required this.laalimentacion,
+    required this.idpersona,
+    required this.detalles,
+  });
+
+  // Ajustado para recibir los detalles opcionalmente desde el JSON
+  factory Alimentacion.fromJson(Map<String, dynamic> json) {
+    var list = json['detalles'] as List?;
+    List<DetalleAlimentacion> detallesList = list != null 
+        ? list.map((i) => DetalleAlimentacion.fromJson(i)).toList() 
+        : [];
+
+    return Alimentacion(
+      idalimentacion: json['idalimentacion'].toString(),
+      laalimentacion: json['laalimentacion'] ?? '',
+      idpersona: json['idpersona'].toString(),
+      detalles: detallesList,
+    );
+  }
+}
+*/
+
+
+
+
+
+
+class DetalleAlimentacion {
+  final String iddetallealimentacion;
+  final String idalimentacion;
+  final String elalimento;
+  final String detalle;
+  final String detallealimento;
+  final String fechadesde;
+  final String fechahasta;
+  final double porcentaje; // <-- NUEVO CAMPO
+  // 🎯 NUEVO CAMPO: Ultima fecha en que se registró un cumplimiento
+  final String? ultimaFechaCumplimiento;
+
+  DetalleAlimentacion({
+    required this.iddetallealimentacion,
+    required this.idalimentacion,
+    required this.elalimento,
+    required this.detalle,
+    required this.detallealimento,
+    required this.fechadesde,
+    required this.fechahasta,
+    required this.porcentaje, // <-- Requerido
+    this.ultimaFechaCumplimiento, // 🎯 AÑADIR A CONSTRUCTOR
+  });
+
+  factory DetalleAlimentacion.fromJson(Map<String, dynamic> json) {
+    return DetalleAlimentacion(
+      iddetallealimentacion: json['iddetallealimentacion'].toString(),
+      idalimentacion: json['idalimentacion'].toString(),
+      elalimento: json['elalimento'] ?? '',
+      detalle: json['detalle'] ?? '',
+      detallealimento: json['detallealimento'] ?? '',
+      fechadesde: json['fechadesde'] ?? '',
+      fechahasta: json['fechahasta'] ?? '',
+      // Leemos el porcentaje calculado por PHP. Si es null es 0.0
+      porcentaje: double.tryParse(json['porcentaje'].toString()) ?? 0.0,
+      // 🎯 NUEVA LÍNEA: Leer el valor del JSON (asumiendo que la API lo proporcionará)
+      ultimaFechaCumplimiento: json['ultima_fecha_cumplimiento'],
+    );
+  }
+}
+
+
+
+
+class AlimentoVista {
+  final String idalimento;
+  final String nombre;
+  final String detalle;
+  final String detallealimento;
+  int totalRegistros; // Nuevo campo
+
+  AlimentoVista({
+    required this.idalimento, 
+    required this.nombre, 
+    required this.detalle,
+    required this.detallealimento,
+    this.totalRegistros = 1,
+  });
+
+  factory AlimentoVista.fromJson(Map<String, dynamic> json) {
+    return AlimentoVista(
+      idalimento: json['idalimento'].toString(),
+      nombre: json['elalimento'] ?? '',
+      detalle: json['detalle'] ?? '',
+      detallealimento: json['detallealimento'] ?? '',
+    );
+  }
+}
+
+
+
+
+
+// 1. Modifica la clase Ejercitacion existente
+class Ejercitacion {
+  final String idejercitacion;
+  final String nombre;
+  final String laejercitacion;
+  final String? tipo;
+  final int idtipoejercitacion;
+  final int idestadoejercitacion; // NUEVO
+   final String fechadesde;
+  final String fechahasta;
+  final String elestadoejercitacion; // NUEVO
+  List<DetalleEjercitacion> detalles;
+
+  Ejercitacion({
+    required this.idejercitacion,
+    required this.nombre,
+    required this.laejercitacion,
+    this.tipo,
+    required this.idtipoejercitacion,
+    required this.idestadoejercitacion,
+    required this.elestadoejercitacion,
+    required this.detalles,
+    required this.fechadesde,
+    required this.fechahasta,
+
+  });
+
+  factory Ejercitacion.fromJson(Map<String, dynamic> json) {
+    List<DetalleEjercitacion> listaDetalles = [];
+    if (json['detalles'] != null) {
+      listaDetalles = (json['detalles'] as List)
+          .map((i) => DetalleEjercitacion.fromJson(i))
+          .toList();
+    }
+
+    return Ejercitacion(
+      idejercitacion: json['idejercitacion'].toString(),
+      // Mapeo flexible para nombre (por si la vista o tabla cambian)
+      nombre: json['laejercitacion'] ?? json['nombre'] ?? 'Sin nombre',
+      laejercitacion: json['laejercitacion'] ?? json['nombre'] ?? 'Sin nombre',
+      tipo: json['eltipoejercitacion'] ?? json['tipo'] ?? '',
+      idtipoejercitacion: int.tryParse(json['idtipoejercitacion'].toString()) ?? 1,
+      // Valores por defecto si vienen nulos
+      idestadoejercitacion: int.tryParse(json['idestadoejercitacion'].toString()) ?? 1,
+      elestadoejercitacion: json['elestadoejercitacion'] ?? 'Activo',
+      fechadesde: json['fechadesde'] ?? '',
+      fechahasta: json['fechahasta'] ?? '',
+      detalles: listaDetalles,
+    );
+  }
+}
+
+
+
+
+
+
+
+
+
+
+/*
+class Ejercitacion {
+  final String idejercitacion;
+  final String laejercitacion;
+  final String idpersona;
+  final List<DetalleEjercitacion> detalles;
+
+  Ejercitacion({
+    required this.idejercitacion,
+    required this.laejercitacion,
+    required this.idpersona,
+    required this.detalles,
+  });
+
+  // Ajustado para recibir los detalles opcionalmente desde el JSON
+  factory Ejercitacion.fromJson(Map<String, dynamic> json) {
+    var list = json['detalles'] as List?;
+    List<DetalleEjercitacion> detallesList = list != null 
+        ? list.map((i) => DetalleEjercitacion.fromJson(i)).toList() 
+        : [];
+
+    return Ejercitacion(
+      idejercitacion: json['idejercitacion'].toString(),
+      laejercitacion: json['laejercitacion'] ?? '',
+      idpersona: json['idpersona'].toString(),
+      detalles: detallesList,
+    );
+  }
+}
+*/
+
+
+class DetalleEjercitacion {
+  final String iddetalleejercitacion;
+  final String idejercitacion;
+  final String elejercicio;
+  final String detalle;
+  final String detalleejercicio;
+  final String fechadesde;
+  final String fechahasta;
+  final double porcentaje; // <-- NUEVO CAMPO
+  // 🎯 NUEVO CAMPO: Ultima fecha en que se registró un cumplimiento
+  final String? ultimaFechaCumplimiento;
+
+  DetalleEjercitacion({
+    required this.iddetalleejercitacion,
+    required this.idejercitacion,
+    required this.elejercicio,
+    required this.detalle,
+    required this.detalleejercicio,
+    required this.fechadesde,
+    required this.fechahasta,
+    required this.porcentaje, // <-- Requerido
+    this.ultimaFechaCumplimiento, // 🎯 AÑADIR A CONSTRUCTOR
+  });
+
+  factory DetalleEjercitacion.fromJson(Map<String, dynamic> json) {
+    return DetalleEjercitacion(
+      iddetalleejercitacion: json['iddetalleejercitacion'].toString(),
+      idejercitacion: json['idejercitacion'].toString(),
+      elejercicio: json['elejercicio'] ?? '',
+      detalle: json['detalle'] ?? '',
+      detalleejercicio: json['detalleejercicio'] ?? '',
+      fechadesde: json['fechadesde'] ?? '',
+      fechahasta: json['fechahasta'] ?? '',
+      // Leemos el porcentaje calculado por PHP. Si es null es 0.0
+      porcentaje: double.tryParse(json['porcentaje'].toString()) ?? 0.0,
+      // 🎯 NUEVA LÍNEA: Leer el valor del JSON (asumiendo que la API lo proporcionará)
+      ultimaFechaCumplimiento: json['ultima_fecha_cumplimiento'],
+    );
+  }
+}
+
+class EjercicioVista {
+  final String idEjercicio;
+  final String nombre;
+  final String detalle;
+  final String detalleejercicio;
+  int totalRegistros; // Nuevo campo
+
+  EjercicioVista({
+    required this.idEjercicio, 
+    required this.nombre, 
+    required this.detalle,
+    required this.detalleejercicio,
+    this.totalRegistros = 1,
+  });
+
+  factory EjercicioVista.fromJson(Map<String, dynamic> json) {
+    return EjercicioVista(
+      idEjercicio: json['idejercicio'].toString(),
+      nombre: json['elejercicio'] ?? '',
+      detalle: json['detalle'] ?? '',
+      detalleejercicio: json['detalleejercicio'] ?? '',
+    );
+  }
+}
 
 
 

@@ -1,75 +1,108 @@
-import 'package:flutter/material.dart';                                                                              
-import 'package:http/http.dart' as http;
-import 'dart:convert';                
-import 'evento.dart';                 
-import 'api_service.dart';     
-
+import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'evento.dart';
+import 'api_service.dart';
 
 class CarritoProductoPage extends StatefulWidget {
-    final String idpersona;
-    const CarritoProductoPage({Key? key, required this.idpersona}) : super(key: key);
+  final String idpersona;
+  final String cedula; // Añadido para consistencia
 
-    @override
-    State<CarritoProductoPage> createState() => _CarritoProductoPageState();
+  const CarritoProductoPage({Key? key, required this.idpersona, required this.cedula}) : super(key: key);
+
+  @override
+  State<CarritoProductoPage> createState() => _CarritoProductoPageState();
 }
 
 class _CarritoProductoPageState extends State<CarritoProductoPage> {
-    late Future<List<Producto>> _productosFuture;
-    final Map<int,int> _itemQuantities ={};
+  late Future<List<Producto>> _productosFuture;
+  final Map<int, int> _itemQuantities = {};
 
-    @override
-    void initState(){
-        super.initState();
-        _productosFuture = ApiService.fetchProductosCarrito(widget.idpersona);
-    }
+  @override
+  void initState() {
+    super.initState();
+    _productosFuture = ApiService.fetchProductosCarrito(widget.idpersona);
+  }
 
+  // --- LÓGICA DE ZOOM ---
+  void _mostrarZoomImagen(BuildContext context, String url, String nombre) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(10),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            InteractiveViewer(
+              panEnabled: true,
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.network(
+                  url,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return const Center(child: CircularProgressIndicator(color: Colors.white));
+                  },
+                  errorBuilder: (_, __, ___) => Container(
+                    color: Colors.white,
+                    padding: const EdgeInsets.all(20),
+                    child: const Icon(Icons.image_not_supported, size: 100, color: Colors.grey),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 10,
+              right: 10,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   void _incrementQuantity(int productoId) {
     setState(() {
       _itemQuantities.update(productoId, (value) => value + 1, ifAbsent: () => 1);
     });
-  }   
-        
+  }
+
   void _decrementQuantity(int productoId) {
     setState(() {
       if (_itemQuantities.containsKey(productoId) && _itemQuantities[productoId]! > 1) {
         _itemQuantities.update(productoId, (value) => value - 1);
-      } else {  
+      } else {
         _itemQuantities.remove(productoId);
-      }             
-    });         
-  }      
+      }
+    });
+  }
 
-
-
-  void _restToCart(Producto producto, int quantity) {                            
-    // Implementa la lógica para agregar el artículo y la cantidad al carrito   
-    // Por ejemplo, puedes usar un proveedor de estado o una lista global
-    ScaffoldMessenger.of(context).showSnackBar(                                 
-      SnackBar(                                                                 
-        content: Text('${producto.elproducto} (x$quantity) agregado al carrito'),
-        duration: const Duration(seconds: 2),                                   
-      ),  
-    );  
-  }   
-
-
-
-
-
+  void _restToCart(Producto producto, int quantity) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('♻️ ${producto.elproducto} (x$quantity) devuelto'),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.redAccent,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Determinar el número de columnas basado en el ancho de la pantalla
-    final screenWidth = MediaQuery.of(context).size.width;
-    final crossAxisCount = screenWidth > 600 ? 5 : 2; // 5 columnas para pantallas anchas, 2 para estrechas
-    final childAspectRatio = screenWidth > 600 ? 0.6 : 0.7; // Ajustar la relación de aspecto
-
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        title: const Text('Productos en el carrito del vendedor'),
+        title: const Text('Mi Carrito de Compras', style: TextStyle(fontSize: 16)),
         backgroundColor: Colors.blue[700],
-      ),  
+        elevation: 0,
+      ),
       body: FutureBuilder<List<Producto>>(
         future: _productosFuture,
         builder: (context, snapshot) {
@@ -79,105 +112,91 @@ class _CarritoProductoPageState extends State<CarritoProductoPage> {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
             final productos = snapshot.data!;
-            return GridView.builder(
-              padding: const EdgeInsets.all(10),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: crossAxisCount,
-                crossAxisSpacing: 10, 
-                mainAxisSpacing: 10, 
-                childAspectRatio: childAspectRatio,
-              ),  
+            return ListView.builder(
+              padding: const EdgeInsets.all(12),
               itemCount: productos.length,
               itemBuilder: (context, index) {
                 final producto = productos[index];
-                final fotoUrl = "https://educaysoft.org/descargar3.php?archivo=producto${producto.idproducto}.jpg";
+                final fotoUrl = "https://educaysoft.org/descargarproducto.php?archivo=producto${producto.idproducto}.jpg";
                 final quantity = _itemQuantities[producto.idproducto] ?? 1;
 
                 return Card(
-                  elevation: 5,
+                  elevation: 0,
+                  margin: const EdgeInsets.only(bottom: 12),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15.0),
-                  ),  
-                  child: InkWell(
-                    onTap: () {
-                      // Opcional: Lógica para ver detalles del artículo
-                    },  
-                    borderRadius: BorderRadius.circular(15.0),
-                    child: Column(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: Colors.grey.withOpacity(0.2)),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          flex: 2,
-                          child: ClipRRect(
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(15.0)),
-                            child: Image.network(
-                              fotoUrl,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              errorBuilder: (context, error, stackTrace) => const Icon(Icons.shopping_bag, size: 80, color: Colors.grey),
-                            ),  
-                          ),  
-                        ),  
-                        Expanded(
-                          flex: 3,
-                          child: Padding(                                                                                                                                                                                                                                                                                                                                                                                                                                             
-                            padding: const EdgeInsets.all(8.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  producto.elproducto,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  producto.detalle,
-                                  style: const TextStyle(fontSize: 10, color: Colors.grey),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Precio: \$${producto.precio.toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: Colors.green,
+                        // Imagen con Zoom
+                        GestureDetector(
+                          onTap: () => _mostrarZoomImagen(context, fotoUrl, producto.elproducto),
+                          child: Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  fotoUrl,
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(
+                                    width: 100, height: 100,
+                                    color: Colors.grey[100],
+                                    child: const Icon(Icons.shopping_bag, color: Colors.grey),
                                   ),
                                 ),
-                                const Spacer(),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.remove_circle_outline, size: 24),
-                                      onPressed: () => _decrementQuantity(producto.idproducto),
-                                    ),
-                                    Text(
-                                      '$quantity',
-                                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.add_circle_outline, size: 24),
-                                      onPressed: () => _incrementQuantity(producto.idproducto),
-                                    ),
-                                  ],
+                              ),
+                              const Positioned(
+                                right: 4,
+                                bottom: 4,
+                                child: CircleAvatar(
+                                  radius: 12,
+                                  backgroundColor: Colors.black45,
+                                  child: Icon(Icons.zoom_in, size: 14, color: Colors.white),
                                 ),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton.icon(
-                                    onPressed: () => _restToCart(producto, quantity),
-                                    icon: const Icon(Icons.shopping_cart, size: 18),
-                                    label: const Text('Devolver'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blue,
-                                      foregroundColor: Colors.white,
-                                    ),
+                              )
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        // Información y Controles
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(producto.elproducto, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                              Text(producto.detalle, style: TextStyle(fontSize: 12, color: Colors.grey[600]), maxLines: 2),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text('\$${producto.precio.toStringAsFixed(2)}', 
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green)),
+                                  Row(
+                                    children: [
+                                      IconButton(icon: const Icon(Icons.remove_circle_outline), onPressed: () => _decrementQuantity(producto.idproducto)),
+                                      Text('$quantity', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                      IconButton(icon: const Icon(Icons.add_circle_outline), onPressed: () => _incrementQuantity(producto.idproducto)),
+                                    ],
                                   ),
+                                ],
+                              ),
+                              ElevatedButton.icon(
+                                onPressed: () => _restToCart(producto, quantity),
+                                icon: const Icon(Icons.assignment_return, size: 16),
+                                label: const Text("DEVOLVER"),
+                                style: ElevatedButton.styleFrom(
+                                  minimumSize: const Size(double.infinity, 36),
+                                  backgroundColor: Colors.red.shade400,
+                                  foregroundColor: Colors.white,
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -187,29 +206,19 @@ class _CarritoProductoPageState extends State<CarritoProductoPage> {
               },
             );
           } else {
-            return const Center(child: Text('No hay artículos disponibles para este vendedor.'));
+            return const Center(child: Text('No hay artículos en tu carrito.'));
           }
         },
       ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 20.0), // Ajuste para que no se superponga
-        child: FloatingActionButton.extended(
-          onPressed: () {
-            // Lógica para navegar a la página del carrito
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Navegando al carrito de compras...')),
-            );
-          },
-          icon: const Icon(Icons.shopping_cart_checkout),
-          label: const Text('Ver Carrito'),
-          backgroundColor: Colors.orange,
-        ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          // Lógica de Pago
+        },
+        icon: const Icon(Icons.payments_outlined),
+        label: const Text('PAGAR AHORA'),
+        backgroundColor: Colors.orange.shade800,
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
-
-
-
-
-}
+  }
 }

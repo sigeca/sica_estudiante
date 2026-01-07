@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'api_service.dart';
 import 'evento.dart'; 
 import 'SignosVitalesPage.dart';
-import 'CumplimientoPage.dart';
+import 'AlimentacionPage.dart';
+import 'EjercitacionPage.dart';
+import 'CumplimientoPage.dart'; // Asumiendo que aquí manejas la lista de medicación
+import 'MedicacionGestionPage.dart'; // Asumiendo que aquí manejas la lista de medicación
+import 'AlimentacionGestionPage.dart'; // Asumiendo que aquí manejas la lista de medicación
+import 'EjercitacionGestionPage.dart'; // Asumiendo que aquí manejas la lista de medicación
 
 class SaludPage extends StatefulWidget {
   final String idpersona;
@@ -15,129 +19,194 @@ class SaludPage extends StatefulWidget {
   _SaludPageState createState() => _SaludPageState();
 }
 
-class _SaludPageState extends State<SaludPage> with SingleTickerProviderStateMixin {
-  List<Medicacion> medicaciones = [];
-  List<MedicamentoVista> medicamentosVista = [];
+class _SaludPageState extends State<SaludPage> {
+  // Colores minimalistas
+  static const Color primaryColor = Color(0xFF2D3142);
+  static const Color accentColor = Color(0xFF4F5D75);
+  static const Color backgroundColor = Color(0xFFF5F7FA);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      appBar: AppBar(
+        title: Text("Gestión de Salud", style: TextStyle(fontSize: 18, color: Colors.white)),
+        backgroundColor: primaryColor,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.favorite, color: Colors.redAccent),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => SignosVitalesPage(idpersona: widget.idpersona)),
+            ),
+          )
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSectionTitle("SEGUIMIENTO Y CUMPLIMIENTO"),
+            SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(child: _buildMenuCard("Medicación", Icons.medical_services, Colors.blue, () => _navTo(context, "medicacion"))),
+                SizedBox(width: 12),
+                Expanded(child: _buildMenuCard("Catálogo Meds", Icons.inventory_2, Colors.blueGrey, () => _navTo(context, "cat_meds"))),
+              ],
+            ),
+            SizedBox(height: 16),
+            _buildSectionTitle("HÁBITOS DE VIDA"),
+            SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(child: _buildMenuCard("Alimentación", Icons.restaurant, Colors.orange, () => _navTo(context, "alimentacion"))),
+                SizedBox(width: 12),
+                Expanded(child: _buildMenuCard("Catálogo Alim.", Icons.apple, Colors.green, () => _navTo(context, "cat_alim"))),
+              ],
+            ),
+            SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(child: _buildMenuCard("Ejercitación", Icons.fitness_center, Colors.deepPurple, () => _navTo(context, "ejercitacion"))),
+                SizedBox(width: 12),
+                Expanded(child: _buildMenuCard("Catálogo Ejerc.", Icons.directions_run, Colors.indigo, () => _navTo(context, "cat_ejer"))),
+              ],
+            ),
+            SizedBox(height: 24),
+            _buildSignosVitalesBanner(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: accentColor, letterSpacing: 1.2),
+    );
+  }
+
+  Widget _buildMenuCard(String title, IconData icon, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 100,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4)),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 28),
+            SizedBox(height: 8),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: primaryColor),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSignosVitalesBanner() {
+    return Container(
+      padding: EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: [Colors.redAccent, Colors.orangeAccent]),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: CircleAvatar(backgroundColor: Colors.white24, child: Icon(Icons.monitor_heart, color: Colors.white)),
+        title: Text("Signos Vitales", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+        subtitle: Text("Monitoreo de presión y pulso", style: TextStyle(color: Colors.white70, fontSize: 11)),
+        trailing: Icon(Icons.arrow_forward_ios, color: Colors.white, size: 14),
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => SignosVitalesPage(idpersona: widget.idpersona))),
+      ),
+    );
+  }
+
+// Dentro de SaludPage.dart en la función _navTo:
+void _navTo(BuildContext context, String route) {
+  Widget page;
+  switch (route) {
+    case "medicacion": 
+      page = MedicacionGestionPage(idpersona: widget.idpersona, cedula: widget.cedula); 
+      break;
+    case "cat_meds": 
+      page = MedicamentoCatalogoPage(idpersona: widget.idpersona); 
+      break;
+    case "alimentacion": 
+      page = AlimentacionGestionPage(idpersona: widget.idpersona, cedula: widget.cedula); 
+      break;
+    case "cat_alim": 
+      page = AlimentoCatalogoPage(idpersona: widget.idpersona); 
+      break;
+    case "ejercitacion": 
+      page = EjercitacionGestionPage(idpersona: widget.idpersona, cedula: widget.cedula); 
+      break;
+    case "cat_ejer": 
+      page = EjercicioCatalogoPage(idpersona: widget.idpersona); 
+      break;
+
+
+    default: 
+      page = AlimentacionPage(idpersona: widget.idpersona, cedula: widget.cedula);
+  }
+  Navigator.push(context, MaterialPageRoute(builder: (context) => page));
+}
+
+
+}
+
+
+class MedicamentoCatalogoPage extends StatefulWidget {
+  final String idpersona;
+  const MedicamentoCatalogoPage({Key? key, required this.idpersona}) : super(key: key);
+
+  @override
+  _MedicamentoCatalogoPageState createState() => _MedicamentoCatalogoPageState();
+}
+
+class _MedicamentoCatalogoPageState extends State<MedicamentoCatalogoPage> {
+  List<MedicamentoVista> todosLosMeds = [];
+  List<MedicamentoVista> filtrados = [];
   bool isLoading = true;
-  late TabController _tabController;
-
-  static const Color primaryColor = Colors.redAccent;
-  static const Color secondaryColor = Colors.blueAccent;
-
-  // Controladores de búsqueda independientes
-  TextEditingController _searchMedicaController = TextEditingController(); // Para pestaña Medicación
-  TextEditingController _searchMedsController = TextEditingController();   // Para pestaña Medicamentos
-  
-  List<Medicacion> _farmaceuticasFiltradas = [];
-  List<MedicamentoVista> _vistaFiltrada = [];
+  String query = "";
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this); // Reducido a 2 pestañas
-    _cargarTodo();
+    _cargarMedicamentos();
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    _searchMedicaController.dispose();
-    _searchMedsController.dispose();
-    super.dispose();
-  }
-
-
-
-// --- MÉTODOS DE APOYO PARA UI ---
-
-  Color _getColorEstado(int idEstado) {
-    switch (idEstado) {
-      case 1: return Colors.green; 
-      case 2: return Colors.orange; 
-      case 3: return Colors.red; 
-      case 4: return Colors.blue; 
-      default: return Colors.grey;
-    }
-  }
-
-  Color _getColorPorcentaje(double porcentaje) {
-    if (porcentaje > 80) return Colors.green;
-    if (porcentaje > 50) return Colors.orange;
-    return Colors.red;
-  }
-
-  Widget _buildLastTakenDate(String? dateString) {
-    if (dateString == null || dateString.isEmpty) {
-      return Text("Sin registro de toma", 
-        style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey, fontSize: 12));
-    }
-
+  Future<void> _cargarMedicamentos() async {
     try {
-      final DateTime lastTaken = DateTime.parse(dateString);
-      final DateTime today = DateTime.now();
-      final DateFormat formatter = DateFormat('dd/MM/yyyy HH:mm:ss');
-      final String formattedDate = formatter.format(lastTaken);
+      // Reutiliza la lógica de SaludPage1 para obtener los medicamentos
+      final data = await ApiService.fetchMedicacion2(widget.idpersona);
       
-      final lastTakenDateOnly = DateTime(lastTaken.year, lastTaken.month, lastTaken.day);
-      final todayDateOnly = DateTime(today.year, today.month, today.day);
-      final difference = todayDateOnly.difference(lastTakenDateOnly).inDays;
-
-      String text;
-      Color color;
-      IconData icon;
-
-      if (difference == 0) {
-        text = "¡Última toma HOY! ($formattedDate)";
-        color = Colors.green.shade700;
-        icon = Icons.check_circle;
-      } else if (difference == 1) {
-        text = "Última toma ayer";
-        color = Colors.orange.shade700;
-        icon = Icons.warning_amber;
-      } else {
-        text = "Hace $difference días ($formattedDate)";
-        color = Colors.red.shade700;
-        icon = Icons.error;
+      // Agrupar por ID para evitar duplicados si la API devuelve registros repetidos
+      Map<String, MedicamentoVista> agrupados = {};
+      for (var item in data) {
+        if (!agrupados.containsKey(item.idmedicamento)) {
+          agrupados[item.idmedicamento] = item;
+        }
       }
-      
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: color),
-          SizedBox(width: 4),
-          Text(text, style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.bold)),
-        ],
-      );
-    } catch (e) {
-      return Text("Error en fecha", style: TextStyle(fontSize: 12, color: Colors.grey));
-    }
-  }
-
-
-
-  // Carga inicial de datos
-  Future<void> _cargarTodo() async {
-    try {
-      final resMedicaciones = await ApiService.fetchMedicaciones(widget.idpersona);
-      final resVista = await ApiService.fetchMedicacion2(widget.idpersona);
 
       if (mounted) {
         setState(() {
-          medicaciones = resMedicaciones;
-          
-          // Agrupación de vista de medicamentos
-          Map<String, MedicamentoVista> agrupados = {};
-          for (var item in resVista) {
-            if (agrupados.containsKey(item.idMedicamento)) {
-              agrupados[item.idMedicamento]!.totalRegistros += 1;
-            } else {
-              agrupados[item.idMedicamento] = item;
-            }
-          }
-          medicamentosVista = agrupados.values.toList();
-          
-          _aplicarFiltroMedica("");
-          _aplicarFiltroMeds("");
+          todosLosMeds = agrupados.values.toList();
+          filtrados = todosLosMeds;
           isLoading = false;
         });
       }
@@ -146,95 +215,63 @@ class _SaludPageState extends State<SaludPage> with SingleTickerProviderStateMix
     }
   }
 
-  void _aplicarFiltroMedica(String query) {
+  void _filtrar(String val) {
     setState(() {
-      _farmaceuticasFiltradas = medicaciones
-          .where((m) => m.nombre.toLowerCase().contains(query.toLowerCase()))
+      query = val;
+      filtrados = todosLosMeds
+          .where((m) =>
+              m.nombre.toLowerCase().contains(val.toLowerCase()) ||
+              m.detallemedicamento.toLowerCase().contains(val.toLowerCase()))
           .toList();
     });
   }
 
-  void _aplicarFiltroMeds(String query) {
-    setState(() {
-      _vistaFiltrada = medicamentosVista
-          .where((m) => m.nombre.toLowerCase().contains(query.toLowerCase()) || 
-                         m.detallemedicamento.toLowerCase().contains(query.toLowerCase()))
-          .toList();
-    });
-  }
-
-  // --- DIÁLOGOS (Editado para quitar tipo dietética) ---
-
-  void _mostrarDialogoMedicacion({Medicacion? medicacionExistente}) {
-    final isEditing = medicacionExistente != null;
-    final _nombreController = TextEditingController(text: isEditing ? medicacionExistente.nombre : '');
-    final _fechaDesdeController = TextEditingController(text: isEditing ? medicacionExistente.fechadesde : '');
-    final _fechaHastaController = TextEditingController(text: isEditing ? medicacionExistente.fechahasta : '');
-    int _estadoSeleccionado = isEditing ? medicacionExistente.idestadomedicacion : 1;
-
+  // Función para mostrar zoom de la imagen
+  void _mostrarZoomImagen(BuildContext context, String url, String nombre) {
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setStateDialog) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(isEditing ? "Editar Medicación" : "Nueva Medicación"),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: _nombreController,
-                  decoration: InputDecoration(labelText: "Nombre", border: OutlineInputBorder(), prefixIcon: Icon(Icons.medication)),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: EdgeInsets.all(10),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            InteractiveViewer( // Permite pellizcar para hacer zoom (pinch to zoom)
+              panEnabled: true,
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.network(
+                  url,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Center(child: CircularProgressIndicator(color: Colors.white));
+                  },
+                  errorBuilder: (_, __, ___) => Container(
+                    color: Colors.white,
+                    padding: EdgeInsets.all(20),
+                    child: Icon(Icons.image_not_supported, size: 100, color: Colors.grey),
+                  ),
                 ),
-                SizedBox(height: 15),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _fechaDesdeController,
-                        readOnly: true,
-                        onTap: () => _selectDate(context, _fechaDesdeController),
-                        decoration: InputDecoration(labelText: "Desde", icon: Icon(Icons.calendar_today)),
-                      ),
-                    ),
-                    Expanded(
-                      child: TextField(
-                        controller: _fechaHastaController,
-                        readOnly: true,
-                        onTap: () => _selectDate(context, _fechaHastaController),
-                        decoration: InputDecoration(labelText: "Hasta", icon: Icon(Icons.event_busy)),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 15),
-                DropdownButton<int>(
-                  value: _estadoSeleccionado,
-                  isExpanded: true,
-                  items: [
-                    DropdownMenuItem(child: Text("Activo"), value: 1),
-                    DropdownMenuItem(child: Text("Suspendido"), value: 2),
-                    DropdownMenuItem(child: Text("Finalizado"), value: 4),
-                  ],
-                  onChanged: (val) => setStateDialog(() => _estadoSeleccionado = val!),
-                ),
-              ],
+              ),
             ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: Text("Cancelar")),
-            ElevatedButton(
-              onPressed: () async {
-                if (_nombreController.text.isEmpty) return;
-                Navigator.pop(context);
-                if (isEditing) {
-                  await ApiService.actualizarMedicacion(medicacionExistente.idmedicacion, _nombreController.text, 2, _estadoSeleccionado);
-                } else {
-                  await ApiService.registrarMedicacion(_nombreController.text, _fechaDesdeController.text, _fechaHastaController.text, widget.idpersona, 2, _estadoSeleccionado);
-                }
-                _cargarTodo();
-              },
-              child: Text("Guardar"),
+            Positioned(
+              top: 10,
+              right: 10,
+              child: IconButton(
+                icon: Icon(Icons.close, color: Colors.white, size: 30),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+            Positioned(
+              bottom: 20,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(20)),
+                child: Text(nombre, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
             )
           ],
         ),
@@ -242,229 +279,89 @@ class _SaludPageState extends State<SaludPage> with SingleTickerProviderStateMix
     );
   }
 
-  // --- WIDGETS DE APOYO ---
-
-  Widget _buildSearchField(TextEditingController controller, Function(String) onChanged, String hint) {
-    return Container(
-      height: 40,
-      margin: EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
-      child: TextField(
-        controller: controller,
-        onChanged: onChanged,
-        decoration: InputDecoration(
-          hintText: hint,
-          prefixIcon: Icon(Icons.search, size: 20),
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(vertical: 10),
-        ),
-      ),
-    );
-  }
-
-  
-// ... dentro de _SaludPageState ...
-
-Widget _buildListaMedica() {
-    if (_farmaceuticasFiltradas.isEmpty) {
-      return Center(child: Text("No hay registros de medicación", style: TextStyle(color: Colors.grey)));
-    }
-
-    return ListView.builder(
-      padding: EdgeInsets.all(12),
-      itemCount: _farmaceuticasFiltradas.length,
-      itemBuilder: (context, index) {
-        final item = _farmaceuticasFiltradas[index];
-
-        // 🎯 Lógica para encontrar la última toma entre todos los detalles
-        String? ultimaTomaGlobal;
-        for (var detalle in item.detalles) {
-          if (detalle.ultimaFechaCumplimiento != null && detalle.ultimaFechaCumplimiento!.isNotEmpty) {
-            final current = DateTime.parse(detalle.ultimaFechaCumplimiento!);
-            if (ultimaTomaGlobal == null || current.isAfter(DateTime.parse(ultimaTomaGlobal!))) {
-              ultimaTomaGlobal = detalle.ultimaFechaCumplimiento;
-            }
-          }
-        }
-
-        return Card(
-          elevation: 3,
-          margin: EdgeInsets.only(bottom: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-          child: ExpansionTile(
-            initiallyExpanded: true, // Tarjeta siempre abierta
-            leading: InkWell(
-              onTap: () => _mostrarDialogoMedicacion(medicacionExistente: item), // El icono IZQUIERDO edita
-              child: CircleAvatar(
-                backgroundColor: primaryColor.withOpacity(0.1),
-                child: Icon(Icons.edit, color: Colors.blue, size: 20),
-              ),
-            ),
-            title: Text(item.nombre, style: TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildEstadoChip(item.elestadomedicacion, _getColorEstado(item.idestadomedicacion)),
-                _buildLastTakenDate(ultimaTomaGlobal), // 🎯 Última fecha debajo del estado
-              ],
-            ),
-            children: [
-              ...item.detalles.map<Widget>((d) {
-                final Color colorPorc = _getColorPorcentaje(d.porcentaje);
-                return ListTile(
-                  title: Text(d.detalle, style: TextStyle(fontSize: 14)),
-                  subtitle: Text("${d.fechadesde} ➔ ${d.fechahasta}"),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text("${d.porcentaje.toStringAsFixed(0)} veces", 
-                           style: TextStyle(fontWeight: FontWeight.bold, color: colorPorc)),
-                      IconButton(
-                        icon: Icon(Icons.open_in_new),
-                        onPressed: () async {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => CumplimientoPage(detalle: d, nombreMedicamento: item.nombre),
-                            ),
-                          );
-                          _cargarTodo(); // 🎯 Actualiza fecha y hora al volver
-                        },
-                      )
-                    ],
-                  ),
-                );
-              }).toList(),
-              // Botón de agregar instrucción al final
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    icon: Icon(Icons.add, color: primaryColor),
-                    label: Text("Agregar Instrucción", style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold)),
-                    onPressed: () => _mostrarDialogoDetalle(item.idmedicacion),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  // Utilidad para el chip de estado
-  Widget _buildEstadoChip(String label, Color color) {
-    return Container(
-      margin: EdgeInsets.only(top: 4, bottom: 4),
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.5))
-      ),
-      child: Text(label, style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.bold)),
-    );
-  }
-
-
-
-
-
-
-
   @override
   Widget build(BuildContext context) {
-    final fotoUrl = "https://educaysoft.org/descargar2.php?archivo=${widget.cedula}.jpg";
-    
     return Scaffold(
+      backgroundColor: Color(0xFFF5F7FA),
       appBar: AppBar(
-        backgroundColor: Colors.yellowAccent,
-        title: Row(children: [
-          CircleAvatar(backgroundImage: NetworkImage(fotoUrl), radius: 18),
-          SizedBox(width: 10),
-          Text("Mi Salud", style: TextStyle(color: Colors.black)),
-        ]),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.monitor_heart, color: Colors.black),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => SignosVitalesPage(idpersona: widget.idpersona))),
-          )
-        ],
+        title: Text("Diccionario de Medicamentos", style: TextStyle(fontSize: 16, color: Colors.white)),
+        backgroundColor: Color(0xFF2D3142),
+        elevation: 0,
         bottom: PreferredSize(
-          preferredSize: Size.fromHeight(110),
-          child: Column(
-            children: [
-              // 🎯 BUSCADOR DINÁMICO SEGÚN PESTAÑA
-              _tabController.index == 0 
-                ? _buildSearchField(_searchMedicaController, _aplicarFiltroMedica, "Buscar en mis medicaciones...")
-                : _buildSearchField(_searchMedsController, _aplicarFiltroMeds, "Buscar en catálogo de medicamentos..."),
-              TabBar(
-                controller: _tabController,
-                labelColor: Colors.black,
-                indicatorColor: Colors.black,
-                onTap: (index) => setState(() {}), // Para refrescar el buscador
-                tabs: [
-                  Tab(icon: Icon(Icons.medical_services), text: "Medicación"),
-                  Tab(icon: Icon(Icons.inventory), text: "Medicamentos"),
-                ],
+          preferredSize: Size.fromHeight(60),
+          child: Padding(
+            padding: EdgeInsets.only(left: 16, right: 16, bottom: 12),
+            child: TextField(
+              onChanged: _filtrar,
+              style: TextStyle(fontSize: 13),
+              decoration: InputDecoration(
+                hintText: "Buscar por nombre o componente...",
+                prefixIcon: Icon(Icons.search, size: 20),
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: EdgeInsets.zero,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
               ),
-            ],
+            ),
           ),
         ),
       ),
-      body: isLoading 
-        ? Center(child: CircularProgressIndicator())
-        : TabBarView(
-            controller: _tabController,
-            children: [
-              _buildListaMedica(),
-              _buildListaMedicamentosVista(_vistaFiltrada),
-            ],
-          ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _mostrarDialogoMedicacion(),
-        backgroundColor: primaryColor,
-        child: Icon(Icons.add),
-      ),
+      body: isLoading
+          ? Center(child: CircularProgressIndicator())
+          : filtrados.isEmpty
+              ? Center(child: Text("No se encontraron medicamentos"))
+              : ListView.builder(
+                  padding: EdgeInsets.all(12),
+                  itemCount: filtrados.length,
+                  itemBuilder: (context, index) {
+                    final med = filtrados[index];
+                    final String urlImagen = "https://educaysoft.org/descargar.php?archivo=medicamentos/medicamento${med.idmedicamento}.jpg";
+
+                    return Card(
+                      elevation: 0,
+                      margin: EdgeInsets.only(bottom: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: Colors.grey.withOpacity(0.1)),
+                      ),
+                      child: ListTile(
+                        contentPadding: EdgeInsets.all(10),
+                        leading: GestureDetector(
+                          onTap: () => _mostrarZoomImagen(context, urlImagen, med.nombre),
+                          child: Hero( // Efecto de transición suave
+                            tag: 'med_${med.idmedicamento}',
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                urlImagen,
+                                width: 60,
+                                height: 60,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  width: 60, height: 60,
+                                  color: Colors.blueGrey.withOpacity(0.1),
+                                  child: Icon(Icons.medication, color: Colors.blueGrey),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        title: Text(med.nombre, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        subtitle: Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            med.detallemedicamento,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                          ),
+                        ),
+                        trailing: Icon(Icons.zoom_in, color: Colors.blue.withOpacity(0.5)),
+                        onTap: () => _mostrarZoomImagen(context, urlImagen, med.nombre),
+                      ),
+                    );
+                  },
+                ),
     );
-  }
-
-  // --- MÉTODOS RESTANTES (Lógica de Detalle y Vista 2) ---
-
-  void _mostrarDialogoDetalle(String idMedicacion) {
-    // Lógica similar a la original para registrar detalle...
-  }
-
-  Widget _buildListaMedicamentosVista(List<MedicamentoVista> lista) {
-     if (lista.isEmpty) return Center(child: Text("No hay resultados"));
-     return ListView.builder(
-       padding: EdgeInsets.all(12),
-       itemCount: lista.length,
-       itemBuilder: (context, index) {
-         final med = lista[index];
-         return Card(
-           child: ListTile(
-             leading: Image.network(
-               "https://educaysoft.org/descargar.php?archivo=medicamentos/medicamento${med.idMedicamento}.jpg",
-               width: 50, errorBuilder: (_,__,___) => Icon(Icons.medication),
-             ),
-             title: Text(med.nombre),
-             subtitle: Text(med.detallemedicamento),
-           ),
-         );
-       },
-     );
-  }
-
-  Future<void> _selectDate(BuildContext context, TextEditingController controller) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2023),
-      lastDate: DateTime(2030),
-    );
-    if (picked != null) controller.text = DateFormat('yyyy-MM-dd').format(picked);
   }
 }
