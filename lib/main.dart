@@ -420,22 +420,18 @@ class _EventoPageState extends State<EventoPage> {
                 return Center(child: Text('Error al cargar eventos: ${snapshot.error}', style: TextStyle(color: Colors.red[700])));
               } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
                 final eventos = snapshot.data!;
-                return ListView.builder(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  itemCount: eventos.length,
-                  itemBuilder: (context, index) {
-                    final evento = eventos[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
-                      elevation: 3,
-                      child: ListTile(
-                        leading: Icon(Icons.calendar_today, color: Theme.of(context).primaryColor),
-                        title: Text(evento.titulo, style: const TextStyle(fontWeight: FontWeight.w600)),
-                        subtitle: Text('ID: ${evento.idevento}'),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.open_in_new, color: Colors.blueAccent),
-                          tooltip: "Ver detalles",
-                          onPressed: () {
+                return SizedBox(
+                  height: 200, // Altura fija para el carrusel horizontal
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                    itemCount: eventos.length,
+                    itemBuilder: (context, index) {
+                      final evento = eventos[index];
+                      return SizedBox(
+                        width: 300, // Ancho fijo para cada tarjeta
+                        child: InkWell(
+                          onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -448,10 +444,49 @@ class _EventoPageState extends State<EventoPage> {
                               ),
                             );
                           },
+                          child: Card(
+                            margin: const EdgeInsets.symmetric(horizontal: 4.0),
+                            elevation: 4,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.calendar_today, color: Theme.of(context).primaryColor, size: 20),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          evento.titulo,
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const Divider(),
+                                  Text(
+                                    'ID: ${evento.idevento}',
+                                    style: TextStyle(color: Colors.grey[700], fontSize: 13, fontWeight: FontWeight.w500),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    evento.detalle,
+                                    style: const TextStyle(fontSize: 14),
+                                    maxLines: 3,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 );
 
               } else {
@@ -460,7 +495,7 @@ class _EventoPageState extends State<EventoPage> {
             },
           ),
       ),
-        ),
+    ),
       ],
     );
   }

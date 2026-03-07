@@ -40,15 +40,23 @@ class Evento {
     final String idpersona;
     final String idtipogrupoparticipante;
     final String titulo;
+    final String detalle; // NUEVO CAMPO
   
-    Evento({required this.titulo, required this.idpersona,required this.idtipogrupoparticipante, required this.idevento});
+    Evento({
+      required this.titulo, 
+      required this.idpersona, 
+      required this.idtipogrupoparticipante, 
+      required this.idevento,
+      required this.detalle,
+    });
   
     factory Evento.fromJson(Map<String, dynamic> json) {
       return Evento(
         idevento: json['idevento'].toString(),
         idpersona: json['idpersona'].toString(),
         idtipogrupoparticipante: json['idtipogrupoparticipante'].toString(),
-        titulo: json['titulo'],
+        titulo: json['titulo'] ?? '',
+        detalle: json['detalle'] ?? '', // Mapeo del nuevo campo
       );
     }
   }
