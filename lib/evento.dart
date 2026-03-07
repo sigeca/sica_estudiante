@@ -519,22 +519,26 @@ class Producto {
   final String elproducto;
   final String detalle;
   final String idpersona;
+  final String idcarrito;
   final String elcustodio;
   final String idinstitucion;
   final String lainstitucion;
   final double precio; // Campo de precio
   final double stock; // Campo de precio
+  final double cantidad; // Campo de precio
 
   Producto({
     required this.idproducto,
     required this.elproducto,
     required this.detalle,
     required this.idpersona,
+    required this.idcarrito,
     required this.elcustodio,
     required this.idinstitucion,
     required this.lainstitucion,
     required this.precio,
     required this.stock,
+    required this.cantidad,
   });
 
   factory Producto.fromJson(Map<String, dynamic> json) {
@@ -543,11 +547,13 @@ class Producto {
       elproducto: json['elproducto'],
       detalle: json['detalle'],
       idpersona: json['idpersona'].toString(),
+      idcarrito: json['idcarrito'].toString(),
       elcustodio: json['elcustodio'],
       idinstitucion: json['idinstitucion'].toString(),
       lainstitucion: json['lainstitucion'],
       precio: double.tryParse(json['precio'].toString()) ?? 0.0,
       stock: double.tryParse(json['stock'].toString()) ?? 0.0,
+      cantidad: double.tryParse(json['cantidad'].toString()) ?? 0.0,
     );
   }
 }

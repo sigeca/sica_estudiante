@@ -175,7 +175,7 @@ class _AlimentacionGestionPageState extends State<AlimentacionGestionPage> {
     return Scaffold(
       backgroundColor: Color(0xFFF5F7FA),
       appBar: AppBar(
-        title: Text("Control de Medicación", style: TextStyle(fontSize: 16, color: Colors.black87)),
+        title: Text("Control de Alimentación", style: TextStyle(fontSize: 16, color: Colors.black87)),
         backgroundColor: Colors.white,
         elevation: 0.5,
         iconTheme: IconThemeData(color: Colors.black87),

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
 import 'evento.dart';
 import 'api_service.dart';
 
@@ -28,20 +27,46 @@ class _CarritoProductoPageState extends State<CarritoProductoPage> {
       final productos = await ApiService.fetchProductosCarrito(widget.idpersona);
       setState(() {
         _listaProductos = productos;
+        // Sincronizar cantidades iniciales desde la base de datos
+        for (var prod in productos) {
+          _itemQuantities[prod.idproducto] = prod.cantidad.toInt(); // Asumiendo que 'cantidad' es el campo del modelo
+        }
       });
     } catch (e) {
       debugPrint("Error al cargar productos: $e");
     }
   }
 
-  // Lógica real de devolución conectada al ApiService
+  // --- MÉTODOS DE CANTIDAD ---
+
+  void _incrementQuantity(int productoId, double maxLimit) {
+    setState(() {
+      int currentQty = _itemQuantities[productoId] ?? 0;
+      if (currentQty < maxLimit) {
+        _itemQuantities.update(productoId, (value) => value + 1, ifAbsent: () => 1);
+      }
+    });
+  }
+
+  void _decrementQuantity(int productoId) {
+    setState(() {
+      if (_itemQuantities.containsKey(productoId) && _itemQuantities[productoId]! > 0) {
+        _itemQuantities.update(productoId, (value) => value - 1);
+      }
+    });
+  }
+
+  // --- LÓGICA DE ELIMINACIÓN ---
+
   Future<void> _restToCart(Producto producto, int quantity) async {
+    if (quantity <= 0) return; // Seguridad extra
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Procesando devolución de ${producto.elproducto}...')),
     );
 
     bool exito = await ApiService.eliminarProductoCarrito(
-      widget.idpersona, 
+      producto.idcarrito, 
       producto.idproducto
     );
 
@@ -63,13 +88,15 @@ class _CarritoProductoPageState extends State<CarritoProductoPage> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('❌ Error al devolver el producto. Intenta de nuevo.'),
+          content: Text('❌ Error al devolver el producto'),
           backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
         ),
       );
     }
   }
+
+  // (El método _mostrarZoomImagen y _procesarPago se mantienen igual...)
+  // ... [Omitidos por brevedad, pero mantenlos en tu archivo] ...
 
   void _mostrarZoomImagen(BuildContext context, String url, String nombre) {
     showDialog(
@@ -115,21 +142,7 @@ class _CarritoProductoPageState extends State<CarritoProductoPage> {
     );
   }
 
-  void _incrementQuantity(int productoId) {
-    setState(() {
-      _itemQuantities.update(productoId, (value) => value + 1, ifAbsent: () => 1);
-    });
-  }
 
-  void _decrementQuantity(int productoId) {
-    setState(() {
-      if (_itemQuantities.containsKey(productoId) && _itemQuantities[productoId]! > 1) {
-        _itemQuantities.update(productoId, (value) => value - 1);
-      } else {
-        _itemQuantities.remove(productoId);
-      }
-    });
-  }
 
 
 
@@ -173,6 +186,9 @@ Future<void> _procesarPago() async {
 }
 
 
+
+
+
 void _mostrarMensajeExito() {
   showDialog(
     context: context,
@@ -188,21 +204,6 @@ void _mostrarMensajeExito() {
     ),
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -234,7 +235,11 @@ void _mostrarMensajeExito() {
                   itemBuilder: (context, index) {
                     final producto = _listaProductos![index];
                     final fotoUrl = "https://educaysoft.org/descargarproducto.php?archivo=producto${producto.idproducto}.jpg";
-                    final quantity = _itemQuantities[producto.idproducto] ?? 1;
+                    
+                    // Lógica de cantidad y límites
+                    final int quantity = _itemQuantities[producto.idproducto] ?? 0;
+                    final double maxDisponible = producto.cantidad; // Cantidad original en el carrito
+                    final bool tieneCantidad = quantity > 0;
 
                     return Card(
                       elevation: 0,
@@ -248,32 +253,16 @@ void _mostrarMensajeExito() {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Imagen (Igual que en ProductoVendedor)
                             GestureDetector(
                               onTap: () => _mostrarZoomImagen(context, fotoUrl, producto.elproducto),
-                              child: Stack(
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.network(
-                                      fotoUrl,
-                                      width: 100, height: 100,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => Container(
-                                        width: 100, height: 100,
-                                        color: Colors.grey[100],
-                                        child: const Icon(Icons.shopping_bag, color: Colors.grey),
-                                      ),
-                                    ),
-                                  ),
-                                  const Positioned(
-                                    right: 4, bottom: 4,
-                                    child: CircleAvatar(
-                                      radius: 12,
-                                      backgroundColor: Colors.black45,
-                                      child: Icon(Icons.zoom_in, size: 14, color: Colors.white),
-                                    ),
-                                  )
-                                ],
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  fotoUrl,
+                                  width: 100, height: 100, fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(width: 100, height: 100, color: Colors.grey[100], child: const Icon(Icons.shopping_bag)),
+                                ),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -282,30 +271,39 @@ void _mostrarMensajeExito() {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(producto.elproducto, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                                  Text(producto.detalle, style: TextStyle(fontSize: 12, color: Colors.grey[600]), maxLines: 2),
+                                  Text('Máximo en carrito: ${maxDisponible.toInt()}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
                                   const SizedBox(height: 8),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text('\$${producto.precio.toStringAsFixed(2)}', 
                                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green)),
-                                      Row(
-                                        children: [
-                                          IconButton(icon: const Icon(Icons.remove_circle_outline), onPressed: () => _decrementQuantity(producto.idproducto)),
-                                          Text('$quantity', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                          IconButton(icon: const Icon(Icons.add_circle_outline), onPressed: () => _incrementQuantity(producto.idproducto)),
-                                        ],
-                                      ),
+                                      
+                                      // SELECTOR DE CANTIDAD CON LÓGICA DE BLOQUEO
+                                   //   Row(
+                                     //   children: [
+                                    //      IconButton(
+                                      //      icon: const Icon(Icons.remove_circle_outline), 
+                                      //      onPressed: tieneCantidad ? () => _decrementQuantity(producto.idproducto) : null,
+                                      //    ),
+                                       //   Text('$quantity', style: TextStyle(fontWeight: FontWeight.bold, color: tieneCantidad ? Colors.black : Colors.red)),
+                                       //   IconButton(
+                                       //     icon: const Icon(Icons.add_circle_outline), 
+                                        //    onPressed: (quantity < maxDisponible) ? () => _incrementQuantity(producto.idproducto, maxDisponible) : null,
+                                         // ),
+                                     //   ],
+                                    //  ),
                                     ],
                                   ),
+                                  // BOTÓN DEVOLVER (Se deshabilita si quantity es 0)
                                   ElevatedButton.icon(
-                                    onPressed: () => _restToCart(producto, quantity),
+                                    onPressed: tieneCantidad ? () => _restToCart(producto, quantity) : null,
                                     icon: const Icon(Icons.assignment_return, size: 16),
-                                    label: const Text("DEVOLVER"),
+                                    label: Text(tieneCantidad ? "DEVOLVER" : "SIN CANTIDAD"),
                                     style: ElevatedButton.styleFrom(
                                       minimumSize: const Size(double.infinity, 36),
-                                      backgroundColor: Colors.red.shade400,
-                                      foregroundColor: Colors.white,
+                                      backgroundColor: tieneCantidad ? Colors.red.shade400 : Colors.grey[300],
+                                      foregroundColor: tieneCantidad ? Colors.white : Colors.grey[600],
                                     ),
                                   ),
                                 ],
@@ -318,35 +316,12 @@ void _mostrarMensajeExito() {
                   },
                 ),
       floatingActionButton: FloatingActionButton.extended(
-         onPressed: _listaProductos != null && _listaProductos!.isNotEmpty 
-            ? _procesarPago 
-            : null, // Deshabilitar si el carrito está vacío
+         onPressed: (_listaProductos != null && _listaProductos!.isNotEmpty) ? _procesarPago : null,
         icon: const Icon(Icons.payments_outlined),
         label: const Text('PAGAR AHORA'),
-        backgroundColor: (_listaProductos != null && _listaProductos!.isNotEmpty) 
-            ? Colors.orange.shade800 
-            : Colors.grey,
-            ),
+        backgroundColor: (_listaProductos != null && _listaProductos!.isNotEmpty) ? Colors.orange.shade800 : Colors.grey,
+      ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }

@@ -86,10 +86,16 @@ class _ProductosVendedorPageState extends State<ProductosVendedorPage> {
     );
   }
 
-  void _incrementQuantity(int productoId) {
+  void _incrementQuantity(int productoId, double stockMaximo) {
     setState(() {
-      _itemQuantities.update(productoId, (value) => value + 1, ifAbsent: () => 1);
+
+int currentQty = _itemQuantities[productoId] ?? 1;
+      // Solo incrementa si no ha superado el stock disponible
+      if (currentQty < stockMaximo) {
+        _itemQuantities.update(productoId, (value) => value + 1, ifAbsent: () => 1);
+      }
     });
+
   }
 
   void _decrementQuantity(int productoId) {
@@ -179,7 +185,13 @@ return Scaffold(
                   itemBuilder: (context, index) {
                     final prod = snapshot.data![index];
                     final fotoUrl = "https://educaysoft.org/descargarproducto.php?archivo=producto${prod.idproducto}.jpg";
-                    final quantity = _itemQuantities[prod.idproducto] ?? 1;
+                    final quantity = _itemQuantities[prod.idproducto] ?? (prod.stock > 0 ? 1 : 0);
+                   // Calculamos el stock que se muestra en pantalla
+                    double stockVisual = prod.stock - quantity;
+                    bool tieneStock = prod.stock > 0;
+
+
+
 
                     return Card(
                       elevation: 0,
@@ -232,31 +244,57 @@ return Scaffold(
                                   Text(prod.elproducto, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                                   Text(prod.detalle, style: TextStyle(fontSize: 12, color: Colors.grey[600]), maxLines: 2),
                                   const SizedBox(height: 8),
+                                  Text(
+                                         'Precio: \$${prod.precio.toStringAsFixed(2)}',
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green)
+                                   ),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text('\$${prod.precio.toStringAsFixed(2)}',style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green)),
-                                      Text('Cantidad: ${prod.stock.toStringAsFixed(2)}',style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green)),
+                                        // El stock disminuye visualmente según aumenta quantity
+                                        Text(
+                                          'Stock disponible: ${stockVisual.toStringAsFixed(0)}', 
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold, 
+                                            fontSize: 12, 
+                                            color: tieneStock ? Colors.blueGrey : Colors.red
+                                          )
+                                        ),                                    
+
                                       // Selector de cantidad
                                       Row(
                                         children: [
-                                          IconButton(icon: const Icon(Icons.remove_circle_outline), onPressed: () => _decrementQuantity(prod.idproducto)),
+                                            IconButton(
+                                                      icon: const Icon(Icons.remove_circle_outline), 
+                                                      onPressed: tieneStock ? () => _decrementQuantity(prod.idproducto) : null
+                                                    ),
+
                                           Text('$quantity', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                          IconButton(icon: const Icon(Icons.add_circle_outline), onPressed: () => _incrementQuantity(prod.idproducto)),
+                                             IconButton(
+                                                      icon: const Icon(Icons.add_circle_outline), 
+                                                      // Deshabilitar si quantity llega al stock máximo
+                                                      onPressed: (tieneStock && quantity < prod.stock) 
+                                                          ? () => _incrementQuantity(prod.idproducto, prod.stock) 
+                                                          : null,
+                                                    ),
+
                                         ],
                                       ),
                                     ],
                                   ),
-                                  ElevatedButton.icon(
-                                    onPressed: () => _addToCart(prod, quantity),
-                                    icon: const Icon(Icons.add_shopping_cart, size: 16),
-                                    label: const Text("AÑADIR"),
-                                    style: ElevatedButton.styleFrom(
-                                      minimumSize: const Size(double.infinity, 36),
-                                      backgroundColor: Colors.blue.shade700,
-                                      foregroundColor: Colors.white,
+                                    ElevatedButton.icon(
+                                      // Si stock es 0, onPressed es null (se deshabilita el botón)
+                                      onPressed: tieneStock ? () => _addToCart(prod, quantity) : null,
+                                      icon: const Icon(Icons.add_shopping_cart, size: 16),
+                                      label: Text(tieneStock ? "AÑADIR" : "SIN STOCK"),
+                                      style: ElevatedButton.styleFrom(
+                                        minimumSize: const Size(double.infinity, 36),
+                                        backgroundColor: tieneStock ? Colors.blue.shade700 : Colors.grey,
+                                        foregroundColor: Colors.white,
+                                      ),
                                     ),
-                                  ),
+
+
                                 ],
                               ),
                             ),

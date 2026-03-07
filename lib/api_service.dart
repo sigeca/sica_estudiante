@@ -1194,11 +1194,11 @@ static Future<List<Cumplimiento>> fetchCumplimientosEjercitacion(String iddetall
 
 
 
-static Future<bool> eliminarProductoCarrito(String idpersona, int idproducto) async {
-  final url = Uri.parse('https://educaysoft.org/sica/index.php/carritoproducto/eliminar_carrito.php'); // Cambia por tu URL real
+static Future<bool> eliminarProductoCarrito(String idcarrito, int idproducto) async {
+  final url = Uri.parse('https://educaysoft.org/sica/index.php/carritoproducto/eliminar_carrito'); // Cambia por tu URL real
   try {
     final response = await http.post(url, body: {
-      'idpersona': idpersona,
+      'idcarrito': idcarrito,
       'idproducto': idproducto.toString(),
     });
     return response.statusCode == 200;
