@@ -421,69 +421,15 @@ class _EventoPageState extends State<EventoPage> {
               } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
                 final eventos = snapshot.data!;
                 return SizedBox(
-                  height: 200, // Altura fija para el carrusel horizontal
+                  height: 320, // Aumentado para mejor visualización
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
                     itemCount: eventos.length,
                     itemBuilder: (context, index) {
-                      final evento = eventos[index];
-                      return SizedBox(
-                        width: 300, // Ancho fijo para cada tarjeta
-                        child: InkWell(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => EventoDetalleScreen(
-                                  idevento: evento.idevento,
-                                  titulo: evento.titulo,
-                                  idpersona: widget.idpersona,
-                                  idtipogrupoparticipante: evento.idtipogrupoparticipante,
-                                ),
-                              ),
-                            );
-                          },
-                          child: Card(
-                            margin: const EdgeInsets.symmetric(horizontal: 4.0),
-                            elevation: 4,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            child: Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(Icons.calendar_today, color: Theme.of(context).primaryColor, size: 20),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          evento.titulo,
-                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const Divider(),
-                                  Text(
-                                    'ID: ${evento.idevento}',
-                                    style: TextStyle(color: Colors.grey[700], fontSize: 13, fontWeight: FontWeight.w500),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    evento.detalle,
-                                    style: const TextStyle(fontSize: 14),
-                                    maxLines: 3,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
+                      return EventoCard(
+                        evento: eventos[index],
+                        idpersona: widget.idpersona,
                       );
                     },
                   ),
@@ -497,6 +443,168 @@ class _EventoPageState extends State<EventoPage> {
       ),
     ),
       ],
+    );
+  }
+}
+
+// ---------------------- EVENTO CARD WIDGET ---------------------------------
+
+class EventoCard extends StatefulWidget {
+  final Evento evento;
+  final String idpersona;
+
+  const EventoCard({super.key, required this.evento, required this.idpersona});
+
+  @override
+  State<EventoCard> createState() => _EventoCardState();
+}
+
+class _EventoCardState extends State<EventoCard> {
+  bool _isExpanded = false;
+
+  void _toggleExpanded() {
+    setState(() {
+      _isExpanded = !_isExpanded;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 300,
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => EventoDetalleScreen(
+                idevento: widget.evento.idevento,
+                titulo: widget.evento.titulo,
+                idpersona: widget.idpersona,
+                idtipogrupoparticipante: widget.evento.idtipogrupoparticipante,
+              ),
+            ),
+          );
+        },
+        child: Card(
+          margin: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 4.0),
+          elevation: 6,
+          shadowColor: Colors.black26,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // --- HERO IMAGE ---
+                Image.network(
+                  'https://educaysoft.org/descargar.php?archivo=heros/movil${widget.evento.idevento}.jpg',
+                  height: 120, // Altura incrementada para impacto visual
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Image.network(
+                      'https://educaysoft.org/descargar.php?archivo=heros/movilunknow.jpg',
+                      height: 120,
+                      fit: BoxFit.cover,
+                    );
+                  },
+                ),
+                // --- CONTENIDO ---
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(14.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.calendar_today, color: Theme.of(context).primaryColor, size: 18),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                widget.evento.titulo,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold, 
+                                  fontSize: 16,
+                                  letterSpacing: -0.5,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        
+                        // DESCRIPCIÓN CON "LEER MÁS"
+                        Expanded(
+                          child: SingleChildScrollView(
+                            physics: _isExpanded ? const BouncingScrollPhysics() : const NeverScrollableScrollPhysics(),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.evento.detalle,
+                                  style: TextStyle(
+                                    fontSize: 13, 
+                                    color: Colors.grey[700],
+                                    height: 1.3,
+                                  ),
+                                  maxLines: _isExpanded ? 10 : 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (widget.evento.detalle.length > 50) 
+                                  GestureDetector(
+                                    onTap: _toggleExpanded,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(top: 4.0),
+                                      child: Text(
+                                        _isExpanded ? 'Ver menos' : 'Leer más...',
+                                        style: TextStyle(
+                                          color: Theme.of(context).primaryColor,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              child: Text(
+                                'REF: ${widget.evento.idevento}',
+                                style: TextStyle(
+                                  color: Theme.of(context).primaryColor, 
+                                  fontSize: 10, 
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                            Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey[400]),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

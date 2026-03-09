@@ -696,7 +696,25 @@ class _EventoDetalleScreenState extends State<EventoDetalleScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Sesiones del Evento')),
-      body: _buildPages()[_selectedIndex],
+      body: Column(
+        children: [
+          Image.network(
+            'https://educaysoft.org/descargar.php?archivo=heros/movil${widget.idevento}.jpg',
+            width: double.infinity,
+            height: 200,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                width: double.infinity,
+                height: 200,
+                color: Colors.grey[300],
+                child: const Icon(Icons.school, size: 80, color: Colors.grey),
+              );
+            },
+          ),
+          Expanded(child: _buildPages()[_selectedIndex]),
+        ],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
