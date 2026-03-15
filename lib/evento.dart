@@ -1093,5 +1093,40 @@ class EjercicioVista {
   }
 }
 
+class ProductoFeed {
+  final int idproducto;
+  final String elproducto;
+  final String detalle;
+  final double precio;
+  final String tipo; // Venta, Alquiler, Trueque, Servicios
+  final String subtipo; // ej. Intercambio de Libros
+  final int idvendedor;
+  final String cedulavendedor;
+  final String nombrevendedor;
+  
+  ProductoFeed({
+    required this.idproducto,
+    required this.elproducto,
+    required this.detalle,
+    required this.precio,
+    required this.tipo,
+    required this.subtipo,
+    required this.idvendedor,
+    required this.cedulavendedor,
+    required this.nombrevendedor,
+  });
 
-
+  factory ProductoFeed.fromJson(Map<String, dynamic> json) {
+    return ProductoFeed(
+      idproducto: int.parse(json['idproducto'].toString()),
+      elproducto: json['elproducto'] ?? '',
+      detalle: json['detalle'] ?? '',
+      precio: double.tryParse(json['precio'].toString()) ?? 0.0,
+      tipo: json['tipo'] ?? 'Venta',
+      subtipo: json['subtipo'] ?? '',
+      idvendedor: int.tryParse(json['idvendedor'].toString()) ?? 0,
+      cedulavendedor: json['cedulavendedor'] ?? '',
+      nombrevendedor: json['nombrevendedor'] ?? '',
+    );
+  }
+}

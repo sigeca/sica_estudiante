@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'evento.dart';
 import 'api_service.dart';
-import 'ProductoVendedorPage.dart'; // Importa la nueva página de artículos
+import 'ProductoVendedorPage.dart'; 
 
 class ComUniTiPage extends StatefulWidget {
   final String idpersona;
@@ -15,133 +14,313 @@ class ComUniTiPage extends StatefulWidget {
 }
 
 class _ComUniTiPageState extends State<ComUniTiPage> {
-  late Future<List<Vendedor>> _vendedoresFuture;
+  late Future<List<ProductoFeed>> _productosFuture;
+  String _selectedCategory = 'Todos'; // 'Todos', 'Ventas', 'Alquiler', 'Servicios'
 
   @override
   void initState() {
     super.initState();
-    _vendedoresFuture = ApiService.fetchVendedores();
+    _productosFuture = ApiService.fetchTodosLosProductos();
+  }
+
+  void _onCategorySelected(String category) {
+    setState(() {
+      _selectedCategory = category;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    // Determinar el número de columnas basado en el ancho de la pantalla
-    final screenWidth = MediaQuery.of(context).size.width;
-    final crossAxisCount = screenWidth > 600 ? 5 : 2; // 5 columnas para pantallas anchas, 2 para estrechas
-    final childAspectRatio = screenWidth > 600 ? 0.7 : 0.8; // Ajustar la relación de aspecto
-
     return Column(
       children: [
+        // Header con título
+        Container(
+          width: double.infinity,
+          color: Colors.blue.shade800,
+          padding: const EdgeInsets.only(top: 15, bottom: 15),
+          child: const Text(
+            'ComUniTi',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+        ),
+        
+        // Search bar
         Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
-            decoration: BoxDecoration(
-              color: Colors.blue[700],
-              borderRadius: BorderRadius.circular(8.0),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: const Text(
-              'Vendedores disponibles',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+          padding: const EdgeInsets.all(12.0),
+          child: TextField(
+            decoration: InputDecoration(
+              hintText: 'Buscar productos...',
+              prefixIcon: const Icon(Icons.search),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Colors.grey, width: 0.5),
+              ),
             ),
           ),
         ),
+
+        // Filtros (Ventas, Alquiler, Servicios)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildCategoryButton('Ventas', Colors.indigo.shade800),
+              _buildCategoryButton('Alquiler', Colors.orange),
+              _buildCategoryButton('Servicios', Colors.green),
+            ],
+          ),
+        ),
+        
+        const SizedBox(height: 10),
+
+        // GridView de Productos
         Expanded(
-          child: FutureBuilder<List<Vendedor>>(
-            future: _vendedoresFuture,
+          child: FutureBuilder<List<ProductoFeed>>(
+            future: _productosFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               } else if (snapshot.hasError) {
                 return Center(child: Text('Error: ${snapshot.error}'));
               } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                final vendedores = snapshot.data!;
+                // Filtrar según categoría
+                List<ProductoFeed> productos = snapshot.data!;
+                if (_selectedCategory != 'Todos') {
+                  productos = productos.where((p) => p.tipo.toLowerCase().contains(_selectedCategory.toLowerCase())).toList();
+                }
+
+                if (productos.isEmpty) {
+                  return const Center(child: Text('No hay productos en esta categoría.'));
+                }
+
+                final screenWidth = MediaQuery.of(context).size.width;
+                final crossAxisCount = screenWidth > 600 ? 4 : 2;
+
                 return GridView.builder(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: crossAxisCount,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                    childAspectRatio: childAspectRatio,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 0.8, // Ajustado para dar más espacio vertical
                   ),
-                  itemCount: vendedores.length,
+                  itemCount: productos.length,
                   itemBuilder: (context, index) {
-                    final vendedor = vendedores[index];
-                    final fotoUrl = "https://educaysoft.org/descargar2.php?archivo=${vendedor.cedula}.jpg";
-                    return Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10.0),
-                      ),
-                      child: InkWell(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ProductosVendedorPage(idpersona: vendedor.idpersona.toString(),cedula:vendedor.cedula, idpersona1: widget.idpersona,cedula1: widget.cedula
-                            ),
-                            ),
-                          );
-                        },
-                        borderRadius: BorderRadius.circular(10.0),
-                        child: Column(
-                          children: [
-                            Expanded(
-                              flex: 3,
-                              child: ClipRRect(
-                                borderRadius: const BorderRadius.vertical(top: Radius.circular(10.0)),
-                                child: Image.network(
-                                  fotoUrl,
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.person, size: 80, color: Colors.grey),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              flex: 1,
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      vendedor.elvendedor,
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 5),
-                                    const Text(
-                                      'Ver productos',
-                                      style: TextStyle(fontSize: 12, color: Colors.blue),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    return ProductoFeedCard(
+                      producto: productos[index],
+                      currentUserPersonaId: widget.idpersona,
+                      currentUserCedula: widget.cedula,
                     );
                   },
                 );
               } else {
-                return const Center(child: Text('No hay vendedores disponibles.'));
+                return const Center(child: Text('No hay productos disponibles.'));
               }
             },
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildCategoryButton(String category, Color color) {
+    final isSelected = _selectedCategory == category;
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+        child: ElevatedButton(
+          onPressed: () {
+            _onCategorySelected(isSelected ? 'Todos' : category);
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isSelected ? color.withOpacity(0.8) : color,
+            foregroundColor: Colors.white,
+            elevation: isSelected ? 0 : 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: isSelected ? const BorderSide(color: Colors.black, width: 2) : BorderSide.none,
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+          ),
+          child: Text(
+            category,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class ProductoFeedCard extends StatelessWidget {
+  final ProductoFeed producto;
+  final String currentUserPersonaId;
+  final String currentUserCedula;
+
+  const ProductoFeedCard({
+    Key? key,
+    required this.producto,
+    required this.currentUserPersonaId,
+    required this.currentUserCedula,
+  }) : super(key: key);
+
+  Color _getBadgeColor(String tipo) {
+    switch (tipo.toLowerCase()) {
+      case 'venta':
+        return Colors.deepOrange.shade600;
+      case 'alquiler':
+        return Colors.orange.shade600;
+      case 'trueque':
+        return Colors.green.shade600;
+      case 'servicios':
+        return Colors.teal.shade600;
+      case 'ventas':
+        return Colors.indigo.shade600;
+      default:
+        return Colors.blue.shade600;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final fotoProductoUrl = "https://educaysoft.org/descargarproducto.php?archivo=producto${producto.idproducto}.jpg";
+    final fotoVendedorUrl = "https://educaysoft.org/descargar2.php?archivo=${producto.cedulavendedor}.jpg";
+
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProductosVendedorPage(
+              idpersona: producto.idvendedor.toString(),
+              cedula: producto.cedulavendedor,
+              idpersona1: currentUserPersonaId,
+              cedula1: currentUserCedula,
+            ),
+          ),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 5,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Imagen con Badges
+            Expanded(
+              flex: 5,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                    child: Image.network(
+                      fotoProductoUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        color: Colors.grey[200],
+                        child: const Icon(Icons.image, size: 50, color: Colors.grey),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _getBadgeColor(producto.tipo),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        producto.tipo,
+                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                  if (producto.tipo.toLowerCase() == 'trueque' && producto.subtipo.isNotEmpty)
+                    Positioned(
+                      top: 32,
+                      left: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade800,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          producto.subtipo,
+                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            
+            // Info Vendedor y Precio
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 12,
+                      backgroundColor: Colors.transparent,
+                      backgroundImage: NetworkImage(fotoVendedorUrl),
+                      onBackgroundImageError: (_, __) => const Icon(Icons.person, size: 12),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        producto.nombrevendedor,
+                        style: TextStyle(fontSize: 12, color: Colors.grey.shade800),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Text(
+                      '\$${producto.precio.toStringAsFixed(producto.precio.truncateToDouble() == producto.precio ? 0 : 2)}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.indigo.shade900,
+                      ),
+                    ),
+                    if (producto.tipo.toLowerCase() == 'alquiler')
+                      Text(
+                        '/mes',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

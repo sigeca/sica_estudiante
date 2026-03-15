@@ -371,6 +371,18 @@ static Future<List<Tema>> fetchTema(String idtema) async {
     }
   }
 
+  static Future<List<ProductoFeed>> fetchTodosLosProductos() async {
+    // Nota: El backend en PHP debe responder con un listado completo (feed) de productos,
+    // que incluya no solo datos del producto sino también 'tipo', 'subtipo', y datos del vendedor.
+    final response = await http.get(Uri.parse('https://educaysoft.org/sica/index.php/producto/feed1'));
+    if (response.statusCode == 200) {
+      final List<dynamic> jsonResponse = json.decode(response.body);
+      return jsonResponse.map((data) => ProductoFeed.fromJson(data)).toList();
+    } else {
+      throw Exception('Failed to load products feed');
+    }
+  }
+
 
 // --- MEDICACIÓN ---
 
