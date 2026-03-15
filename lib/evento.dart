@@ -1118,15 +1118,15 @@ class ProductoFeed {
 
   factory ProductoFeed.fromJson(Map<String, dynamic> json) {
     return ProductoFeed(
-      idproducto: int.parse(json['idproducto'].toString()),
-      elproducto: json['elproducto'] ?? '',
-      detalle: json['detalle'] ?? '',
-      precio: double.tryParse(json['precio'].toString()) ?? 0.0,
-      tipo: json['tipo'] ?? 'Venta',
-      subtipo: json['subtipo'] ?? '',
-      idvendedor: int.tryParse(json['idvendedor'].toString()) ?? 0,
-      cedulavendedor: json['cedulavendedor'] ?? '',
-      nombrevendedor: json['nombrevendedor'] ?? '',
+      idproducto: int.tryParse(json['idproducto']?.toString() ?? '0') ?? 0,
+      elproducto: json['elproducto']?.toString() ?? '',
+      detalle: json['detalle']?.toString() ?? '',
+      precio: double.tryParse(json['precio']?.toString() ?? '0.0') ?? 0.0,
+      tipo: json['tipo']?.toString() ?? 'Venta',
+      subtipo: json['subtipo']?.toString() ?? '',
+      idvendedor: int.tryParse(json['idvendedor']?.toString() ?? '0') ?? 0,
+      cedulavendedor: json['cedulavendedor']?.toString() ?? '',
+      nombrevendedor: json['nombrevendedor']?.toString() ?? '',
     );
   }
 }
