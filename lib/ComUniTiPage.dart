@@ -15,7 +15,7 @@ class ComUniTiPage extends StatefulWidget {
 
 class _ComUniTiPageState extends State<ComUniTiPage> {
   late Future<List<ProductoFeed>> _productosFuture;
-  String _selectedCategory = 'Todos'; // 'Todos', 'Ventas', 'Alquiler', 'Servicios'
+  String _selectedCategory = 'Todos'; // 'Todos', 'Venta', 'Alquiler', 'Servicios'
 
   @override
   void initState() {
@@ -67,13 +67,13 @@ class _ComUniTiPageState extends State<ComUniTiPage> {
           ),
         ),
 
-        // Filtros (Ventas, Alquiler, Servicios)
+        // Filtros (Venta, Alquiler, Servicios)
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildCategoryButton('Ventas', Colors.indigo.shade800),
+              _buildCategoryButton('Venta', Colors.indigo.shade800),
               _buildCategoryButton('Alquiler', Colors.orange),
               _buildCategoryButton('Servicios', Colors.green),
             ],
@@ -111,7 +111,7 @@ class _ComUniTiPageState extends State<ComUniTiPage> {
                     crossAxisCount: crossAxisCount,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 16,
-                    childAspectRatio: 0.8, // Ajustado para dar más espacio vertical
+                    childAspectRatio: 0.68, // Ajustado para dar más espacio vertical al texto
                   ),
                   itemCount: productos.length,
                   itemBuilder: (context, index) {
@@ -276,44 +276,79 @@ class ProductoFeedCard extends StatelessWidget {
               ),
             ),
             
-            // Info Vendedor y Precio
+            // Info Producto, Vendedor y Precio
             Expanded(
-              flex: 2,
+              flex: 3,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                child: Row(
+                padding: const EdgeInsets.fromLTRB(8.0, 6.0, 8.0, 8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    CircleAvatar(
-                      radius: 12,
-                      backgroundColor: Colors.transparent,
-                      backgroundImage: NetworkImage(fotoVendedorUrl),
-                      onBackgroundImageError: (_, __) => const Icon(Icons.person, size: 12),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        producto.nombrevendedor,
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade800),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    Text(
-                      '\$${producto.precio.toStringAsFixed(producto.precio.truncateToDouble() == producto.precio ? 0 : 2)}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.indigo.shade900,
-                      ),
-                    ),
-                    if (producto.tipo.toLowerCase() == 'alquiler')
-                      Text(
-                        '/mes',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Colors.grey.shade600,
+                    // Nombre del Producto y Precio
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            producto.elproducto,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              height: 1.2,
+                            ),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 4),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '\$${producto.precio.toStringAsFixed(producto.precio.truncateToDouble() == producto.precio ? 0 : 2)}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.indigo.shade900,
+                              ),
+                            ),
+                            if (producto.tipo.toLowerCase() == 'alquiler')
+                              Text(
+                                '/mes',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    // Info Vendedor
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 10,
+                          backgroundColor: Colors.transparent,
+                          backgroundImage: NetworkImage(fotoVendedorUrl),
+                          onBackgroundImageError: (_, __) => const Icon(Icons.person, size: 10),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            producto.nombrevendedor,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey.shade800,
+                              height: 1.2,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),

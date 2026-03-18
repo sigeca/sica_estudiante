@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="(new model)" id="id-9fed0905bb5b4a548c68f2e63b341998" version="5.0.0">
+  <folder name="Strategy" id="id-b5cfb117c6ef414eade59861dcf84f99" type="strategy"/>
+  <folder name="Business" id="id-ae5e37503f6e4fe4b48b5d39529d08df" type="business">
+    <element xsi:type="archimate:BusinessActor" name="estudiantes" id="id-98cac2a2023e4bf58830618f2f1f7d53"/>
+    <element xsi:type="archimate:BusinessActor" name="docentes" id="id-4beff5d25b4046f5a469494244b6d3f6"/>
+    <element xsi:type="archimate:BusinessActor" name="equipo administrativo" id="id-18fe46512d554048af639ce7eaac6ff9"/>
+    <element xsi:type="archimate:BusinessActor" name="equipo técnico" id="id-b3c1c868751346c0acaf21dc76204870"/>
+    <element xsi:type="archimate:BusinessFunction" name="Registro y calificación de vendedores" id="id-62c83aa183b84bfdb83e2245ba985f5e"/>
+    <element xsi:type="archimate:BusinessFunction" name="Gestionar las ventas" id="id-be64d4671871407a9d8e6001797742e9"/>
+  </folder>
+  <folder name="Application" id="id-60740d010cc14aa991465bea033d0c6b" type="application"/>
+  <folder name="Technology &amp; Physical" id="id-b24633ac4a684cb482df62f5b3f5c6ba" type="technology"/>
+  <folder name="Motivation" id="id-9b648ac4a9a84484a2a84477783fefb8" type="motivation"/>
+  <folder name="Implementation &amp; Migration" id="id-43dcd60251fb44f699bfcc282121d184" type="implementation_migration"/>
+  <folder name="Other" id="id-689be5aa1a7b4d71badc82bed2b4e6cf" type="other"/>
+  <folder name="Relations" id="id-8a500fb5352e404eacd64bf3aeafc2a6" type="relations"/>
+  <folder name="Views" id="id-3955becc62854ef3b0d1edcec2ea0023" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="Default View" id="id-f2c7e7f18aba48a3a2d8e4eead446c6e">
+      <child xsi:type="archimate:Group" id="id-17c1d71273c34fa4a2fbabb75aaaa409" name="Usuarios" textAlignment="1">
+        <bounds x="132" y="48" width="1081" height="241"/>
+        <child xsi:type="archimate:DiagramObject" id="id-d3470c10dcf2490aa425454d42be8322" archimateElement="id-98cac2a2023e4bf58830618f2f1f7d53">
+          <bounds x="72" y="55" width="120" height="55"/>
+        </child>
+        <child xsi:type="archimate:DiagramObject" id="id-e2e99795da9b434c927da3176a8aa1ed" archimateElement="id-4beff5d25b4046f5a469494244b6d3f6">
+          <bounds x="300" y="60" width="120" height="55"/>
+        </child>
+        <child xsi:type="archimate:DiagramObject" id="id-a5e3023c870a45b1af3ff3c3eda654b6" archimateElement="id-18fe46512d554048af639ce7eaac6ff9">
+          <bounds x="816" y="60" width="120" height="55"/>
+        </child>
+        <child xsi:type="archimate:DiagramObject" id="id-0865aaa385f7441fb9183f27378b3a79" archimateElement="id-b3c1c868751346c0acaf21dc76204870">
+          <bounds x="504" y="55" width="120" height="55"/>
+        </child>
+      </child>
+      <child xsi:type="archimate:Group" id="id-4dc341de55bd43f5b7a03eb2d3873ae7" name="negocio" textAlignment="1">
+        <bounds x="120" y="336" width="1105" height="205"/>
+        <child xsi:type="archimate:DiagramObject" id="id-338423710e2d41cc9b851a4eb4204372" archimateElement="id-62c83aa183b84bfdb83e2245ba985f5e">
+          <bounds x="99" y="76" width="120" height="55"/>
+        </child>
+        <child xsi:type="archimate:DiagramObject" id="id-b2e172fe1d124936a3f6aac6862a0048" archimateElement="id-be64d4671871407a9d8e6001797742e9">
+          <bounds x="360" y="72" width="120" height="55"/>
+        </child>
+      </child>
+    </element>
+  </folder>
+</archimate:model>
