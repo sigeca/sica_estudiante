@@ -15,7 +15,7 @@ class ComUniTiPage extends StatefulWidget {
 
 class _ComUniTiPageState extends State<ComUniTiPage> {
   late Future<List<ProductoFeed>> _productosFuture;
-  String _selectedCategory = 'Todos'; // 'Todos', 'Venta', 'Alquiler', 'Servicios'
+  String _selectedCategory = 'Todos'; // 'Todos', 'Venta', 'Alquiler', 'Servicio'
   String _searchQuery = '';
 
   @override
@@ -73,7 +73,7 @@ class _ComUniTiPageState extends State<ComUniTiPage> {
           ),
         ),
 
-        // Filtros (Venta, Alquiler, Servicios)
+        // Filtros (Venta, Alquiler, Servicio)
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12.0),
           child: Row(
@@ -81,7 +81,7 @@ class _ComUniTiPageState extends State<ComUniTiPage> {
             children: [
               _buildCategoryButton('Venta', Colors.indigo.shade800),
               _buildCategoryButton('Alquiler', Colors.orange),
-              _buildCategoryButton('Servicios', Colors.green),
+              _buildCategoryButton('Servicio', Colors.green),
             ],
           ),
         ),
