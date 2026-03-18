@@ -16,6 +16,7 @@ class ComUniTiPage extends StatefulWidget {
 class _ComUniTiPageState extends State<ComUniTiPage> {
   late Future<List<ProductoFeed>> _productosFuture;
   String _selectedCategory = 'Todos'; // 'Todos', 'Venta', 'Alquiler', 'Servicios'
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -49,6 +50,11 @@ class _ComUniTiPageState extends State<ComUniTiPage> {
         Padding(
           padding: const EdgeInsets.all(12.0),
           child: TextField(
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value;
+              });
+            },
             decoration: InputDecoration(
               hintText: 'Buscar productos...',
               prefixIcon: const Icon(Icons.search),
@@ -96,6 +102,14 @@ class _ComUniTiPageState extends State<ComUniTiPage> {
                 List<ProductoFeed> productos = snapshot.data!;
                 if (_selectedCategory != 'Todos') {
                   productos = productos.where((p) => p.tipo.toLowerCase().contains(_selectedCategory.toLowerCase())).toList();
+                }
+
+                if (_searchQuery.isNotEmpty) {
+                  final query = _searchQuery.toLowerCase();
+                  productos = productos.where((p) => 
+                    p.elproducto.toLowerCase().contains(query) || 
+                    p.nombrevendedor.toLowerCase().contains(query)
+                  ).toList();
                 }
 
                 if (productos.isEmpty) {
