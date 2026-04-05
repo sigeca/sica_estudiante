@@ -1219,6 +1219,18 @@ static Future<bool> eliminarProductoCarrito(String idcarrito, int idproducto) as
   }
 }
 
+static Future<bool> devolverProductoCarritoFlutter(String idcarritoproducto) async {
+  final url = Uri.parse('https://educaysoft.org/sica/index.php/carritoproducto/descargar_flutter');
+  try {
+    final response = await http.post(url, body: {
+      'idcarritoproducto': idcarritoproducto,
+    });
+    return response.statusCode == 200;
+  } catch (e) {
+    return false;
+  }
+}
+
 
 static Future<bool> procesarPagoCarrito(String idpersona, List<Map<String, dynamic>> items) async {
   final url = Uri.parse('https://educaysoft.org/tu_endpoint_pago.php'); 

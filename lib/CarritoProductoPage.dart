@@ -65,9 +65,8 @@ class _CarritoProductoPageState extends State<CarritoProductoPage> {
       SnackBar(content: Text('Procesando devolución de ${producto.elproducto}...')),
     );
 
-    bool exito = await ApiService.eliminarProductoCarrito(
-      producto.idcarrito, 
-      producto.idproducto
+    bool exito = await ApiService.devolverProductoCarritoFlutter(
+      producto.idcarrito
     );
 
     if (exito) {
