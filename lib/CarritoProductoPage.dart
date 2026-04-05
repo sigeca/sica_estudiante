@@ -66,7 +66,7 @@ class _CarritoProductoPageState extends State<CarritoProductoPage> {
     );
 
     bool exito = await ApiService.devolverProductoCarritoFlutter(
-      producto.idcarrito
+      producto.idcarritoproducto
     );
 
     if (exito) {

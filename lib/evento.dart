@@ -528,6 +528,7 @@ class Producto {
   final String detalle;
   final String idpersona;
   final String idcarrito;
+  final String idcarritoproducto;
   final String elcustodio;
   final String idinstitucion;
   final String lainstitucion;
@@ -541,6 +542,7 @@ class Producto {
     required this.detalle,
     required this.idpersona,
     required this.idcarrito,
+    required this.idcarritoproducto,
     required this.elcustodio,
     required this.idinstitucion,
     required this.lainstitucion,
@@ -552,13 +554,14 @@ class Producto {
   factory Producto.fromJson(Map<String, dynamic> json) {
     return Producto(
       idproducto: int.parse(json['idproducto'].toString()),
-      elproducto: json['elproducto'],
-      detalle: json['detalle'],
-      idpersona: json['idpersona'].toString(),
-      idcarrito: json['idcarrito'].toString(),
-      elcustodio: json['elcustodio'],
-      idinstitucion: json['idinstitucion'].toString(),
-      lainstitucion: json['lainstitucion'],
+      elproducto: json['elproducto'] ?? '',
+      detalle: json['detalle'] ?? '',
+      idpersona: json['idpersona']?.toString() ?? '',
+      idcarrito: json['idcarrito']?.toString() ?? '',
+      idcarritoproducto: json['idcarritoproducto']?.toString() ?? '',
+      elcustodio: json['elcustodio'] ?? '',
+      idinstitucion: json['idinstitucion']?.toString() ?? '',
+      lainstitucion: json['lainstitucion'] ?? '',
       precio: double.tryParse(json['precio'].toString()) ?? 0.0,
       stock: double.tryParse(json['stock'].toString()) ?? 0.0,
       cantidad: double.tryParse(json['cantidad'].toString()) ?? 0.0,
