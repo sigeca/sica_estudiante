@@ -88,14 +88,12 @@ class _ProductosVendedorPageState extends State<ProductosVendedorPage> {
 
   void _incrementQuantity(int productoId, double stockMaximo) {
     setState(() {
-
-int currentQty = _itemQuantities[productoId] ?? 1;
+      int currentQty = _itemQuantities[productoId] ?? 1;
       // Solo incrementa si no ha superado el stock disponible
       if (currentQty < stockMaximo) {
-        _itemQuantities.update(productoId, (value) => value + 1, ifAbsent: () => 1);
+        _itemQuantities[productoId] = currentQty + 1;
       }
     });
-
   }
 
   void _decrementQuantity(int productoId) {
@@ -126,6 +124,12 @@ int currentQty = _itemQuantities[productoId] ?? 1;
         backgroundColor: Colors.green.shade800,
       ),
     );
+    
+    // Refrescar los productos para ver el stock actualizado inmediatamente
+    setState(() {
+      _productosFuture = ApiService.fetchProductosPorVendedor(widget.idpersona);
+      _itemQuantities.remove(producto.idproducto); // Resetear la cantidad local seleccionada
+    });
   } else {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(

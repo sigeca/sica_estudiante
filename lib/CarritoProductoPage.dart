@@ -70,10 +70,8 @@ class _CarritoProductoPageState extends State<CarritoProductoPage> {
     );
 
     if (exito) {
-      setState(() {
-        _listaProductos?.removeWhere((p) => p.idproducto == producto.idproducto);
-        _itemQuantities.remove(producto.idproducto);
-      });
+      // Refrescar el carrito completo desde el backend para mantener sincronización
+      _cargarProductos();
 
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
