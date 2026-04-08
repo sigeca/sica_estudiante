@@ -755,7 +755,7 @@ class NotasContenidoWidget extends StatelessWidget {
     double pa=0.03; double pb=0.015; double pc=0.015; double pe=0.04;
 
     for (var nota in notas) {
-				double val = safeDouble(nota.porcentaje+nota.ayuda);
+				double val = safeDouble(nota.porcentaje)+safeDouble(nota.ayuda);
       switch (nota.idmodoevaluacion) {
         case '2': a1 += val; break;
         case '3': b1 += val; break;
@@ -793,7 +793,7 @@ class NotasContenidoWidget extends StatelessWidget {
   }
 
   Widget _buildStandardCard(Nota nota) {
-    final porcentaje = safeDouble(nota.porcentaje+nota.ayuda);
+    final porcentaje = safeDouble(nota.porcentaje)+safeDouble(nota.ayuda);
     final ponderacion = safeDouble(nota.ponderacion);
     final isNegativo = porcentaje < 0;
     Color cardColor = isNegativo ? Colors.orange : Colors.white;
@@ -868,7 +868,7 @@ class NotasContenidoWidget extends StatelessWidget {
                     children: [
                       const Text("Ptos", style: TextStyle(fontSize: 9, color: Colors.grey)),
                       Text(
-                        ((safeDouble(nota.porcentaje) + nota.ayuda) * safeDouble(nota.ponderacion)).toStringAsFixed(2),
+                        ((safeDouble(nota.porcentaje) + safeDouble(nota.ayuda)) * safeDouble(nota.ponderacion)).toStringAsFixed(2),
                         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigo),
                       ),
                     ],
