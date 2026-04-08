@@ -324,8 +324,11 @@ class _ParticipacionScreenState extends State<ParticipacionScreen> {
       itemCount: participaciones.length,
       itemBuilder: (context, index) {
         final participacion = participaciones[index];
-       final porcentaje = double.tryParse(participacion.porcentaje?.toString() ?? '0') ?? 0.0;
-       final esBajo = porcentaje <= 70;
+       final porcentajeOriginal = double.tryParse(participacion.porcentaje?.toString() ?? '0') ?? 0.0;
+       final porcentajeTotal = porcentajeOriginal + participacion.ayuda;
+       final hasAyuda = participacion.ayuda > 0;
+       final esBajo = porcentajeTotal <= 70;
+       final porcentajeTextColor = hasAyuda ? Colors.red.shade900 : (esBajo ? Colors.orange : Colors.green);
 
       return Card(
             margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -336,17 +339,23 @@ class _ParticipacionScreenState extends State<ParticipacionScreen> {
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Porcentaje de participación: ${participacion.porcentaje}%'),
+              Text(
+                'Porcentaje de participación: ${porcentajeTotal.toStringAsFixed(2)}%',
+                style: TextStyle(
+                  color: hasAyuda ? Colors.red.shade900 : null,
+                  fontWeight: hasAyuda ? FontWeight.bold : null,
+                ),
+              ),
               Text('Ayuda: ${participacion.ayuda}'),
               Text('Comentario: ${participacion.comentario}'),
             ],
           ),
                       trailing: Text(                                                                                                                                                                        
-                         '${participacion.porcentaje}%',
+                         '${porcentajeTotal.toStringAsFixed(2)}%',
                          style: TextStyle(
                            fontSize: 18,
                            fontWeight: FontWeight.bold,
-                           color: esBajo ? Colors.orange : Colors.green, // Color según si es negativo o positivo
+                           color: porcentajeTextColor, // Color rojo si hay ayuda, sino naranja o verde
                          ),
                        ),
        ),

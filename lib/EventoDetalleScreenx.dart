@@ -552,10 +552,13 @@ Widget _buildParticipacion() {
                 itemCount: participaciones.length,
                 itemBuilder: (context, index) {
                   final participacion = participaciones[index];
-                  final porcentaje = double.tryParse(participacion.porcentaje ?? '0') ?? 0.0;
-                  final isNegativo = porcentaje < 0;
+                  final porcentajeOriginal = double.tryParse(participacion.porcentaje ?? '0') ?? 0.0;
+                  final porcentajeTotal = porcentajeOriginal + participacion.ayuda;
+                  final hasAyuda = participacion.ayuda > 0;
+                  final isNegativo = porcentajeTotal < 0;
                   final backgroundColor = isNegativo ? Colors.red.shade200 : Colors.green.shade200;
                   final textColor = Colors.black87;
+                  final porcentajeTextColor = hasAyuda ? Colors.red.shade900 : textColor;
 
                   return Card(
                     color: backgroundColor,
@@ -572,9 +575,9 @@ Widget _buildParticipacion() {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Fecha: ${participacion.fecha}', style: TextStyle(color: textColor)),
+                                Text('Fecha: ${participacion.fecha.toString().split(' ')[0]}', style: TextStyle(color: textColor)),
                                 Text('Comentario: ${participacion.comentario}', style: TextStyle(color: textColor)),
-                                Text('Porcentaje de participación: ${participacion.porcentaje}%', style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
+                                Text('Porcentaje de participación: ${porcentajeTotal.toStringAsFixed(2)}%', style: TextStyle(color: porcentajeTextColor, fontWeight: FontWeight.bold)),
                               ],
                             ),
 
