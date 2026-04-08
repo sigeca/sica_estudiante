@@ -857,7 +857,7 @@ class NotasContenidoWidget extends StatelessWidget {
                     children: [
                       const Text("Rendi. %", style: TextStyle(fontSize: 9, color: Colors.grey)),
                       Text(
-                        (safeDouble(nota.porcentaje) + nota.ayuda).toStringAsFixed(2) + "%",
+                        (safeDouble(nota.porcentaje) + safeDouble(nota.ayuda)).toStringAsFixed(2) + "%",
                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black54),
                       ),
                     ],

@@ -328,7 +328,7 @@ class Nota {
   final String fecha;
   final String porcentaje;
   final String ponderacion;
-  final double ayuda;
+  final String ayuda;
   final String comentario;
   final String idmodoevaluacion;
   final String modoevaluacion;
@@ -341,7 +341,7 @@ class Nota {
       fecha: json['fecha'],
       porcentaje: json['porcentaje'],
       ponderacion: json['ponderacion'],
-      ayuda: double.tryParse(json['ayuda']?.toString() ?? '0') ?? 0.0,
+      ayuda: json['ayuda'],
       comentario: json['comentario'],
       idmodoevaluacion: json['idmodoevaluacion'].toString(),
       modoevaluacion: json['modoevaluacion'],
