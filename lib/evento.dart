@@ -328,11 +328,12 @@ class Nota {
   final String fecha;
   final String porcentaje;
   final String ponderacion;
+  final double ayuda;
   final String comentario;
   final String idmodoevaluacion;
   final String modoevaluacion;
 
-  Nota({required this.idparticipacion, required this.fecha, required this.porcentaje, required this.ponderacion, required this.comentario, required this.idmodoevaluacion, required this.modoevaluacion});
+  Nota({required this.idparticipacion, required this.fecha, required this.porcentaje, required this.ponderacion, required this.ayuda, required this.comentario, required this.idmodoevaluacion, required this.modoevaluacion});
 
   factory Nota.fromJson(Map<String, dynamic> json) {
     return Nota(
@@ -340,6 +341,7 @@ class Nota {
       fecha: json['fecha'],
       porcentaje: json['porcentaje'],
       ponderacion: json['ponderacion'],
+      ayuda: double.tryParse(json['ayuda']?.toString() ?? '0') ?? 0.0,
       comentario: json['comentario'],
       idmodoevaluacion: json['idmodoevaluacion'].toString(),
       modoevaluacion: json['modoevaluacion'],

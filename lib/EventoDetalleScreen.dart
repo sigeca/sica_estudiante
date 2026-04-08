@@ -857,7 +857,7 @@ class NotasContenidoWidget extends StatelessWidget {
                     children: [
                       const Text("Rendi. %", style: TextStyle(fontSize: 9, color: Colors.grey)),
                       Text(
-                        (nota.porcentaje+nota.ayuda).toStringAsFixed(2)  + "%",
+                        (safeDouble(nota.porcentaje) + nota.ayuda).toStringAsFixed(2) + "%",
                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black54),
                       ),
                     ],
@@ -868,7 +868,7 @@ class NotasContenidoWidget extends StatelessWidget {
                     children: [
                       const Text("Ptos", style: TextStyle(fontSize: 9, color: Colors.grey)),
                       Text(
-                        ((double.tryParse((nota.porcentaje+nota.ayuda).toString()) ?? 0.0) * (double.tryParse(nota.ponderacion ?? '0') ?? 0.0)).toStringAsFixed(2),
+                        ((safeDouble(nota.porcentaje) + nota.ayuda) * safeDouble(nota.ponderacion)).toStringAsFixed(2),
                         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigo),
                       ),
                     ],
