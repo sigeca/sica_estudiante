@@ -153,6 +153,15 @@ Future<void> _procesarPago() async {
     builder: (context) => const Center(child: CircularProgressIndicator()),
   );
 
+  // 3. Llamar a la API de verificación de cliente
+  bool esCliente = await ApiService.esCliente(widget.cedula);
+
+  if (!esCliente) {
+    Navigator.pop(context); // Cerrar diálogo de carga
+    _mostrarErrorNoCliente();
+    return;
+  }
+
   // 2. Preparar los datos (ID del producto y su cantidad actual)
   List<Map<String, dynamic>> itemsAPagar = _listaProductos!.map((prod) {
     return {
@@ -192,6 +201,29 @@ void _mostrarMensajeExito() {
     builder: (context) => AlertDialog(
       title: const Text('¡Pago Exitoso!'),
       content: const Text('Tus productos han sido procesados correctamente.'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Aceptar'),
+        ),
+      ],
+    ),
+  );
+}
+
+
+void _mostrarErrorNoCliente() {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Row(
+        children: [
+          Icon(Icons.warning_amber_rounded, color: Colors.orange),
+          SizedBox(width: 8),
+          Text('Registro Requerido'),
+        ],
+      ),
+      content: const Text('No puedes realizar el pago hasta que estés registrado como cliente.'),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),

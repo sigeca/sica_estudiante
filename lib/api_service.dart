@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart'; // 🎯 SOLUCIÓN: IMPORTAR ESTO
 import 'evento.dart';
 import 'portafolio.dart';
+import 'package:flutter/foundation.dart';
 
 class ApiService {
 
@@ -1281,5 +1282,33 @@ print("RESPUESTA BRUTA DEL SERVIDOR: ${response.body}");
 
 
 
+
+
+  static Future<bool> esCliente(String cedula) async {
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/cliente/cliente_cedulaflutter');
+    try {
+      final response = await http.post(url, body: {
+        'cedula': cedula,
+      });
+
+      if (response.statusCode == 200) {
+        final decoded = json.decode(response.body);
+        // Asumiendo que devuelve una lista de clientes o un mapa con status
+        if (decoded is List) {
+          return decoded.isNotEmpty;
+        } else if (decoded is Map) {
+          if (decoded.containsKey('data')) {
+            final data = decoded['data'];
+            return data is List && data.isNotEmpty;
+          }
+          return decoded['status'] == true;
+        }
+      }
+      return false;
+    } catch (e) {
+      debugPrint("Error verificando cliente: $e");
+      return false;
+    }
+  }
 
 }
