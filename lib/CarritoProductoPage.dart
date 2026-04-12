@@ -16,11 +16,24 @@ class CarritoProductoPage extends StatefulWidget {
 class _CarritoProductoPageState extends State<CarritoProductoPage> {
   final Map<int, int> _itemQuantities = {};
   List<Producto>? _listaProductos;
+  String? _ownerName; // Variable para almacenar el nombre del dueño del carrito
 
   @override
   void initState() {
     super.initState();
     _cargarProductos();
+    _cargarDatosPersona(); // Cargar los datos de la persona al iniciar
+  }
+
+  void _cargarDatosPersona() async {
+    try {
+      final persona = await ApiService.fetchPersonaInfo(widget.idpersona);
+      setState(() {
+        _ownerName = persona.lapersona;
+      });
+    } catch (e) {
+      debugPrint("Error al cargar datos de la persona: $e");
+    }
   }
 
   void _cargarProductos() async {
@@ -159,7 +172,7 @@ Future<void> _procesarPago() async {
 
   if (!esCliente) {
     Navigator.pop(context); // Cerrar diálogo de carga
-    _mostrarErrorNoCliente();
+    _mostrarErrorNoCliente(widget.cedula);
     return;
   }
 
@@ -200,7 +213,7 @@ void _mostrarMensajeExito() {
 }
 
 
-void _mostrarErrorNoCliente() {
+void _mostrarErrorNoCliente(String cedula) {
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
@@ -211,7 +224,8 @@ void _mostrarErrorNoCliente() {
           Text('Registro Requerido'),
         ],
       ),
-      content: const Text('No puedes realizar el pago hasta que estés registrado como cliente.'),
+      content: Text('No puedes realizar el pago hasta que estés registrado como cliente. '
+          '\n\nCédula consultada: $cedula'),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
@@ -238,7 +252,10 @@ void _mostrarErrorNoCliente() {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        title: const Text('Mi Carrito de Compras', style: TextStyle(fontSize: 16)),
+        title: Text(
+          _ownerName != null ? 'Carrito de: $_ownerName' : 'Mi Carrito de Compras',
+          style: const TextStyle(fontSize: 16),
+        ),
         backgroundColor: Colors.blue[700],
         elevation: 0,
       ),
