@@ -1135,3 +1135,112 @@ class ProductoFeed {
     );
   }
 }
+
+class Factura {
+  final String idfactura;
+  final String serie;
+  final String folio;
+  final String idcliente;
+  final DateTime fechaemision;
+  final DateTime fechavencimiento;
+  final String idestadofactura;
+  final String idmoneda;
+  final double subtotal;
+  final double totalimpuesto;
+  final double totaldescuento;
+  final double totalfinal;
+
+  Factura({
+    required this.idfactura,
+    required this.serie,
+    required this.folio,
+    required this.idcliente,
+    required this.fechaemision,
+    required this.fechavencimiento,
+    required this.idestadofactura,
+    this.idmoneda = "1",
+    required this.subtotal,
+    required this.totalimpuesto,
+    required this.totaldescuento,
+    required this.totalfinal,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'idfactura': idfactura,
+      'serie': serie,
+      'folio': folio,
+      'idcliente': idcliente,
+      'fechaemision': fechaemision.toIso8601String(),
+      'fechavencimiento': fechavencimiento.toIso8601String().split('T')[0],
+      'idestadofactura': idestadofactura,
+      'idmoneda': idmoneda,
+      'subtotal_global': subtotal.toString(),
+      'impuesto_global': totalimpuesto.toString(),
+      'descuento_global': totaldescuento.toString(),
+      'total_global': totalfinal.toString(),
+    };
+  }
+}
+
+class DetalleFactura {
+  final String idproducto;
+  final String descripcion;
+  final double cantidad;
+  final double preciounitario;
+  final double porcentajedescuento;
+  final String idtipoimpuesto;
+  final double total;
+
+  DetalleFactura({
+    required this.idproducto,
+    required this.descripcion,
+    required this.cantidad,
+    required this.preciounitario,
+    required this.porcentajedescuento,
+    required this.idtipoimpuesto,
+    required this.total,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'idproducto': idproducto,
+      'descripcion': descripcion,
+      'cantidad': cantidad,
+      'preciounitario': preciounitario,
+      'porcentajedescuento': porcentajedescuento,
+      'idtipoimpuesto': idtipoimpuesto,
+      'total': total,
+    };
+  }
+}
+
+class EstadoFactura {
+  final String idestadofactura;
+  final String nombre;
+
+  EstadoFactura({required this.idestadofactura, required this.nombre});
+
+  factory EstadoFactura.fromJson(Map<String, dynamic> json) {
+    return EstadoFactura(
+      idestadofactura: json['idestadofactura'].toString(),
+      nombre: json['nombre'],
+    );
+  }
+}
+
+class TipoImpuesto {
+  final String idtipoimpuesto;
+  final String nombre;
+  final double valor;
+
+  TipoImpuesto({required this.idtipoimpuesto, required this.nombre, required this.valor});
+
+  factory TipoImpuesto.fromJson(Map<String, dynamic> json) {
+    return TipoImpuesto(
+      idtipoimpuesto: json['idtipoimpuesto'].toString(),
+      nombre: json['nombre'],
+      valor: double.tryParse(json['valor'].toString()) ?? 0.0,
+    );
+  }
+}

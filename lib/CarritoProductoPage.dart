@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'evento.dart';
 import 'api_service.dart';
+import 'FacturaFormPage.dart';
 
 class CarritoProductoPage extends StatefulWidget {
   final String idpersona;
@@ -162,33 +163,20 @@ Future<void> _procesarPago() async {
     return;
   }
 
-  // 2. Preparar los datos (ID del producto y su cantidad actual)
-  List<Map<String, dynamic>> itemsAPagar = _listaProductos!.map((prod) {
-    return {
-      'idproducto': prod.idproducto,
-      'cantidad': _itemQuantities[prod.idproducto] ?? 1,
-    };
-  }).toList();
-
-  // 3. Llamar a la API
-  bool exito = await ApiService.procesarPagoCarrito(widget.idpersona, itemsAPagar);
-
-  // Cerrar diálogo de carga
-  Navigator.pop(context);
-
-  if (exito) {
-    // 4. Limpiar el carrito localmente tras el éxito
-    setState(() {
-      _listaProductos = [];
-      _itemQuantities.clear();
-    });
-
-    _mostrarMensajeExito();
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('❌ Error al procesar el pago')),
-    );
-  }
+  Navigator.pop(context); // Cerrar diálogo de carga
+  
+  // Navegar al formulario de factura
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => FacturaFormPage(
+        idpersona: widget.idpersona,
+        cedula: widget.cedula,
+        cartItems: _listaProductos!,
+        itemQuantities: _itemQuantities,
+      ),
+    ),
+  );
 }
 
 

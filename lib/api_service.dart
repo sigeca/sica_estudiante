@@ -1311,4 +1311,38 @@ print("RESPUESTA BRUTA DEL SERVIDOR: ${response.body}");
     }
   }
 
+  static Future<Map<String, dynamic>> fetchFacturaInitialData(String idpersona) async {
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/factura/get_initial_data_flutter/$idpersona');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      return {'status': false, 'message': 'Servidor retornó error ${response.statusCode}'};
+    } catch (e) {
+      return {'status': false, 'message': e.toString()};
+    }
+  }
+
+  static Future<Map<String, dynamic>> saveFactura(Factura header, List<DetalleFactura> detalles) async {
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/factura/save_flutter');
+    try {
+      final body = json.encode({
+        'header': header.toJson(),
+        'detalles': detalles.map((d) => d.toJson()).toList(),
+      });
+      final response = await http.post(url, body: body, headers: {'Content-Type': 'application/json'});
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      return {'status': false, 'message': 'Error ${response.statusCode}'};
+    } catch (e) {
+      return {'status': false, 'message': e.toString()};
+    }
+  }
+
+  static String getFacturaPdfUrl(String idfactura) {
+    return 'https://educaysoft.org/sica/index.php/factura/reportepdf_flutter/$idfactura';
+  }
+
 }
