@@ -1293,15 +1293,21 @@ print("RESPUESTA BRUTA DEL SERVIDOR: ${response.body}");
 
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
-        // Asumiendo que devuelve una lista de clientes o un mapa con status
-        if (decoded is List) {
-          return decoded.isNotEmpty;
-        } else if (decoded is Map) {
+        
+        // Verificación robusta: status=true o existencia de datos
+        if (decoded is Map) {
+          if (decoded['status'] == true) return true;
+          
           if (decoded.containsKey('data')) {
             final data = decoded['data'];
-            return data is List && data.isNotEmpty;
+            if (data == null) return false;
+            if (data is Map) return true; // Si es un mapa, se encontró un registro
+            if (data is List) return data.isNotEmpty;
           }
-          return decoded['status'] == true;
+        }
+        
+        if (decoded is List) {
+          return decoded.isNotEmpty;
         }
       }
       return false;
