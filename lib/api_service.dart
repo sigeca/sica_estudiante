@@ -1285,7 +1285,7 @@ print("RESPUESTA BRUTA DEL SERVIDOR: ${response.body}");
 
 
   static Future<bool> esCliente(String cedula) async {
-    final url = Uri.parse('https://educaysoft.org/sica/index.php/cliente/cliente_cedulaflutter');
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/cliente/cliente_cedula_flutter');
     try {
       final response = await http.post(url, body: {
         'cedula': cedula,
