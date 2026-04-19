@@ -65,6 +65,38 @@ class Evento {
 
 
 
+class Asignatura {
+  final String idasignatura;
+  final String nombre;
+  final String codigo;
+  final String nivel;
+  final String area;
+  final String malla;
+  final String creditos;
+
+  Asignatura({
+    required this.idasignatura,
+    required this.nombre,
+    required this.codigo,
+    required this.nivel,
+    required this.area,
+    required this.malla,
+    required this.creditos,
+  });
+
+  factory Asignatura.fromJson(Map<String, dynamic> json) {
+    return Asignatura(
+      idasignatura: json['idasignatura'].toString(),
+      nombre: json['nombre'] ?? '',
+      codigo: json['codigo'] ?? '',
+      nivel: json['nivel']?.toString() ?? '',
+      area: json['area'] ?? '',
+      malla: json['malla'] ?? '',
+      creditos: json['creditos']?.toString() ?? '',
+    );
+  }
+}
+
 class Persona {                                                                                               
     final String idpersona;
     final String lapersona;

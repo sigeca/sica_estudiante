@@ -142,6 +142,24 @@ if (dataList != null && dataList.isNotEmpty) {
     } else {
       throw Exception('Error al cargar portafolio');
     }
+  }  static Future<List<Asignatura>> fetchAsignaturasMalla() async {
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/asignatura/asignaturas_malla_flutter');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> json = jsonDecode(response.body);
+        if (json.containsKey('data')) {
+           final List data = json['data'];
+           return data.map((e) => Asignatura.fromJson(e)).toList();
+        }
+        return [];
+      } else {
+        throw Exception('Error del servidor: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error en fetchAsignaturasMalla: $e');
+      throw Exception('Error al cargar asignaturas: Verifique su conexión y los datos del servidor.');
+    }
   }
 
   static Future<List<SesionEvento>> fetchSesiones(String idevento) async {

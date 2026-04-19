@@ -230,11 +230,85 @@ Future<void> _fetchPersonaData() async {
     );
   }
 
+  Widget _buildUserProfile(Persona persona) {
+    final fotoUrl = "https://educaysoft.org/descargar2.php?archivo=${persona.cedula}.jpg";
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: Colors.grey[200]!, width: 1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(1.5),
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: ClipOval(
+              child: Image.network(
+                fotoUrl,
+                width: 42,
+                height: 42,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  width: 42,
+                  height: 42,
+                  color: Colors.grey[200],
+                  child: const Icon(Icons.person, size: 24, color: Colors.grey),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  persona.lapersona,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  'Cédula: ${persona.cedula}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey[500],
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _buildHeader(),
-      body: _pages[_selectedIndex],
+      body: Column(
+        children: [
+          if (_personaInfo != null) _buildUserProfile(_personaInfo!),
+          Expanded(child: _pages[_selectedIndex]),
+        ],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.event), label: 'Eventos'),
@@ -276,6 +350,7 @@ class EventoPage extends StatefulWidget {
 class _EventoPageState extends State<EventoPage> {
   late Future<Persona> _personaInfoFuture;
   late Future<List<Evento>> _eventosFuture;
+  late Future<List<Asignatura>> _asignaturasFuture;
 
   @override
   void initState() {
@@ -286,163 +361,284 @@ class _EventoPageState extends State<EventoPage> {
   void _fetchData() {
     _eventosFuture = ApiService.fetchEventos(widget.idpersona);
     _personaInfoFuture = ApiService.fetchPersonaInfo(widget.idpersona); 
+    _asignaturasFuture = ApiService.fetchAsignaturasMalla();
   }
 
-  Widget _buildPersonaInfo(Persona persona) {
-    final fotoUrl = "https://educaysoft.org/descargar2.php?archivo=${persona.cedula}.jpg";
-    // 🎯 LÍNEA AGREGADA PARA IMPRIMIR LA URL
-  print('EventoPage - URL de la foto de la persona: $fotoUrl');
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-      child: Column(
-        children: [
-          ClipOval(
-            child: Image.network(
-              fotoUrl,
-              width: 100,
-              height: 100,
-              fit: BoxFit.cover,
-              loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
-                if (loadingProgress == null) return child;
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: () async {
+        setState(() {
+          _fetchData();
+        });
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // --- RIBBON 1: EVENTOS ---
+            _buildRibbonHeader('Eventos y cursos tomados', Icons.event_available),
+            FutureBuilder<List<Evento>>(
+              future: _eventosFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SizedBox(height: 200, child: Center(child: CircularProgressIndicator()));
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                  final eventos = snapshot.data!;
+                  return Container(
+                    height: 310,
+                    margin: const EdgeInsets.only(bottom: 10),
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      itemCount: eventos.length,
+                      itemBuilder: (context, index) => EventoCard(evento: eventos[index], idpersona: widget.idpersona),
+                    ),
+                  );
+                }
+                return const Padding(padding: EdgeInsets.all(20), child: Center(child: Text('No hay eventos.')));
+              },
+            ),
+
+            // --- RIBBON 2: ASIGNATURAS MOD ---
+            _buildRibbonHeader('Asignaturas (Malla MOD)', Icons.book),
+            FutureBuilder<List<Asignatura>>(
+              future: _asignaturasFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SizedBox(height: 150, child: Center(child: CircularProgressIndicator()));
+                } else if (snapshot.hasError) {
+                  return Container(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        Icon(Icons.error_outline, color: Colors.red[300], size: 40),
+                        const SizedBox(height: 8),
+                        Text(
+                          'No se pudieron cargar las asignaturas',
+                          style: TextStyle(color: Colors.red[700], fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  );
+                } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                  final asignaturas = snapshot.data!;
+                  return Container(
+                    height: 160,
+                    margin: const EdgeInsets.only(bottom: 20),
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      itemCount: asignaturas.length,
+                      itemBuilder: (context, index) => AsignaturaCard(asignatura: asignaturas[index]),
+                    ),
+                  );
+                }
                 return Container(
-                  width: 100,
-                  height: 100,
+                  height: 120,
                   alignment: Alignment.center,
-                  child: CircularProgressIndicator(
-                    value: loadingProgress.expectedTotalBytes != null
-                        ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                        : null,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.grey[400], size: 30),
+                      const SizedBox(height: 8),
+                      Text('No hay asignaturas en esta malla.', style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                    ],
                   ),
-                );
-              },
-              errorBuilder: (BuildContext context, Object exception, StackTrace? stackTrace) {
-                return Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.person, size: 60, color: Colors.grey[600]),
                 );
               },
             ),
-          ),
-          const SizedBox(height: 12),
+
+            // --- RIBBON 3: SALUD Y BIENESTAR ---
+            _buildRibbonHeader('Salud y Bienestar', Icons.favorite),
+            Container(
+              height: 140,
+              margin: const EdgeInsets.only(bottom: 30),
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                children: [
+                  ActionCard(
+                    title: 'Alimentación',
+                    imagePath: 'assets/alimentacion.png',
+                    color: Colors.green[50]!,
+                    onTap: () {},
+                  ),
+                  ActionCard(
+                    title: 'Medicación',
+                    imagePath: 'assets/medicacion.png',
+                    color: Colors.blue[50]!,
+                    onTap: () {},
+                  ),
+                  ActionCard(
+                    title: 'Ejercitación',
+                    imagePath: 'assets/ejercitacion.png',
+                    color: Colors.orange[50]!,
+                    onTap: () {},
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRibbonHeader(String title, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: Theme.of(context).primaryColor),
+          const SizedBox(width: 8),
           Text(
-            persona.lapersona,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 19,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black87,
-              shadows: [
-                Shadow(
-                  offset: Offset(1.5, 1.5),
-                  blurRadius: 2.0,
-                  color: Colors.black.withOpacity(0.35),
-                ),
-              ],
-            ),
+            title,
+            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, letterSpacing: 0.5),
           ),
         ],
       ),
     );
   }
+}
+
+// ---------------------- ACTION CARD WIDGET (Health) ---------------------------
+class ActionCard extends StatelessWidget {
+  final String title;
+  final String imagePath;
+  final Color color;
+  final VoidCallback onTap;
+
+  const ActionCard({
+    super.key,
+    required this.title,
+    required this.imagePath,
+    required this.color,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
-              borderRadius: BorderRadius.circular(8.0),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
-                  blurRadius: 4,
-                  offset: const Offset(0,2),
-                )
-              ]
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 130,
+        margin: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-            child: const Text(
-              'Eventos y cursos tomados',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+          ],
+        ),
+        child: Column(
+          children: [
+            Expanded(
+              flex: 3,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: Image.asset(
+                  imagePath,
+                  fit: BoxFit.contain,
+                ),
+              ),
             ),
-        ),
-      ),
-
-        // Sección para mostrar la información de la persona
-        FutureBuilder<Persona>(
-          future: _personaInfoFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Padding(
-                padding: EdgeInsets.all(20.0),
-                child: Center(child: CircularProgressIndicator()),
-              );
-            } else if (snapshot.hasError) {
-              return Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Center(child: Text('Error al cargar info de usuario: ${snapshot.error}', textAlign: TextAlign.center, style: TextStyle(color: Colors.red[700]))),
-              );
-            } else if (snapshot.hasData) {
-              return _buildPersonaInfo(snapshot.data!);
-            } else {
-              return const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Center(child: Text('No hay información del usuario disponible.')),
-              );
-            }
-          },
-        ),
-
-    Expanded(
-      child: RefreshIndicator( 
-          onRefresh: () async {
-            setState(() {
-              _fetchData(); 
-            });
-          },
-          child: FutureBuilder<List<Evento>>(
-            future: _eventosFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.teal)));
-              } else if (snapshot.hasError) {
-                return Center(child: Text('Error al cargar eventos: ${snapshot.error}', style: TextStyle(color: Colors.red[700])));
-              } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                final eventos = snapshot.data!;
-                return SizedBox(
-                  height: 320, // Aumentado para mejor visualización
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
-                    itemCount: eventos.length,
-                    itemBuilder: (context, index) {
-                      return EventoCard(
-                        evento: eventos[index],
-                        idpersona: widget.idpersona,
-                      );
-                    },
+            Expanded(
+              flex: 1,
+              child: Center(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: Colors.black87,
                   ),
-                );
-
-              } else {
-                return const Center(child: Text('No hay eventos para mostrar.'));
-              }
-            },
-          ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-      ],
+    );
+  }
+}
+
+// ---------------------- ASIGNATURA CARD WIDGET ---------------------------------
+class AsignaturaCard extends StatelessWidget {
+  final Asignatura asignatura;
+  const AsignaturaCard({super.key, required this.asignatura});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 180,
+      margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 3)),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(15),
+          onTap: () {},
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  child: Text(
+                    asignatura.codigo,
+                    style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.blue),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  asignatura.nombre,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const Spacer(),
+                Row(
+                  children: [
+                    Icon(Icons.layers, size: 12, color: Colors.grey[400]),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Nivel ${asignatura.nivel}',
+                      style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -636,119 +832,13 @@ class _PortafolioPageState extends State<PortafolioPage> {
   }
 
 
-  Widget _buildPersonaInfo(Persona persona) {
-    final fotoUrl = 'https://educaysoft.org/descargar2.php?archivo=${persona.cedula}.jpg';
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-      child: Column(
-        children: [
-          ClipOval(
-            child: Image.network(
-              fotoUrl,
-              width: 100,
-              height: 100,
-              fit: BoxFit.cover,
-              loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Container(
-                  width: 100,
-                  height: 100,
-                  alignment: Alignment.center,
-                  child: CircularProgressIndicator(
-                    value: loadingProgress.expectedTotalBytes != null
-                        ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                        : null,
-                  ),
-                );
-              },
-              errorBuilder: (BuildContext context, Object exception, StackTrace? stackTrace) {
-                return Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.person, size: 60, color: Colors.grey[600]),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            persona.lapersona,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 19,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black87,
-              shadows: const [
-                Shadow(
-                  offset: Offset(1.5, 1.5),
-                  blurRadius: 2.0,
-                  color: Colors.black38,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
-              borderRadius: BorderRadius.circular(8.0),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                )
-              ],
-            ),
-            child: const Text(
-              'Portafolios de la persona',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-            ),
-          ),
-        ),
-        
-        FutureBuilder<Persona>(
-          future: _personaInfoFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Padding(
-                padding: EdgeInsets.all(20.0),
-                child: Center(child: CircularProgressIndicator()),
-              );
-            } else if (snapshot.hasError) {
-              print("Error FutureBuilder Persona (PortafolioPage): ${snapshot.error}");
-              return Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Center(child: Text('No se pudo cargar la información del usuario.', textAlign: TextAlign.center, style: TextStyle(color: Colors.red[700]))),
-              );
-            } else if (snapshot.hasData) {
-              return _buildPersonaInfo(snapshot.data!);
-            } else {
-              return const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Center(child: Text('No hay información del usuario disponible.')),
-              );
-            }
-          },
-        ),
+        _buildRibbonHeader('Portafolios de la persona', Icons.folder_shared),
         
         Expanded(
           child: RefreshIndicator( 
@@ -803,7 +893,25 @@ class _PortafolioPageState extends State<PortafolioPage> {
       ],
     );
   }
+
+  Widget _buildRibbonHeader(String title, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: Theme.of(context).primaryColor),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+          ),
+        ],
+      ),
+    );
+  }
 }
+        
+
 
 // Las clases 'ComUniTiPage', 'DocumentosPortafolioScreen', 'EventoDetalleScreen', 'Portafolio', 'Persona', etc., 
 // se asumen que están definidas en otros archivos (como 'portafolio.dart', 'evento.dart') o en archivos dedicados.
