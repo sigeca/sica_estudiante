@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart'; // 🎯 SOLUCIÓN: IMPORTAR ESTO
 import 'evento.dart';
 import 'portafolio.dart';
+import 'tipo_oferta.dart';
 import 'package:flutter/foundation.dart';
 
 class ApiService {
@@ -1367,6 +1368,26 @@ print("RESPUESTA BRUTA DEL SERVIDOR: ${response.body}");
 
   static String getFacturaPdfUrl(String idfactura) {
     return 'https://educaysoft.org/sica/index.php/factura/reportepdf_flutter/$idfactura';
+  }
+
+  static Future<List<TipoOferta>> fetchTipoOferta() async {
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/tipooferta/tipooferta_flutter');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> json = jsonDecode(response.body);
+        if (json.containsKey('data')) {
+           final List data = json['data'];
+           return data.map((e) => TipoOferta.fromJson(e)).toList();
+        }
+        return [];
+      } else {
+        throw Exception('Error del servidor: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error en fetchTipoOferta: $e');
+      throw Exception('Error al cargar tipos de oferta.');
+    }
   }
 
 }

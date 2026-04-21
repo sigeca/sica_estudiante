@@ -10,6 +10,11 @@ import 'ComUniTiPage.dart';
 import 'SaludPage.dart';
 import 'DocumentosPortafolioScreen.dart';
 import 'EventoDetalleScreen.dart';
+import 'MedicacionGestionPage.dart'; // Asumiendo que aquí manejas la lista de medicación
+import 'AlimentacionGestionPage.dart'; // Asumiendo que aquí manejas la lista de medicación
+import 'EjercitacionGestionPage.dart'; // Asumiendo que aquí manejas la lista de medicación
+import 'tipo_oferta.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -161,7 +166,7 @@ Future<void> _fetchPersonaData() async {
           _personaInfo = persona;
           // 2. Inicializar _pages después de obtener los datos
           _pages = <Widget>[
-            EventoPage(idpersona: widget.idpersona),
+            EventoPage(idpersona: widget.idpersona, cedula: _personaInfo!.cedula),
             PortafolioPage(idpersona: widget.idpersona),
             // Pasar la cédula a ComUniTiPage
             ComUniTiPage(idpersona: widget.idpersona,cedula: _personaInfo!.cedula), // Usar .cedula aquí
@@ -176,7 +181,7 @@ Future<void> _fetchPersonaData() async {
         setState(() {
           // Inicializar _pages con un valor por defecto o la idpersona si falla la cédula
            _pages = <Widget>[
-            EventoPage(idpersona: widget.idpersona),
+            EventoPage(idpersona: widget.idpersona, cedula: widget.idpersona),
             PortafolioPage(idpersona: widget.idpersona),
             ComUniTiPage(idpersona:widget.idpersona,cedula: widget.idpersona), // Asumir idpersona como fallback
           ];
@@ -340,8 +345,9 @@ Future<void> _fetchPersonaData() async {
 
 class EventoPage extends StatefulWidget {
   final String idpersona;
+  final String cedula;
 
-  const EventoPage({super.key, required this.idpersona});
+  const EventoPage({super.key, required this.idpersona, required this.cedula});
 
   @override
   State<EventoPage> createState() => _EventoPageState();
@@ -351,6 +357,7 @@ class _EventoPageState extends State<EventoPage> {
   late Future<Persona> _personaInfoFuture;
   late Future<List<Evento>> _eventosFuture;
   late Future<List<Asignatura>> _asignaturasFuture;
+  late Future<List<TipoOferta>> _tipoOfertaFuture;
 
   @override
   void initState() {
@@ -362,6 +369,7 @@ class _EventoPageState extends State<EventoPage> {
     _eventosFuture = ApiService.fetchEventos(widget.idpersona);
     _personaInfoFuture = ApiService.fetchPersonaInfo(widget.idpersona); 
     _asignaturasFuture = ApiService.fetchAsignaturasMalla();
+    _tipoOfertaFuture = ApiService.fetchTipoOferta();
   }
 
 
@@ -467,22 +475,102 @@ class _EventoPageState extends State<EventoPage> {
                     title: 'Alimentación',
                     imagePath: 'assets/alimentacion.png',
                     color: Colors.green[50]!,
-                    onTap: () {},
+                    onTap: () {
+                      final page=AlimentacionGestionPage(idpersona: widget.idpersona,cedula: widget.cedula);  
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => page));
+
+                    },
                   ),
                   ActionCard(
                     title: 'Medicación',
                     imagePath: 'assets/medicacion.png',
                     color: Colors.blue[50]!,
-                    onTap: () {},
+                    onTap: () {
+
+                      final page = MedicacionGestionPage(idpersona: widget.idpersona,cedula: widget.cedula);  
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => page));
+
+
+                    },
                   ),
                   ActionCard(
                     title: 'Ejercitación',
                     imagePath: 'assets/ejercitacion.png',
                     color: Colors.orange[50]!,
-                    onTap: () {},
+                    onTap: () {
+                      final page=EjercitacionGestionPage(idpersona: widget.idpersona,cedula: widget.cedula);  
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => page));
+
+
+                    },
                   ),
                 ],
               ),
+            ),
+
+            // --- RIBBON 4: COMUNIDAD (TIPO OFERTA) ---
+            _buildRibbonHeader('Comunidad (Marketplace)', Icons.shopping_basket),
+            FutureBuilder<List<TipoOferta>>(
+              future: _tipoOfertaFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SizedBox(height: 140, child: Center(child: CircularProgressIndicator()));
+                } else if (snapshot.hasError) {
+                  return const SizedBox(); // Ocultar si hay error
+                } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                  final tipos = snapshot.data!;
+                  return Container(
+                    height: 140,
+                    margin: const EdgeInsets.only(bottom: 30),
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      itemCount: tipos.length,
+                      itemBuilder: (context, index) {
+                        final tipo = tipos[index];
+                        String img = 'assets/servicio.png';
+                        Color col = Colors.green[50]!;
+                        
+                        if (tipo.nombre.toLowerCase().contains('venta')) {
+                          img = 'assets/venta.png';
+                          col = Colors.blue[50]!;
+                        } else if (tipo.nombre.toLowerCase().contains('alquiler')) {
+                          img = 'assets/alquiler.png';
+                          col = Colors.orange[50]!;
+                        } else if (tipo.nombre.toLowerCase().contains('trueque')) {
+                          img = 'assets/trueque.png';
+                          col = Colors.teal[50]!;
+                        } else if (tipo.nombre.toLowerCase().contains('donación') || tipo.nombre.toLowerCase().contains('donacion')) {
+                          img = 'assets/donacion.png';
+                          col = Colors.pink[50]!;
+                        }
+                        
+                        return ActionCard(
+                          title: tipo.nombre,
+                          imagePath: img,
+                          color: col,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => Scaffold(
+                                  body: ComUniTiPage(
+                                    idpersona: widget.idpersona,
+                                    cedula: widget.cedula,
+                                    initialCategory: tipo.nombre,
+                                    showBackButton: true,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  );
+                }
+                return const SizedBox();
+              },
             ),
           ],
         ),

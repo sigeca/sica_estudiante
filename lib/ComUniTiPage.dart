@@ -2,12 +2,21 @@ import 'package:flutter/material.dart';
 import 'evento.dart';
 import 'api_service.dart';
 import 'ProductoVendedorPage.dart'; 
+import 'tipo_oferta.dart';
 
 class ComUniTiPage extends StatefulWidget {
   final String idpersona;
   final String cedula;
+  final String? initialCategory;
+  final bool showBackButton;
 
-  const ComUniTiPage({Key? key, required this.idpersona, required this.cedula}) : super(key: key);
+  const ComUniTiPage({
+    Key? key,
+    required this.idpersona,
+    required this.cedula,
+    this.initialCategory,
+    this.showBackButton = false,
+  }) : super(key: key);
 
   @override
   State<ComUniTiPage> createState() => _ComUniTiPageState();
@@ -15,13 +24,16 @@ class ComUniTiPage extends StatefulWidget {
 
 class _ComUniTiPageState extends State<ComUniTiPage> {
   late Future<List<ProductoFeed>> _productosFuture;
-  String _selectedCategory = 'Todos'; // 'Todos', 'Venta', 'Alquiler', 'Servicio'
+  late Future<List<TipoOferta>> _tiposFuture;
+  String _selectedCategory = 'Todos'; // 'Todos', 'Venta', 'Alquiler', 'Servicio', etc.
   String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
+    _selectedCategory = widget.initialCategory ?? 'Todos';
     _productosFuture = ApiService.fetchTodosLosProductos();
+    _tiposFuture = ApiService.fetchTipoOferta();
   }
 
   void _onCategorySelected(String category) {
@@ -38,11 +50,27 @@ class _ComUniTiPageState extends State<ComUniTiPage> {
         Container(
           width: double.infinity,
           color: Colors.blue.shade800,
-          padding: const EdgeInsets.only(top: 15, bottom: 15),
-          child: const Text(
-            'ComUniTi',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+          padding: EdgeInsets.only(
+            top: widget.showBackButton ? MediaQuery.of(context).padding.top + 10 : 15,
+            bottom: 15,
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              if (widget.showBackButton)
+                Positioned(
+                  left: 8,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ),
+              const Text(
+                'ComUniTi',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+            ],
           ),
         ),
         
@@ -73,16 +101,52 @@ class _ComUniTiPageState extends State<ComUniTiPage> {
           ),
         ),
 
-        // Filtros (Venta, Alquiler, Servicio)
+        // Dynamic Filtros Ribbon
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildCategoryButton('Venta', Colors.indigo.shade800),
-              _buildCategoryButton('Alquiler', Colors.orange),
-              _buildCategoryButton('Servicio', Colors.green),
-            ],
+          child: FutureBuilder<List<TipoOferta>>(
+            future: _tiposFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const SizedBox(height: 45, child: Center(child: LinearProgressIndicator()));
+              }
+              
+              if (snapshot.hasError) {
+                return Row(
+                  children: [
+                    const Text('Error al cargar categorías', style: TextStyle(color: Colors.red, fontSize: 12)),
+                    TextButton(onPressed: () => setState(() => _tiposFuture = ApiService.fetchTipoOferta()), child: const Text('Reintentar'))
+                  ],
+                );
+              }
+
+              List<String> categories = ['Todos'];
+              if (snapshot.hasData) {
+                categories.addAll(snapshot.data!.map((e) => e.nombre).toList());
+              }
+
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                child: Row(
+                  children: categories.map((cat) {
+                    Color baseCol = Colors.blue.shade600;
+                    String cleanCat = cat.toLowerCase();
+                    if (cleanCat.contains('venta')) baseCol = Colors.indigo.shade800;
+                    else if (cleanCat.contains('alquiler')) baseCol = Colors.orange;
+                    else if (cleanCat.contains('servicio')) baseCol = Colors.green;
+                    else if (cleanCat.contains('donación') || cleanCat.contains('donacion')) baseCol = Colors.pink;
+                    else if (cleanCat.contains('trueque')) baseCol = Colors.teal;
+                    else if (cleanCat.contains('cambio')) baseCol = Colors.cyan;
+
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: _buildCategoryButton(cat, baseCol),
+                    );
+                  }).toList(),
+                ),
+              );
+            },
           ),
         ),
         
@@ -148,27 +212,25 @@ class _ComUniTiPageState extends State<ComUniTiPage> {
 
   Widget _buildCategoryButton(String category, Color color) {
     final isSelected = _selectedCategory == category;
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4.0),
-        child: ElevatedButton(
-          onPressed: () {
-            _onCategorySelected(isSelected ? 'Todos' : category);
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: isSelected ? color.withOpacity(0.8) : color,
-            foregroundColor: Colors.white,
-            elevation: isSelected ? 0 : 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-              side: isSelected ? const BorderSide(color: Colors.black, width: 2) : BorderSide.none,
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 12),
+    return Container(
+      constraints: const BoxConstraints(minWidth: 100),
+      child: ElevatedButton(
+        onPressed: () {
+          _onCategorySelected(category);
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isSelected ? color.withOpacity(0.8) : color,
+          foregroundColor: Colors.white,
+          elevation: isSelected ? 0 : 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: isSelected ? const BorderSide(color: Colors.black, width: 2) : BorderSide.none,
           ),
-          child: Text(
-            category,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+        ),
+        child: Text(
+          category,
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -338,6 +400,24 @@ class ProductoFeedCard extends StatelessWidget {
                           ],
                         ),
                       ],
+                    ),
+                    // Stock Info
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2.0),
+                      child: Row(
+                        children: [
+                          Icon(Icons.inventory_2_outlined, size: 12, color: Colors.blue.shade700),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Stock disponible: ${producto.stock.toStringAsFixed(producto.stock.truncateToDouble() == producto.stock ? 0 : 2)}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.blue.shade900,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     // Info Vendedor
                     Row(

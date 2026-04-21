@@ -1140,6 +1140,8 @@ class ProductoFeed {
   final int idvendedor;
   final String cedulavendedor;
   final String nombrevendedor;
+  final double stock;
+  final double cantidad;
   
   ProductoFeed({
     required this.idproducto,
@@ -1151,6 +1153,8 @@ class ProductoFeed {
     required this.idvendedor,
     required this.cedulavendedor,
     required this.nombrevendedor,
+    required this.stock,
+    required this.cantidad,
   });
 
   factory ProductoFeed.fromJson(Map<String, dynamic> json) {
@@ -1164,6 +1168,9 @@ class ProductoFeed {
       idvendedor: int.tryParse(json['idvendedor']?.toString() ?? '0') ?? 0,
       cedulavendedor: json['cedulavendedor']?.toString() ?? '',
       nombrevendedor: json['nombrevendedor']?.toString() ?? '',
+      // Probamos varias claves comunes para stock/existencia encontradas en el backend
+      stock: double.tryParse((json['stock'] ?? json['ultimostock'] ?? json['existencia'] ?? json['stock_actual'] ?? json['last_stock'] ?? json['cantidad'] ?? '0.0').toString()) ?? 0.0,
+      cantidad: double.tryParse(json['cantidad']?.toString() ?? '0.0') ?? 0.0,
     );
   }
 }
