@@ -1349,10 +1349,11 @@ print("RESPUESTA BRUTA DEL SERVIDOR: ${response.body}");
     }
   }
 
-  static Future<Map<String, dynamic>> saveFactura(Factura header, List<DetalleFactura> detalles) async {
+  static Future<Map<String, dynamic>> saveFactura(String idpersona, Factura header, List<DetalleFactura> detalles) async {
     final url = Uri.parse('https://educaysoft.org/sica/index.php/factura/save_flutter');
     try {
       final body = json.encode({
+        'idpersona': idpersona,
         'header': header.toJson(),
         'detalles': detalles.map((d) => d.toJson()).toList(),
       });

@@ -36,6 +36,8 @@ class _FacturaFormPageState extends State<FacturaFormPage> {
   List<EstadoFactura> _estados = [];
   List<TipoImpuesto> _impuestos = [];
   String? _selectedEstado;
+  String? _selectedTipoPago;
+  List<TipoPagoFactura> _tipopagos = [];
   String? _idCliente;
   String? _nombreCliente;
 
@@ -69,9 +71,11 @@ class _FacturaFormPageState extends State<FacturaFormPage> {
           _nombreCliente = data['cliente']['elcliente'];
         }
         _estados = (data['estados'] as List).map((e) => EstadoFactura.fromJson(e)).toList();
+        _tipopagos = (data['tipopagos'] as List).map((e) => TipoPagoFactura.fromJson(e)).toList();
         _impuestos = (data['impuestos'] as List).map((e) => TipoImpuesto.fromJson(e)).toList();
         
         if (_estados.isNotEmpty) _selectedEstado = _estados.first.idestadofactura;
+        if (_tipopagos.isNotEmpty) _selectedTipoPago = _tipopagos.first.idtipopagofactura;
         
         // Initialize Detalles from Cart
         String defaultImpuesto = _impuestos.isNotEmpty ? _impuestos.first.idtipoimpuesto : "0";
@@ -147,13 +151,14 @@ class _FacturaFormPageState extends State<FacturaFormPage> {
       fechaemision: DateTime.parse(_fechaEmisionController.text.replaceAll(' ', 'T')),
       fechavencimiento: DateTime.parse(_fechaVencimientoController.text),
       idestadofactura: _selectedEstado!,
+      idtipopagofactura: _selectedTipoPago!,
       subtotal: _subtotalGlobal,
       totalimpuesto: _impuestoGlobal,
       totaldescuento: _descuentoGlobal,
       totalfinal: _totalFinal,
     );
 
-    final result = await ApiService.saveFactura(header, _detalles);
+    final result = await ApiService.saveFactura(widget.idpersona, header, _detalles);
 
     setState(() => _isLoading = false);
 
@@ -274,6 +279,8 @@ class _FacturaFormPageState extends State<FacturaFormPage> {
                 Expanded(child: _buildDropdownEstado()),
               ],
             ),
+            const SizedBox(height: 10),
+            _buildDropdownTipoPago(),
           ],
         ),
       ),
@@ -304,6 +311,20 @@ class _FacturaFormPageState extends State<FacturaFormPage> {
       ),
       items: _estados.map((e) => DropdownMenuItem(value: e.idestadofactura, child: Text(e.nombre, style: const TextStyle(fontSize: 12)))).toList(),
       onChanged: (val) => setState(() => _selectedEstado = val),
+    );
+  }
+
+  Widget _buildDropdownTipoPago() {
+    return DropdownButtonFormField<String>(
+      value: _selectedTipoPago,
+      decoration: InputDecoration(
+        labelText: 'Tipo de Pago',
+        labelStyle: const TextStyle(fontSize: 14),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      ),
+      items: _tipopagos.map((e) => DropdownMenuItem(value: e.idtipopagofactura, child: Text(e.nombre))).toList(),
+      onChanged: (val) => setState(() => _selectedTipoPago = val),
     );
   }
 

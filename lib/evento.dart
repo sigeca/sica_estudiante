@@ -1183,6 +1183,7 @@ class Factura {
   final DateTime fechaemision;
   final DateTime fechavencimiento;
   final String idestadofactura;
+  final String idtipopagofactura;
   final String idmoneda;
   final double subtotal;
   final double totalimpuesto;
@@ -1197,6 +1198,7 @@ class Factura {
     required this.fechaemision,
     required this.fechavencimiento,
     required this.idestadofactura,
+    required this.idtipopagofactura,
     this.idmoneda = "1",
     required this.subtotal,
     required this.totalimpuesto,
@@ -1213,6 +1215,7 @@ class Factura {
       'fechaemision': fechaemision.toIso8601String(),
       'fechavencimiento': fechavencimiento.toIso8601String().split('T')[0],
       'idestadofactura': idestadofactura,
+      'idtipopagofactura': idtipopagofactura,
       'idmoneda': idmoneda,
       'subtotal_global': subtotal.toString(),
       'impuesto_global': totalimpuesto.toString(),
@@ -1264,6 +1267,20 @@ class EstadoFactura {
     return EstadoFactura(
       idestadofactura: json['idestadofactura'].toString(),
       nombre: json['nombre'],
+    );
+  }
+}
+
+class TipoPagoFactura {
+  final String idtipopagofactura;
+  final String nombre;
+
+  TipoPagoFactura({required this.idtipopagofactura, required this.nombre});
+
+  factory TipoPagoFactura.fromJson(Map<String, dynamic> json) {
+    return TipoPagoFactura(
+      idtipopagofactura: json['idtipopagofactura']?.toString() ?? json['idtipopago']?.toString() ?? '',
+      nombre: json['nombre'] ?? '',
     );
   }
 }
