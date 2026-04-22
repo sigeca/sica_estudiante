@@ -1056,7 +1056,7 @@ class AcercaDePage extends StatelessWidget {
               child: Column(
                 children: [
                   const Text(
-                    'El equipo de desarrollo acepta donaciones.',
+                    'El equipo de desarrollo agradece sus donaciones para disfrutar de una tacita de café.',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 16, color: Colors.black87),
                   ),
