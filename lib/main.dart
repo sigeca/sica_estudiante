@@ -142,7 +142,13 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-  late List<Widget> _pages;
+  List<Widget> _pages = const [
+    Center(child: CircularProgressIndicator()),
+    Center(child: CircularProgressIndicator()),
+    Center(child: CircularProgressIndicator()),
+    Center(child: CircularProgressIndicator()),
+    AcercaDePage(),
+  ];
 Persona? _personaInfo; // Para almacenar la info de la persona
 
   @override
@@ -171,6 +177,7 @@ Future<void> _fetchPersonaData() async {
             // Pasar la cédula a ComUniTiPage
             ComUniTiPage(idpersona: widget.idpersona,cedula: _personaInfo!.cedula), // Usar .cedula aquí
             SaludPage(idpersona: widget.idpersona,cedula: _personaInfo!.cedula), // Usar .cedula aquí
+            const AcercaDePage(),
           ];
         });
       }
@@ -184,6 +191,8 @@ Future<void> _fetchPersonaData() async {
             EventoPage(idpersona: widget.idpersona, cedula: widget.idpersona),
             PortafolioPage(idpersona: widget.idpersona),
             ComUniTiPage(idpersona:widget.idpersona,cedula: widget.idpersona), // Asumir idpersona como fallback
+            SaludPage(idpersona: widget.idpersona,cedula: widget.idpersona),
+            const AcercaDePage(),
           ];
         });
       }
@@ -326,8 +335,8 @@ Future<void> _fetchPersonaData() async {
           ),
 // ---------------------------------
           BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Ajustes',
+            icon: Icon(Icons.info),
+            label: 'Acerca de',
           ),
 
         ],
@@ -1003,3 +1012,74 @@ class _PortafolioPageState extends State<PortafolioPage> {
 
 // Las clases 'ComUniTiPage', 'DocumentosPortafolioScreen', 'EventoDetalleScreen', 'Portafolio', 'Persona', etc., 
 // se asumen que están definidas en otros archivos (como 'portafolio.dart', 'evento.dart') o en archivos dedicados.
+
+class AcercaDePage extends StatelessWidget {
+  const AcercaDePage({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.network(
+              'https://educaysoft.org/sica/images/logo.jpg',
+              height: 100,
+              errorBuilder: (context, error, stackTrace) => const Icon(Icons.business, size: 100, color: Colors.blueAccent),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'SICA',
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.blueAccent),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Versión 1.0.0',
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 32),
+            const Text(
+              'Creado por Estudiantes de Ingeniería de Software',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 18, fontStyle: FontStyle.italic),
+            ),
+            const SizedBox(height: 48),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.green[50],
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: Colors.green[200]!),
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    'El equipo de desarrollo acepta donaciones.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 16, color: Colors.black87),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Funcionalidad de donaciones en construcción.')),
+                      );
+                    },
+                    icon: const Icon(Icons.favorite),
+                    label: const Text('Donar a los desarrolladores'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
