@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart'; 
+import 'package:url_launcher/url_launcher.dart'; 
 import 'api_service.dart';
 import 'evento.dart';
 
@@ -102,6 +103,29 @@ class _CumplimientoAlimentacionPageState extends State<CumplimientoAlimentacionP
     }
   }
 
+  // --- FUNCIÓN PARA ABRIR VIDEO ---
+  Future<void> _lanzarURL(String? urlString) async {
+    if (urlString == null || urlString.isEmpty) return;
+
+    String finalUrl = urlString.trim();
+    if (!finalUrl.startsWith('http')) {
+      finalUrl = 'https://www.youtube.com/watch?v=$finalUrl';
+    }
+
+    final Uri uri = Uri.parse(finalUrl);
+    try {
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        throw Exception('No se pudo lanzar $uri');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No se pudo abrir el video: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -128,6 +152,20 @@ class _CumplimientoAlimentacionPageState extends State<CumplimientoAlimentacionP
                     Text("INSTRUCCIÓN MÉDICA", style: TextStyle(fontSize: 10, color: Colors.teal, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
                     SizedBox(height: 5),
                     Text(widget.detalle.detalle, style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.black87), textAlign: TextAlign.center),
+                    if (widget.detalle.videoEnlace != null && widget.detalle.videoEnlace!.isNotEmpty) ...[
+                      SizedBox(height: 10),
+                      ElevatedButton.icon(
+                        onPressed: () => _lanzarURL(widget.detalle.videoEnlace),
+                        icon: Icon(Icons.play_circle_fill, size: 18),
+                        label: Text("VER VIDEO TUTORIAL", style: TextStyle(fontSize: 11)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red.shade700,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

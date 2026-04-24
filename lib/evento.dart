@@ -909,6 +909,7 @@ class DetalleAlimentacion {
   final double porcentaje; // <-- NUEVO CAMPO
   // 🎯 NUEVO CAMPO: Ultima fecha en que se registró un cumplimiento
   final String? ultimaFechaCumplimiento;
+  final String? videoEnlace;
 
   DetalleAlimentacion({
     required this.iddetallealimentacion,
@@ -920,6 +921,7 @@ class DetalleAlimentacion {
     required this.fechahasta,
     required this.porcentaje, // <-- Requerido
     this.ultimaFechaCumplimiento, // 🎯 AÑADIR A CONSTRUCTOR
+    this.videoEnlace,
   });
 
   factory DetalleAlimentacion.fromJson(Map<String, dynamic> json) {
@@ -935,6 +937,7 @@ class DetalleAlimentacion {
       porcentaje: double.tryParse(json['porcentaje'].toString()) ?? 0.0,
       // 🎯 NUEVA LÍNEA: Leer el valor del JSON (asumiendo que la API lo proporcionará)
       ultimaFechaCumplimiento: json['ultima_fecha_cumplimiento'],
+      videoEnlace: json['video_enlace'],
     );
   }
 }
@@ -947,6 +950,7 @@ class AlimentoVista {
   final String nombre;
   final String detalle;
   final String detallealimento;
+  final String? videoEnlace;
   int totalRegistros; // Nuevo campo
 
   AlimentoVista({
@@ -954,6 +958,7 @@ class AlimentoVista {
     required this.nombre, 
     required this.detalle,
     required this.detallealimento,
+    this.videoEnlace,
     this.totalRegistros = 1,
   });
 
@@ -963,6 +968,7 @@ class AlimentoVista {
       nombre: json['elalimento'] ?? '',
       detalle: json['detalle'] ?? '',
       detallealimento: json['detallealimento'] ?? '',
+      videoEnlace: json['video_enlace'],
     );
   }
 }

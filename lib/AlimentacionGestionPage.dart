@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; 
+import 'package:url_launcher/url_launcher.dart'; 
 import 'api_service.dart';
 import 'evento.dart';
 import 'CumplimientoAlimentacionPage.dart';
@@ -104,6 +105,30 @@ class _AlimentacionGestionPageState extends State<AlimentacionGestionPage> {
       );
     } catch (e) {
       return Text("Error en fecha", style: TextStyle(fontSize: 10, color: Colors.grey));
+    }
+  }
+
+  // --- FUNCIÓN PARA ABRIR VIDEO ---
+  Future<void> _lanzarURL(String? urlString) async {
+    if (urlString == null || urlString.isEmpty) return;
+
+    // Si es solo el ID de YouTube, construimos la URL
+    String finalUrl = urlString.trim();
+    if (!finalUrl.startsWith('http')) {
+      finalUrl = 'https://www.youtube.com/watch?v=$finalUrl';
+    }
+
+    final Uri uri = Uri.parse(finalUrl);
+    try {
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        throw Exception('No se pudo lanzar $uri');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No se pudo abrir el video: $e')),
+        );
+      }
     }
   }
 
@@ -247,7 +272,20 @@ class _AlimentacionGestionPageState extends State<AlimentacionGestionPage> {
                           dense: true,
                           title: Text(d.detalle, style: TextStyle(fontSize: 12)),
                           subtitle: Text("Progreso: ${d.porcentaje.toStringAsFixed(0)} veces", style: TextStyle(fontSize: 10)),
-                          trailing: Icon(Icons.chevron_right, size: 16, color: Colors.blue),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (d.videoEnlace != null && d.videoEnlace!.isNotEmpty) 
+                                IconButton(
+                                  icon: Icon(Icons.play_circle_fill, color: Colors.red, size: 22),
+                                  onPressed: () => _lanzarURL(d.videoEnlace),
+                                  tooltip: "Ver Video Tutorial",
+                                  constraints: BoxConstraints(),
+                                  padding: EdgeInsets.symmetric(horizontal: 8),
+                                ),
+                              Icon(Icons.chevron_right, size: 16, color: Colors.blue),
+                            ],
+                          ),
                           onTap: () async {
                             await Navigator.push(context, MaterialPageRoute(
                               builder: (context) => CumplimientoAlimentacionPage(detalle: d, nombreAlimento: ali.nombre)
