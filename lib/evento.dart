@@ -801,6 +801,7 @@ class Alimentacion {
   final String fechahasta;
   final String elestadoalimentacion; // NUEVO
   List<DetalleAlimentacion> detalles;
+  List<VideoPlan> videos; // NUEVO
 
   Alimentacion({
     required this.idalimentacion,
@@ -813,7 +814,7 @@ class Alimentacion {
     required this.detalles,
     required this.fechadesde,
     required this.fechahasta,
-
+    required this.videos,
   });
 
   factory Alimentacion.fromJson(Map<String, dynamic> json) {
@@ -821,6 +822,13 @@ class Alimentacion {
     if (json['detalles'] != null) {
       listaDetalles = (json['detalles'] as List)
           .map((i) => DetalleAlimentacion.fromJson(i))
+          .toList();
+    }
+
+    List<VideoPlan> listaVideos = [];
+    if (json['videos'] != null) {
+      listaVideos = (json['videos'] as List)
+          .map((i) => VideoPlan.fromJson(i))
           .toList();
     }
 
@@ -837,6 +845,23 @@ class Alimentacion {
       fechadesde: json['fechadesde'] ?? '',
       fechahasta: json['fechahasta'] ?? '',
       detalles: listaDetalles,
+      videos: listaVideos,
+    );
+  }
+}
+
+class VideoPlan {
+  final String idvideo;
+  final String nombre;
+  final String enlace;
+
+  VideoPlan({required this.idvideo, required this.nombre, required this.enlace});
+
+  factory VideoPlan.fromJson(Map<String, dynamic> json) {
+    return VideoPlan(
+      idvideo: (json['idvideoalimentacion'] ?? json['idvideo'] ?? '').toString(),
+      nombre: json['elvideo'] ?? json['nombre'] ?? '',
+      enlace: json['enlace'] ?? '',
     );
   }
 }

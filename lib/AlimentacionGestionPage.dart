@@ -268,31 +268,59 @@ class _AlimentacionGestionPageState extends State<AlimentacionGestionPage> {
                             _buildLastTakenDate(ultimaTomaGlobal),
                           ],
                         ),
-                        children: ali.detalles.map((d) => ListTile(
-                          dense: true,
-                          title: Text(d.detalle, style: TextStyle(fontSize: 12)),
-                          subtitle: Text("Progreso: ${d.porcentaje.toStringAsFixed(0)} veces", style: TextStyle(fontSize: 10)),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (d.videoEnlace != null && d.videoEnlace!.isNotEmpty) 
-                                IconButton(
-                                  icon: Icon(Icons.play_circle_fill, color: Colors.red, size: 22),
-                                  onPressed: () => _lanzarURL(d.videoEnlace),
-                                  tooltip: "Ver Video Tutorial",
-                                  constraints: BoxConstraints(),
-                                  padding: EdgeInsets.symmetric(horizontal: 8),
-                                ),
-                              Icon(Icons.chevron_right, size: 16, color: Colors.blue),
-                            ],
-                          ),
-                          onTap: () async {
-                            await Navigator.push(context, MaterialPageRoute(
-                              builder: (context) => CumplimientoAlimentacionPage(detalle: d, nombreAlimento: ali.nombre)
-                            ));
-                            _cargarAlimentaciones(); 
-                          },
-                        )).toList(),
+                        children: [
+                          if (ali.videos.isNotEmpty) ...[
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.video_library, size: 14, color: Colors.deepOrange),
+                                      SizedBox(width: 6),
+                                      Text("PREPARACIÓN MULTIMEDIA", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.deepOrange)),
+                                    ],
+                                  ),
+                                  ...ali.videos.map((v) => ListTile(
+                                    dense: true,
+                                    visualDensity: VisualDensity.compact,
+                                    leading: Icon(Icons.play_circle_fill, color: Colors.red, size: 22),
+                                    title: Text(v.nombre, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+                                    trailing: Icon(Icons.open_in_new, size: 14, color: Colors.grey),
+                                    onTap: () => _lanzarURL(v.enlace),
+                                  )).toList(),
+                                ],
+                              ),
+                            ),
+                            Divider(height: 1),
+                          ],
+                          ...ali.detalles.map((d) => ListTile(
+                            dense: true,
+                            title: Text(d.detalle, style: TextStyle(fontSize: 12)),
+                            subtitle: Text("Progreso: ${d.porcentaje.toStringAsFixed(0)} veces", style: TextStyle(fontSize: 10)),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (d.videoEnlace != null && d.videoEnlace!.isNotEmpty) 
+                                  IconButton(
+                                    icon: Icon(Icons.play_circle_fill, color: Colors.red, size: 22),
+                                    onPressed: () => _lanzarURL(d.videoEnlace),
+                                    tooltip: "Ver Video Tutorial",
+                                    constraints: BoxConstraints(),
+                                    padding: EdgeInsets.symmetric(horizontal: 8),
+                                  ),
+                                Icon(Icons.chevron_right, size: 16, color: Colors.blue),
+                              ],
+                            ),
+                            onTap: () async {
+                              await Navigator.push(context, MaterialPageRoute(
+                                builder: (context) => CumplimientoAlimentacionPage(detalle: d, nombreAlimento: ali.nombre)
+                              ));
+                              _cargarAlimentaciones(); 
+                            },
+                          )).toList(),
+                        ],
                       ),
                     );
                   },

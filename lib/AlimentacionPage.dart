@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart'; 
 import 'api_service.dart';
 import 'evento.dart'; 
 import 'CumplimientoAlimentacionPage.dart';
@@ -125,12 +126,45 @@ class _AlimentacionPageState extends State<AlimentacionPage> with SingleTickerPr
           child: ExpansionTile(
             title: Text(plan.laalimentacion, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
             subtitle: Text("ID: ${plan.idalimentacion}", style: TextStyle(fontSize: 10, color: Colors.grey)),
-            children: plan.detalles.map((d) => ListTile(
-              title: Text(d.detalle, style: TextStyle(fontSize: 12)),
-              subtitle: Text("${d.fechadesde} - ${d.fechahasta}", style: TextStyle(fontSize: 10)),
-              trailing: Icon(Icons.calendar_today, color: Colors.orange, size: 16),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => CumplimientoAlimentacionPage(detalle: d, nombreAlimento: d.elalimento))),
-            )).toList(),
+            children: [
+              if (plan.videos.isNotEmpty) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("VIDEOS DE PREPARACIÓN", style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.deepOrange)),
+                      ...plan.videos.map((v) => ListTile(
+                        dense: true,
+                        leading: Icon(Icons.play_circle_fill, color: Colors.red, size: 22),
+                        title: Text(v.nombre, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+                        trailing: Icon(Icons.open_in_new, size: 14, color: Colors.grey),
+                        onTap: () => _lanzarURL(v.enlace),
+                      )).toList(),
+                    ],
+                  ),
+                ),
+                Divider(),
+              ],
+              ...plan.detalles.map((d) => ListTile(
+                title: Text(d.detalle, style: TextStyle(fontSize: 12)),
+                subtitle: Text("${d.fechadesde} - ${d.fechahasta}", style: TextStyle(fontSize: 10)),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (d.videoEnlace != null && d.videoEnlace!.isNotEmpty)
+                      IconButton(
+                        icon: Icon(Icons.play_circle_fill, color: Colors.red, size: 20),
+                        onPressed: () => _lanzarURL(d.videoEnlace),
+                        constraints: BoxConstraints(),
+                        padding: EdgeInsets.symmetric(horizontal: 8),
+                      ),
+                    Icon(Icons.calendar_today, color: Colors.orange, size: 16),
+                  ],
+                ),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => CumplimientoAlimentacionPage(detalle: d, nombreAlimento: d.elalimento))),
+              )).toList(),
+            ],
           ),
         );
       },
@@ -156,6 +190,29 @@ class _AlimentacionPageState extends State<AlimentacionPage> with SingleTickerPr
   Widget _emptyState() => Center(child: Text("No se encontraron resultados", style: TextStyle(fontSize: 12, color: Colors.grey)));
 
   void _mostrarDialogoNuevaAlimentacion() { /* Tu lógica de diálogo se mantiene */ }
+
+  // --- FUNCIÓN PARA ABRIR VIDEO ---
+  Future<void> _lanzarURL(String? urlString) async {
+    if (urlString == null || urlString.isEmpty) return;
+
+    String finalUrl = urlString.trim();
+    if (!finalUrl.startsWith('http')) {
+      finalUrl = 'https://www.youtube.com/watch?v=$finalUrl';
+    }
+
+    final Uri uri = Uri.parse(finalUrl);
+    try {
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        throw Exception('No se pudo lanzar $uri');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No se pudo abrir el video: $e')),
+        );
+      }
+    }
+  }
 }
 
 
@@ -347,13 +404,48 @@ class _AlimentoCatalogoPageState extends State<AlimentoCatalogoPage> {
                             style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                           ),
                         ),
-                        trailing: Icon(Icons.zoom_in, color: Colors.blue.withOpacity(0.5)),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (ali.videoEnlace != null && ali.videoEnlace!.isNotEmpty)
+                              IconButton(
+                                icon: Icon(Icons.play_circle_outline, color: Colors.red, size: 24),
+                                onPressed: () {
+                                  // Como estamos dentro de una página interna, necesitamos acceder a la función de lanzamiento
+                                  // o moverla a una clase de utilidad. Por ahora la implementaremos aquí también.
+                                  _lanzarURL(ali.videoEnlace);
+                                },
+                              ),
+                            Icon(Icons.zoom_in, color: Colors.blue.withOpacity(0.5)),
+                          ],
+                        ),
                         onTap: () => _mostrarZoomImagen(context, urlImagen, ali.nombre),
                       ),
                     );
                   },
                 ),
     );
+  }
+
+  // --- FUNCIÓN PARA ABRIR VIDEO (Duplicada para esta clase interna) ---
+  Future<void> _lanzarURL(String? urlString) async {
+    if (urlString == null || urlString.isEmpty) return;
+    String finalUrl = urlString.trim();
+    if (!finalUrl.startsWith('http')) {
+      finalUrl = 'https://www.youtube.com/watch?v=$finalUrl';
+    }
+    final Uri uri = Uri.parse(finalUrl);
+    try {
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        throw Exception('No se pudo lanzar $uri');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No se pudo abrir el video: $e')),
+        );
+      }
+    }
   }
 }
 
