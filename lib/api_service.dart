@@ -947,7 +947,16 @@ static Future<List<Alimentacion>> fetchAlimentaciones(String idpersona) async {
     if (response.statusCode == 200) {
       print("DEBUG SICA: fetchAlimentaciones BODY: ${response.body}"); // 1. Ver qué llega
       try {
-        final dynamic decoded = json.decode(response.body);
+        String bodyString = response.body.trim();
+        // Buscar el inicio real del JSON para ignorar cualquier Notice o Warning extra de PHP
+        int startIndex = bodyString.indexOf(RegExp(r'[\{\[]'));
+        int endIndex = bodyString.lastIndexOf(RegExp(r'[\}\]]'));
+        
+        if (startIndex != -1 && endIndex != -1 && endIndex >= startIndex) {
+             bodyString = bodyString.substring(startIndex, endIndex + 1);
+        }
+        
+        final dynamic decoded = json.decode(bodyString);
         print("DEBUG SICA: decoded type: ${decoded.runtimeType}"); // 2. Ver tipo de dato
 
         List<dynamic> data = [];
@@ -976,9 +985,9 @@ static Future<List<Alimentacion>> fetchAlimentaciones(String idpersona) async {
              return Alimentacion.fromJson(e);
           } catch(innerE) {
              print("DEBUG SICA: Error parseando item individual: $innerE\nItem: $e");
-             rethrow; 
+             return null; 
           }
-        }).toList();
+        }).whereType<Alimentacion>().toList();
         
         print("DEBUG SICA: Resultado final parseado count: ${result.length}");
         return result;

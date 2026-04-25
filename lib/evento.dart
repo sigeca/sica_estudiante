@@ -654,15 +654,15 @@ class DetalleMedicacion {
 
   factory DetalleMedicacion.fromJson(Map<String, dynamic> json) {
     return DetalleMedicacion(
-      iddetallemedicacion: json['iddetallemedicacion'].toString(),
-      idmedicacion: json['idmedicacion'].toString(),
+      iddetallemedicacion: (json['iddetallemedicacion'] ?? '').toString(),
+      idmedicacion: (json['idmedicacion'] ?? '').toString(),
       elmedicamento: json['elmedicamento'] ?? '',
       detalle: json['detalle'] ?? '',
       detallemedicamento: json['detallemedicamento'] ?? '',
       fechadesde: json['fechadesde'] ?? '',
       fechahasta: json['fechahasta'] ?? '',
       // Leemos el porcentaje calculado por PHP. Si es null es 0.0
-      porcentaje: double.tryParse(json['porcentaje'].toString()) ?? 0.0,
+      porcentaje: double.tryParse(json['porcentaje']?.toString() ?? '0') ?? 0.0,
       // 🎯 NUEVA LÍNEA: Leer el valor del JSON (asumiendo que la API lo proporcionará)
       ultimaFechaCumplimiento: json['ultima_fecha_cumplimiento'],
     );
@@ -716,14 +716,14 @@ class Medicacion {
     }
 
     return Medicacion(
-      idmedicacion: json['idmedicacion'].toString(),
+      idmedicacion: (json['idmedicacion'] ?? '').toString(),
       // Mapeo flexible para nombre (por si la vista o tabla cambian)
       nombre: json['lamedicacion'] ?? json['nombre'] ?? 'Sin nombre',
       lamedicacion: json['lamedicacion'] ?? json['nombre'] ?? 'Sin nombre',
       tipo: json['eltipomedicacion'] ?? json['tipo'] ?? '',
-      idtipomedicacion: int.tryParse(json['idtipomedicacion'].toString()) ?? 1,
+      idtipomedicacion: int.tryParse(json['idtipomedicacion']?.toString() ?? '1') ?? 1,
       // Valores por defecto si vienen nulos
-      idestadomedicacion: int.tryParse(json['idestadomedicacion'].toString()) ?? 1,
+      idestadomedicacion: int.tryParse(json['idestadomedicacion']?.toString() ?? '1') ?? 1,
       elestadomedicacion: json['elestadomedicacion'] ?? 'Activo',
       fechadesde: json['fechadesde'] ?? '',
       fechahasta: json['fechahasta'] ?? '',
@@ -819,28 +819,44 @@ class Alimentacion {
 
   factory Alimentacion.fromJson(Map<String, dynamic> json) {
     List<DetalleAlimentacion> listaDetalles = [];
-    if (json['detalles'] != null) {
+    if (json['detalles'] != null && json['detalles'] is List) {
       listaDetalles = (json['detalles'] as List)
-          .map((i) => DetalleAlimentacion.fromJson(i))
+          .map((i) {
+            try {
+              return DetalleAlimentacion.fromJson(i);
+            } catch (e) {
+              print("Error en DetalleAlimentacion.fromJson: $e");
+              return null;
+            }
+          })
+          .whereType<DetalleAlimentacion>()
           .toList();
     }
 
     List<VideoPlan> listaVideos = [];
-    if (json['videos'] != null) {
+    if (json['videos'] != null && json['videos'] is List) {
       listaVideos = (json['videos'] as List)
-          .map((i) => VideoPlan.fromJson(i))
+          .map((i) {
+             try {
+               return VideoPlan.fromJson(i);
+             } catch (e) {
+               print("Error en VideoPlan.fromJson: $e");
+               return null;
+             }
+          })
+          .whereType<VideoPlan>()
           .toList();
     }
 
     return Alimentacion(
-      idalimentacion: json['idalimentacion'].toString(),
+      idalimentacion: (json['idalimentacion'] ?? '').toString(),
       // Mapeo flexible para nombre (por si la vista o tabla cambian)
       nombre: json['laalimentacion'] ?? json['nombre'] ?? 'Sin nombre',
       laalimentacion: json['laalimentacion'] ?? json['nombre'] ?? 'Sin nombre',
       tipo: json['eltipoalimentacion'] ?? json['tipo'] ?? '',
-      idtipoalimentacion: int.tryParse(json['idtipoalimentacion'].toString()) ?? 1,
+      idtipoalimentacion: int.tryParse(json['idtipoalimentacion']?.toString() ?? '1') ?? 1,
       // Valores por defecto si vienen nulos
-      idestadoalimentacion: int.tryParse(json['idestadoalimentacion'].toString()) ?? 1,
+      idestadoalimentacion: int.tryParse(json['idestadoalimentacion']?.toString() ?? '1') ?? 1,
       elestadoalimentacion: json['elestadoalimentacion'] ?? 'Activo',
       fechadesde: json['fechadesde'] ?? '',
       fechahasta: json['fechahasta'] ?? '',
@@ -951,15 +967,15 @@ class DetalleAlimentacion {
 
   factory DetalleAlimentacion.fromJson(Map<String, dynamic> json) {
     return DetalleAlimentacion(
-      iddetallealimentacion: json['iddetallealimentacion'].toString(),
-      idalimentacion: json['idalimentacion'].toString(),
+      iddetallealimentacion: (json['iddetallealimentacion'] ?? '').toString(),
+      idalimentacion: (json['idalimentacion'] ?? '').toString(),
       elalimento: json['elalimento'] ?? '',
       detalle: json['detalle'] ?? '',
       detallealimento: json['detallealimento'] ?? '',
       fechadesde: json['fechadesde'] ?? '',
       fechahasta: json['fechahasta'] ?? '',
       // Leemos el porcentaje calculado por PHP. Si es null es 0.0
-      porcentaje: double.tryParse(json['porcentaje'].toString()) ?? 0.0,
+      porcentaje: double.tryParse(json['porcentaje']?.toString() ?? '0') ?? 0.0,
       // 🎯 NUEVA LÍNEA: Leer el valor del JSON (asumiendo que la API lo proporcionará)
       ultimaFechaCumplimiento: json['ultima_fecha_cumplimiento'],
       videoEnlace: json['video_enlace'],
@@ -1038,14 +1054,14 @@ class Ejercitacion {
     }
 
     return Ejercitacion(
-      idejercitacion: json['idejercitacion'].toString(),
+      idejercitacion: (json['idejercitacion'] ?? '').toString(),
       // Mapeo flexible para nombre (por si la vista o tabla cambian)
       nombre: json['laejercitacion'] ?? json['nombre'] ?? 'Sin nombre',
       laejercitacion: json['laejercitacion'] ?? json['nombre'] ?? 'Sin nombre',
       tipo: json['eltipoejercitacion'] ?? json['tipo'] ?? '',
-      idtipoejercitacion: int.tryParse(json['idtipoejercitacion'].toString()) ?? 1,
+      idtipoejercitacion: int.tryParse(json['idtipoejercitacion']?.toString() ?? '1') ?? 1,
       // Valores por defecto si vienen nulos
-      idestadoejercitacion: int.tryParse(json['idestadoejercitacion'].toString()) ?? 1,
+      idestadoejercitacion: int.tryParse(json['idestadoejercitacion']?.toString() ?? '1') ?? 1,
       elestadoejercitacion: json['elestadoejercitacion'] ?? 'Activo',
       fechadesde: json['fechadesde'] ?? '',
       fechahasta: json['fechahasta'] ?? '',
@@ -1121,15 +1137,15 @@ class DetalleEjercitacion {
 
   factory DetalleEjercitacion.fromJson(Map<String, dynamic> json) {
     return DetalleEjercitacion(
-      iddetalleejercitacion: json['iddetalleejercitacion'].toString(),
-      idejercitacion: json['idejercitacion'].toString(),
+      iddetalleejercitacion: (json['iddetalleejercitacion'] ?? '').toString(),
+      idejercitacion: (json['idejercitacion'] ?? '').toString(),
       elejercicio: json['elejercicio'] ?? '',
       detalle: json['detalle'] ?? '',
       detalleejercicio: json['detalleejercicio'] ?? '',
       fechadesde: json['fechadesde'] ?? '',
       fechahasta: json['fechahasta'] ?? '',
       // Leemos el porcentaje calculado por PHP. Si es null es 0.0
-      porcentaje: double.tryParse(json['porcentaje'].toString()) ?? 0.0,
+      porcentaje: double.tryParse(json['porcentaje']?.toString() ?? '0') ?? 0.0,
       // 🎯 NUEVA LÍNEA: Leer el valor del JSON (asumiendo que la API lo proporcionará)
       ultimaFechaCumplimiento: json['ultima_fecha_cumplimiento'],
     );
