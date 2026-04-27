@@ -408,7 +408,7 @@ class _EventoPageState extends State<EventoPage> {
                 } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
                   final eventos = snapshot.data!;
                   return Container(
-                    height: 310,
+                    height: 220,
                     margin: const EdgeInsets.only(bottom: 10),
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
@@ -764,7 +764,7 @@ class _EventoCardState extends State<EventoCard> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 300,
+      width: 200,
       child: InkWell(
         onTap: () {
           Navigator.push(
@@ -792,12 +792,12 @@ class _EventoCardState extends State<EventoCard> {
                 // --- HERO IMAGE ---
                 Image.network(
                   'https://educaysoft.org/descargar.php?archivo=heros/movil${widget.evento.idevento}.jpg',
-                  height: 120, // Altura incrementada para impacto visual
+                  height: 80, // Altura reducida para consistencia
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Image.network(
                       'https://educaysoft.org/descargar.php?archivo=heros/movilunknow.jpg',
-                      height: 120,
+                      height: 80,
                       fit: BoxFit.cover,
                     );
                   },
@@ -805,7 +805,7 @@ class _EventoCardState extends State<EventoCard> {
                 // --- CONTENIDO ---
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.all(14.0),
+                    padding: const EdgeInsets.all(10.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -818,7 +818,7 @@ class _EventoCardState extends State<EventoCard> {
                                 widget.evento.titulo,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold, 
-                                  fontSize: 16,
+                                  fontSize: 14,
                                   letterSpacing: -0.5,
                                 ),
                                 maxLines: 1,
@@ -839,7 +839,7 @@ class _EventoCardState extends State<EventoCard> {
                                 Text(
                                   widget.evento.detalle,
                                   style: TextStyle(
-                                    fontSize: 13, 
+                                    fontSize: 12, 
                                     color: Colors.grey[700],
                                     height: 1.3,
                                   ),

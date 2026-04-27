@@ -619,9 +619,26 @@ class Cumplimiento {
 
   factory Cumplimiento.fromJson(Map<String, dynamic> json) {
     return Cumplimiento(
-      idcumplimiento: json['idcumplimientomedicacion'].toString(),
-      fechahora: json['fechahora'],
+      idcumplimiento: json['idcumplimientomedicacion']?.toString() ?? '',
+      fechahora: json['fechahora'] ?? '',
      cumplimiento: int.tryParse(json['cumplimiento'].toString()) ?? 0,
+    );
+  }
+}
+
+
+class CumplimientoAlimentacion {
+  final String idcumplimiento;
+  final String fecha;
+  final String hora;
+
+  CumplimientoAlimentacion({required this.idcumplimiento, required this.fecha, required this.hora});
+
+  factory CumplimientoAlimentacion.fromJson(Map<String, dynamic> json) {
+    return CumplimientoAlimentacion(
+      idcumplimiento: json['idcumplimientoalimentacion']?.toString() ?? '',
+      fecha: json['fecha'] ?? '',
+      hora: json['hora'] ?? '',
     );
   }
 }

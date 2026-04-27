@@ -147,23 +147,40 @@ class _AlimentacionPageState extends State<AlimentacionPage> with SingleTickerPr
                 Divider(),
               ],
               ...plan.detalles.map((d) => ListTile(
+                dense: true,
                 title: Text(d.detalle, style: TextStyle(fontSize: 12)),
-                subtitle: Text("${d.fechadesde} - ${d.fechahasta}", style: TextStyle(fontSize: 10)),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (d.videoEnlace != null && d.videoEnlace!.isNotEmpty)
-                      IconButton(
-                        icon: Icon(Icons.play_circle_fill, color: Colors.red, size: 20),
-                        onPressed: () => _lanzarURL(d.videoEnlace),
-                        constraints: BoxConstraints(),
-                        padding: EdgeInsets.symmetric(horizontal: 8),
-                      ),
-                    Icon(Icons.calendar_today, color: Colors.orange, size: 16),
-                  ],
-                ),
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => CumplimientoAlimentacionPage(detalle: d, nombreAlimento: d.elalimento))),
+                subtitle: Text("Ingrediente / Instrucción", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                trailing: d.videoEnlace != null && d.videoEnlace!.isNotEmpty
+                  ? IconButton(
+                      icon: Icon(Icons.play_circle_fill, color: Colors.red, size: 20),
+                      onPressed: () => _lanzarURL(d.videoEnlace),
+                    )
+                  : null,
               )).toList(),
+              Divider(height: 1),
+              ListTile(
+                dense: true,
+                tileColor: Colors.orange.withOpacity(0.05),
+                leading: Icon(Icons.check_circle_outline, color: Colors.orange),
+                title: Text("VER CUMPLIMIENTO DEL PLAN", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.orange)),
+                subtitle: Text("Registrar tomas y ver progreso", style: TextStyle(fontSize: 10)),
+                trailing: Icon(Icons.chevron_right, color: Colors.orange),
+                onTap: () {
+                  if (plan.detalles.isNotEmpty) {
+                    final firstDetail = plan.detalles.first;
+                    Navigator.push(context, MaterialPageRoute(
+                      builder: (context) => CumplimientoAlimentacionPage(
+                        idalimentacion: plan.idalimentacion,
+                        nombreAlimento: plan.laalimentacion,
+                        instruccion: firstDetail.detalle,
+                        fechaDesde: firstDetail.fechadesde,
+                        fechaHasta: firstDetail.fechahasta,
+                        videoEnlace: firstDetail.videoEnlace,
+                      )
+                    ));
+                  }
+                },
+              ),
             ],
           ),
         );

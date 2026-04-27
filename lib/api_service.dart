@@ -1063,16 +1063,14 @@ static Future<List<MedicamentoVista>> fetchCatalogoMedicamentos(String idpersona
 
 
 //static Future<Map<String, bool>> fetchCumplimientosAlimentacion(String iddetalle) async {
-static Future<List<Cumplimiento>> fetchCumplimientosAlimentacion(String iddetalle) async {
-//  final response = await http.get(Uri.parse('https://educaysoft.org/sica/index.php/cumplimientoalimentacion/get_cumplimientos_alim.php?iddetalle=$iddetalle'));
-
+  static Future<List<CumplimientoAlimentacion>> fetchCumplimientosAlimentacion(String idalimentacion) async {
     final url = Uri.parse('https://educaysoft.org/sica/index.php/cumplimientoalimentacion/get_cumplimientos_flutter');
-    final response = await http.post(url, body: {'iddetallealimentacion': iddetalle});
+    final response = await http.post(url, body: {'idalimentacion': idalimentacion});
 
     if (response.statusCode == 200) {
       final decoded = json.decode(response.body);
       if (decoded['data'] != null) {
-        return (decoded['data'] as List).map((e) => Cumplimiento.fromJson(e)).toList();
+        return (decoded['data'] as List).map((e) => CumplimientoAlimentacion.fromJson(e)).toList();
       }
       return [];
     } else {
@@ -1083,18 +1081,17 @@ static Future<List<Cumplimiento>> fetchCumplimientosAlimentacion(String iddetall
 
   // Marcar o desmarcar un día
   static Future<void> registrarCumplimientoAlimentacion(
-      String iddetallealimentacion, 
-      DateTime fechaHora, 
-      int cumplimiento
+      String idalimentacion, 
+      String fecha, 
+      String hora
       ) async {
-        final String fechaHoraString = DateFormat('yyyy-MM-dd HH:mm:ss').format(fechaHora);
 
     final url = Uri.parse('https://educaysoft.org/sica/index.php/cumplimientoalimentacion/save_flutter');
     
-    final response= await http.post(url, body: {
-      'iddetallealimentacion': iddetallealimentacion,
-      'fechahora': fechaHoraString,
-      'cumplimiento': cumplimiento.toString(), // 1 o 0
+    final response = await http.post(url, body: {
+      'idalimentacion': idalimentacion,
+      'fecha': fecha,
+      'hora': hora,
     });
     if(response.statusCode != 200){
         throw Exception('Error al registrar cumplimiento: ${response.body}');

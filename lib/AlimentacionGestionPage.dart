@@ -194,7 +194,7 @@ class _AlimentacionGestionPageState extends State<AlimentacionGestionPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Filtrar por el nombre de la medicación
+    // Filtrar por el nombre de la alimentacion
     final filtrados = alimentaciones.where((m) => m.nombre.toLowerCase().contains(filter.toLowerCase())).toList();
 
     return Scaffold(
@@ -212,7 +212,7 @@ class _AlimentacionGestionPageState extends State<AlimentacionGestionPage> {
             child: TextField(
               style: TextStyle(fontSize: 12),
               decoration: InputDecoration(
-                hintText: "Buscar plan de medicación...",
+                hintText: "Buscar plan de alimentación...",
                 prefixIcon: Icon(Icons.search, size: 18),
                 filled: true,
                 fillColor: Colors.white,
@@ -298,28 +298,40 @@ class _AlimentacionGestionPageState extends State<AlimentacionGestionPage> {
                           ...ali.detalles.map((d) => ListTile(
                             dense: true,
                             title: Text(d.detalle, style: TextStyle(fontSize: 12)),
-                            subtitle: Text("Progreso: ${d.porcentaje.toStringAsFixed(0)} veces", style: TextStyle(fontSize: 10)),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (d.videoEnlace != null && d.videoEnlace!.isNotEmpty) 
-                                  IconButton(
-                                    icon: Icon(Icons.play_circle_fill, color: Colors.red, size: 22),
-                                    onPressed: () => _lanzarURL(d.videoEnlace),
-                                    tooltip: "Ver Video Tutorial",
-                                    constraints: BoxConstraints(),
-                                    padding: EdgeInsets.symmetric(horizontal: 8),
-                                  ),
-                                Icon(Icons.chevron_right, size: 16, color: Colors.blue),
-                              ],
-                            ),
-                            onTap: () async {
-                              await Navigator.push(context, MaterialPageRoute(
-                                builder: (context) => CumplimientoAlimentacionPage(detalle: d, nombreAlimento: ali.nombre)
-                              ));
-                              _cargarAlimentaciones(); 
-                            },
+                            subtitle: Text("Ingrediente / Instrucción", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                            trailing: d.videoEnlace != null && d.videoEnlace!.isNotEmpty
+                              ? IconButton(
+                                  icon: Icon(Icons.play_circle_fill, color: Colors.red, size: 22),
+                                  onPressed: () => _lanzarURL(d.videoEnlace),
+                                  tooltip: "Ver Video Tutorial",
+                                )
+                              : null,
                           )).toList(),
+                          Divider(height: 1),
+                          ListTile(
+                            dense: true,
+                            tileColor: Colors.teal.withOpacity(0.05),
+                            leading: Icon(Icons.check_circle_outline, color: Colors.teal),
+                            title: Text("VER CUMPLIMIENTO DEL PLAN", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.teal)),
+                            subtitle: Text("Registrar tomas, ver historial y progreso", style: TextStyle(fontSize: 10)),
+                            trailing: Icon(Icons.chevron_right, color: Colors.teal),
+                            onTap: () async {
+                              if (ali.detalles.isNotEmpty) {
+                                final firstDetail = ali.detalles.first;
+                                await Navigator.push(context, MaterialPageRoute(
+                                  builder: (context) => CumplimientoAlimentacionPage(
+                                    idalimentacion: ali.idalimentacion, 
+                                    nombreAlimento: ali.nombre,
+                                    instruccion: firstDetail.detalle,
+                                    fechaDesde: firstDetail.fechadesde,
+                                    fechaHasta: firstDetail.fechahasta,
+                                    videoEnlace: firstDetail.videoEnlace,
+                                  )
+                                ));
+                                _cargarAlimentaciones();
+                              }
+                            },
+                          ),
                         ],
                       ),
                     );
