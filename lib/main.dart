@@ -1290,11 +1290,20 @@ class PerfilUsuarioPage extends StatelessWidget {
                       ? const Icon(Icons.check_circle, color: Colors.blueAccent)
                       : const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
                     onTap: () {
-                      if (p.nombre.toLowerCase().contains('vendedor')) {
+                      final lowerName = p.nombre.toLowerCase();
+                      if (lowerName.contains('vendedor')) {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => VendedorDashboardPage(
+                                idpersona: persona!.idpersona),
+                          ),
+                        );
+                      } else if (lowerName.contains('cliente')) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ClienteDashboardPage(
                                 idpersona: persona!.idpersona),
                           ),
                         );
@@ -1620,6 +1629,231 @@ class _VendedorCartsViewState extends State<VendedorCartsView> {
                                 fontWeight: FontWeight.bold,
                                 color: Colors.blueAccent),
                           ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+// ---------------------- CLIENTE DASHBOARD PAGE ---------------------------------
+
+class ClienteDashboardPage extends StatefulWidget {
+  final String idpersona;
+  const ClienteDashboardPage({Key? key, required this.idpersona})
+      : super(key: key);
+
+  @override
+  State<ClienteDashboardPage> createState() => _ClienteDashboardPageState();
+}
+
+class _ClienteDashboardPageState extends State<ClienteDashboardPage> {
+  int _selectedIndex = 0;
+
+  late List<Widget> _views;
+
+  @override
+  void initState() {
+    super.initState();
+    _views = [
+      ClienteCartsView(idpersona: widget.idpersona, isHistory: false),
+      ClienteCartsView(idpersona: widget.idpersona, isHistory: true),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_selectedIndex == 0
+            ? 'Mi Carrito de Compras'
+            : 'Historial de Compras'),
+        backgroundColor: Colors.teal,
+        elevation: 0,
+      ),
+      body: _views[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) => setState(() => _selectedIndex = index),
+        selectedItemColor: Colors.teal,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.shopping_cart),
+            label: 'Carrito',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.receipt_long),
+            label: 'Histórico',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ClienteCartsView extends StatefulWidget {
+  final String idpersona;
+  final bool isHistory;
+
+  const ClienteCartsView(
+      {Key? key, required this.idpersona, required this.isHistory})
+      : super(key: key);
+
+  @override
+  State<ClienteCartsView> createState() => _ClienteCartsViewState();
+}
+
+class _ClienteCartsViewState extends State<ClienteCartsView> {
+  late Future<List<Producto>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  void _loadData() {
+    if (widget.isHistory) {
+      _future =
+          ApiService.fetchHistoricocarritoproductoCliente(widget.idpersona);
+    } else {
+      _future = ApiService.fetchCarritoproductoCliente(widget.idpersona);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: () async {
+        setState(() {
+          _loadData();
+        });
+      },
+      child: FutureBuilder<List<Producto>>(
+        future: _future,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(
+                child: Text(widget.isHistory
+                    ? 'No tienes historial de compras'
+                    : 'Tu carrito está vacío'));
+          }
+
+          final list = snapshot.data!;
+          return ListView.builder(
+            padding: const EdgeInsets.all(12),
+            itemCount: list.length,
+            itemBuilder: (context, index) {
+              final p = list[index];
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15)),
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              p.elproducto,
+                              style: const TextStyle(
+                                  fontSize: 17, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          Text(
+                            '\$${p.precio.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.teal),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Icon(Icons.store, size: 16, color: Colors.teal),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Vendedor: ${p.elcustodio}',
+                            style: TextStyle(
+                                color: Colors.grey[700], fontSize: 14),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.shopping_basket,
+                              size: 16, color: Colors.grey),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Cantidad: ${p.cantidad}',
+                            style: TextStyle(
+                                color: Colors.grey[700], fontSize: 14),
+                          ),
+                        ],
+                      ),
+                      if (p.fechacarga.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(Icons.calendar_today,
+                                size: 16, color: Colors.grey),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Fecha: ${p.fechacarga}',
+                              style: TextStyle(
+                                  color: Colors.grey[500], fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ],
+                      if (widget.isHistory &&
+                          p.elestadoproductocarrito.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                  color: Colors.teal.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                      color: Colors.teal.withOpacity(0.3))),
+                              child: Text(
+                                p.elestadoproductocarrito,
+                                style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.teal),
+                              ),
+                            ),
+                            if (p.fechadescarga.isNotEmpty)
+                              Text(
+                                'Finalizado: ${p.fechadescarga}',
+                                style: TextStyle(
+                                    color: Colors.grey[500], fontSize: 11),
+                              ),
+                          ],
                         ),
                       ],
                     ],

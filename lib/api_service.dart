@@ -1512,4 +1512,30 @@ print("RESPUESTA BRUTA DEL SERVIDOR: ${response.body}");
       throw Exception('Error al cargar histórico del vendedor');
     }
   }
+
+  static Future<List<Producto>> fetchCarritoproductoCliente(
+      String idpersona) async {
+    final url = Uri.parse(
+        'https://educaysoft.org/sica/index.php/carritoproducto/carritoproductocliente_flutter?idpersona=$idpersona');
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((e) => Producto.fromJson(e)).toList();
+    } else {
+      throw Exception('Error al cargar productos del cliente');
+    }
+  }
+
+  static Future<List<Producto>> fetchHistoricocarritoproductoCliente(
+      String idpersona) async {
+    final url = Uri.parse(
+        'https://educaysoft.org/sica/index.php/historicocarritoproducto/historicocarritoproductocliente_flutter?idpersona=$idpersona');
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((e) => Producto.fromJson(e)).toList();
+    } else {
+      throw Exception('Error al cargar histórico del cliente');
+    }
+  }
 }
