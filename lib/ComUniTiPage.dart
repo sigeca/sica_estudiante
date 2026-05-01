@@ -3,6 +3,7 @@ import 'evento.dart';
 import 'api_service.dart';
 import 'ProductoVendedorPage.dart'; 
 import 'tipo_oferta.dart';
+import 'SicaAppBar.dart';
 
 class ComUniTiPage extends StatefulWidget {
   final String idpersona;
@@ -44,35 +45,22 @@ class _ComUniTiPageState extends State<ComUniTiPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    Widget content = Column(
       children: [
-        // Header con título
-        Container(
-          width: double.infinity,
-          color: Colors.blue.shade800,
-          padding: EdgeInsets.only(
-            top: widget.showBackButton ? MediaQuery.of(context).padding.top + 10 : 15,
-            bottom: 15,
+        // Ocultar header si es pestaña porque HomeScreen ya tiene el SicaAppBar
+        if (widget.showBackButton)
+          const SizedBox.shrink() 
+        else
+          Container(
+            width: double.infinity,
+            color: Colors.blue.shade800,
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: const Text(
+              'ComUniTi',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
           ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              if (widget.showBackButton)
-                Positioned(
-                  left: 8,
-                  child: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ),
-              const Text(
-                'ComUniTi',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-              ),
-            ],
-          ),
-        ),
         
         // Search bar
         Padding(
@@ -208,6 +196,19 @@ class _ComUniTiPageState extends State<ComUniTiPage> {
         ),
       ],
     );
+
+    if (widget.showBackButton) {
+      return Scaffold(
+        appBar: SicaAppBar(
+          idpersona: widget.idpersona,
+          cedula: widget.cedula,
+          title: 'ComUniTi',
+        ),
+        body: content,
+      );
+    }
+
+    return content;
   }
 
   Widget _buildCategoryButton(String category, Color color) {
@@ -447,7 +448,7 @@ class ProductoFeedCard extends StatelessWidget {
                 ),
               ),
             ),
-          ],
+      ],
         ),
       ),
     );

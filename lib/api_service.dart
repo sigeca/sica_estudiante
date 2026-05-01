@@ -358,6 +358,70 @@ static Future<List<Tema>> fetchTema(String idtema) async {
       }
     }
 
+  static Future<List<Map<String, dynamic>>> fetchSexos() async {
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/login/sexos_flutter');
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      return List<Map<String, dynamic>>.from(json['data']);
+    }
+    return [];
+  }
+
+  static Future<List<Map<String, dynamic>>> fetchPaises() async {
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/login/paises_flutter');
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      return List<Map<String, dynamic>>.from(json['data']);
+    }
+    return [];
+  }
+
+  static Future<List<Map<String, dynamic>>> fetchEventosRegistro() async {
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/login/eventos_flutter');
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      return List<Map<String, dynamic>>.from(json['data']);
+    }
+    return [];
+  }
+
+  static Future<Map<String, dynamic>> register({
+    required String idevento,
+    required String cedula,
+    required String apellidos,
+    required String nombres,
+    required String email,
+    required String idsexo,
+    required String fechanacimiento,
+    required String telefono,
+    required String idpais,
+    required String password,
+  }) async {
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/login/new_user_registration');
+    final response = await http.post(url, body: {
+      'idevento': idevento,
+      'cedula': cedula,
+      'apellidos': apellidos,
+      'nombres': nombres,
+      'email': email,
+      'idsexo': idsexo,
+      'fechanacimiento': fechanacimiento,
+      'telefono': telefono,
+      'idpais': idpais,
+      'password': password,
+      'fuente': '1', // Indicar que es JSON para el backend
+    });
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Error al registrar usuario');
+    }
+  }
+
 
 
   static Future<List<Vendedor>> fetchVendedores() async {
@@ -1397,4 +1461,29 @@ print("RESPUESTA BRUTA DEL SERVIDOR: ${response.body}");
     }
   }
 
+  static Future<List<Perfil>> fetchPerfiles(String idpersona) async {
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/perfil/perfil_personaflutter');
+    final response = await http.post(
+      url,
+      body: {
+        'idpersona': idpersona,
+      },
+    );
+    if (response.statusCode == 200) {
+      try {
+        final decoded = json.decode(response.body);
+        if (decoded is Map && decoded.containsKey('data')) {
+          final data = decoded['data'];
+          if (data is List) {
+            return data.map((e) => Perfil.fromJson(e)).toList();
+          }
+        }
+        return [];
+      } catch (e) {
+        return [];
+      }
+    } else {
+      return [];
+    }
+  }
 }

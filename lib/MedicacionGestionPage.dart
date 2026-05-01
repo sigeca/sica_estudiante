@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'api_service.dart';
 import 'evento.dart';
 import 'CumplimientoPage.dart';
+import 'SicaAppBar.dart';
 
 class MedicacionGestionPage extends StatefulWidget {
   final String idpersona;
@@ -173,12 +174,10 @@ class _MedicacionGestionPageState extends State<MedicacionGestionPage> {
     final filtrados = medicaciones.where((m) => m.nombre.toLowerCase().contains(filter.toLowerCase())).toList();
 
     return Scaffold(
-      backgroundColor: Color(0xFFF5F7FA),
-      appBar: AppBar(
-        title: Text("Control de Medicación", style: TextStyle(fontSize: 16, color: Colors.black87)),
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-        iconTheme: IconThemeData(color: Colors.black87),
+      appBar: SicaAppBar(
+        idpersona: widget.idpersona,
+        cedula: widget.cedula,
+        title: "Control de Medicación",
       ),
       body: Column(
         children: [

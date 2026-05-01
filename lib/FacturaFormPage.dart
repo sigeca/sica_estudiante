@@ -3,6 +3,7 @@ import 'api_service.dart';
 import 'evento.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'SicaAppBar.dart';
 
 class FacturaFormPage extends StatefulWidget {
   final String idpersona;
@@ -202,10 +203,10 @@ class _FacturaFormPageState extends State<FacturaFormPage> {
     if (_isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Generar Factura'),
-        backgroundColor: Colors.green.shade700,
-        foregroundColor: Colors.white,
+      appBar: SicaAppBar(
+        idpersona: widget.idpersona,
+        cedula: widget.cedula,
+        title: 'Generar Factura',
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

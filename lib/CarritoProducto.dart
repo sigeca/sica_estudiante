@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'evento.dart';
 import 'api_service.dart';
+import 'SicaAppBar.dart';
+import 'CartController.dart';
 
 class CarritoProductoPage extends StatefulWidget {
   final String idpersona;
@@ -92,16 +94,16 @@ class _CarritoProductoPageState extends State<CarritoProductoPage> {
         backgroundColor: Colors.redAccent,
       ),
     );
+    CartController().updateCartCount(widget.idpersona);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        title: const Text('Mi Carrito de Compras', style: TextStyle(fontSize: 16)),
-        backgroundColor: Colors.blue[700],
-        elevation: 0,
+      appBar: SicaAppBar(
+        idpersona: widget.idpersona,
+        cedula: widget.cedula,
       ),
       body: FutureBuilder<List<Producto>>(
         future: _productosFuture,

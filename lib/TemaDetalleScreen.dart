@@ -1,18 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart'; // [IMPORTANTE] Importar paquete
+import 'package:url_launcher/url_launcher.dart';
 import 'api_service.dart';
 import 'evento.dart';
+import 'SicaAppBar.dart';
 
 class TemaDetalleScreen extends StatelessWidget {
   final String idtema;
-  const TemaDetalleScreen({super.key, required this.idtema});
+  final String idpersona;
+  final String cedula;
+
+  const TemaDetalleScreen({
+    Key? key,
+    required this.idtema,
+    required this.idpersona,
+    required this.cedula,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Detalle del Tema ID: $idtema'),
-        backgroundColor: Colors.purple,
+      appBar: SicaAppBar(
+        idpersona: idpersona,
+        cedula: cedula,
+        title: 'Detalle del Tema',
       ),
       body: FutureBuilder<List<Tema>>(
         future: ApiService.fetchTema(idtema),
@@ -22,7 +32,6 @@ class TemaDetalleScreen extends StatelessWidget {
           } else if (snapshot.hasError) {
             return Center(child: Text('Error al cargar el tema: ${snapshot.error}'));
           } else {
-            // Verificamos que haya datos
             if (snapshot.data == null || snapshot.data!.isEmpty) {
                return const Center(child: Text('No se encontró información del tema.'));
             }
@@ -44,24 +53,8 @@ class TemaDetalleScreen extends StatelessWidget {
                   _buildDetailTile(context, 'Secuencia', tema.secuencia),
                   _buildDetailTile(context, 'Autónomo', tema.aprendizajeautonomo),
                   _buildDetailTile(context, 'Duración (min)', tema.duracionminutos),
-                  
-                  // Enlace del Video (YouTube)
-                  _buildDetailTile(
-                    context, 
-                    'Video Tutorial', 
-                    tema.enlace, 
-                    isLink: true,
-                    icon: Icons.play_circle_fill // Icono opcional para destacar que es video
-                  ),
-                  
-                  // Enlace de la Presentación
-                  _buildDetailTile(
-                    context, 
-                    'Link Presentación', 
-                    tema.linkpresentacion, 
-                    isLink: true,
-                    icon: Icons.link // Icono opcional
-                  ),
+                  _buildDetailTile(context, 'Video Tutorial', tema.enlace, isLink: true, icon: Icons.play_circle_fill),
+                  _buildDetailTile(context, 'Link Presentación', tema.linkpresentacion, isLink: true, icon: Icons.link),
                 ],
               ),
             );
@@ -71,35 +64,24 @@ class TemaDetalleScreen extends StatelessWidget {
     );
   }
 
-  // --- FUNCIÓN PARA ABRIR URL ---
-Future<void> _lanzarURL(BuildContext context, String urlString) async {
-  if (urlString.isEmpty) return;
-
-  String finalUrl = urlString.trim();
-
-  // TRUCO: Si detectamos que es un PDF o el script de descarga, usamos Google Docs Viewer
-  // Esto permite visualizarlo en lugar de solo descargarlo a la carpeta de descargas.
-  if (finalUrl.contains('.pdf') || finalUrl.contains('descargar.php')) {
-    // Codificamos la URL original para que pase correctamente como parámetro
-    final encodedUrl = Uri.encodeComponent(finalUrl);
-    finalUrl = 'https://docs.google.com/viewer?url=$encodedUrl';
-  }
-
-  final Uri uri = Uri.parse(finalUrl);
-
-  try {
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      throw Exception('No se pudo lanzar $uri');
+  Future<void> _lanzarURL(BuildContext context, String urlString) async {
+    if (urlString.isEmpty) return;
+    String finalUrl = urlString.trim();
+    if (finalUrl.contains('.pdf') || finalUrl.contains('descargar.php')) {
+      final encodedUrl = Uri.encodeComponent(finalUrl);
+      finalUrl = 'https://docs.google.com/viewer?url=$encodedUrl';
     }
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('No se pudo abrir el enlace: $e')),
-    );
+    final Uri uri = Uri.parse(finalUrl);
+    try {
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        throw Exception('No se pudo lanzar $uri');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo abrir el enlace: $e')),
+      );
+    }
   }
-}
-
-
-
 
   Widget _buildDetailTile(BuildContext context, String label, String value, {bool isLink = false, IconData? icon}) {
     return Padding(
@@ -122,7 +104,7 @@ Future<void> _lanzarURL(BuildContext context, String urlString) async {
           const SizedBox(height: 4.0),
           isLink
               ? InkWell(
-                  onTap: () => _lanzarURL(context, value), // Llamamos a la función real
+                  onTap: () => _lanzarURL(context, value),
                   child: Row(
                     children: [
                       Expanded(
@@ -133,10 +115,10 @@ Future<void> _lanzarURL(BuildContext context, String urlString) async {
                             color: Colors.blue,
                             decoration: TextDecoration.underline,
                           ),
-                          overflow: TextOverflow.ellipsis, // Evita que un link muy largo rompa el diseño
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const Icon(Icons.open_in_new, size: 16, color: Colors.blue), // Icono visual de "abrir"
+                      const Icon(Icons.open_in_new, size: 16, color: Colors.blue),
                     ],
                   ),
                 )

@@ -8,6 +8,7 @@ import 'CumplimientoPage.dart'; // Asumiendo que aquí manejas la lista de medic
 import 'MedicacionGestionPage.dart'; // Asumiendo que aquí manejas la lista de medicación
 import 'AlimentacionGestionPage.dart'; // Asumiendo que aquí manejas la lista de medicación
 import 'EjercitacionGestionPage.dart'; // Asumiendo que aquí manejas la lista de medicación
+import 'SicaAppBar.dart';
 
 class SaludPage extends StatefulWidget {
   final String idpersona;
@@ -28,14 +29,13 @@ class _SaludPageState extends State<SaludPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        title: Text("Gestión de Salud", style: TextStyle(fontSize: 18, color: Colors.white)),
-        backgroundColor: primaryColor,
-        elevation: 0,
+      appBar: SicaAppBar(
+        idpersona: widget.idpersona,
+        cedula: widget.cedula,
+        title: "Gestión de Salud",
         actions: [
           IconButton(
-            icon: Icon(Icons.favorite, color: Colors.redAccent),
+            icon: const Icon(Icons.favorite, color: Colors.redAccent),
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => SignosVitalesPage(idpersona: widget.idpersona)),

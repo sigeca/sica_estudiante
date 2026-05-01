@@ -3,12 +3,15 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'evento.dart';
 import 'api_service.dart';
+import 'SicaAppBar.dart';
 
 class ParticipacionScreen extends StatefulWidget {
   final String idevento;
   final String fecha;
   final String temacorto;
   final String tema;
+  final String idpersona;
+  final String cedula;
 
   const ParticipacionScreen({
     Key? key,
@@ -16,6 +19,8 @@ class ParticipacionScreen extends StatefulWidget {
     required this.fecha,
     required this.temacorto,
     required this.tema,
+    required this.idpersona,
+    required this.cedula,
   }) : super(key: key);
 
   @override
@@ -392,7 +397,11 @@ class _ParticipacionScreenState extends State<ParticipacionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Participaciones Scrum')),
+      appBar: SicaAppBar(
+        idpersona: widget.idpersona,
+        cedula: widget.cedula,
+        title: 'Participaciones Scrum',
+      ),
       body: _buildBody(),
       floatingActionButton: _selectedIndex == 0
           ? FloatingActionButton(

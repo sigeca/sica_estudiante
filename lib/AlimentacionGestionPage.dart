@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'api_service.dart';
 import 'evento.dart';
 import 'CumplimientoAlimentacionPage.dart';
+import 'SicaAppBar.dart';
 
 class AlimentacionGestionPage extends StatefulWidget {
   final String idpersona;
@@ -198,12 +199,10 @@ class _AlimentacionGestionPageState extends State<AlimentacionGestionPage> {
     final filtrados = alimentaciones.where((m) => m.nombre.toLowerCase().contains(filter.toLowerCase())).toList();
 
     return Scaffold(
-      backgroundColor: Color(0xFFF5F7FA),
-      appBar: AppBar(
-        title: Text("Control de Alimentación", style: TextStyle(fontSize: 16, color: Colors.black87)),
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-        iconTheme: IconThemeData(color: Colors.black87),
+      appBar: SicaAppBar(
+        idpersona: widget.idpersona,
+        cedula: widget.cedula,
+        title: "Control de Alimentación",
       ),
       body: Column(
         children: [

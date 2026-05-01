@@ -18,11 +18,15 @@ import 'TemaDetalleScreen.dart';
 class SesionItem extends StatefulWidget {
   final SesionEvento sesion;
   final bool isDocente;
+  final String idpersona;
+  final String cedula;
 
   const SesionItem({
     Key? key,
     required this.sesion,
     required this.isDocente,
+    required this.idpersona,
+    required this.cedula,
   }) : super(key: key);
 
   @override
@@ -212,7 +216,7 @@ class _SesionItemState extends State<SesionItem> {
                             icon: const Icon(Icons.done, color: Colors.blueAccent),
                             tooltip: 'Participación',
                             onPressed: () {
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => ParticipacionScreen(idevento: widget.sesion.idevento, fecha: widget.sesion.fecha, temacorto: widget.sesion.temacorto, tema: widget.sesion.tema)));
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => ParticipacionScreen(idevento: widget.sesion.idevento, fecha: widget.sesion.fecha, temacorto: widget.sesion.temacorto, tema: widget.sesion.tema, idpersona: widget.idpersona, cedula: widget.cedula)));
                             },
                           ),
                           const VerticalDivider(),
@@ -220,21 +224,21 @@ class _SesionItemState extends State<SesionItem> {
                             icon: const Icon(Icons.note_alt_outlined, color: Colors.blueAccent),
                             tooltip: 'Notas',
                             onPressed: () {
-                               Navigator.push(context, MaterialPageRoute(builder: (_) => ParticipacionScreen(idevento: widget.sesion.idevento, fecha: widget.sesion.fecha, temacorto: widget.sesion.temacorto, tema: widget.sesion.tema)));
+                               Navigator.push(context, MaterialPageRoute(builder: (_) => ParticipacionScreen(idevento: widget.sesion.idevento, fecha: widget.sesion.fecha, temacorto: widget.sesion.temacorto, tema: widget.sesion.tema, idpersona: widget.idpersona, cedula: widget.cedula)));
                             },
                           ),
                           IconButton(
                             icon: const Icon(Icons.check_circle_outline, color: Colors.blueAccent),
                             tooltip: 'Asistencias',
                             onPressed: () {
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => AsistenciaScreen(idevento: widget.sesion.idevento, fecha: widget.sesion.fecha)));
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => AsistenciaScreen(idevento: widget.sesion.idevento, fecha: widget.sesion.fecha, idpersona: widget.idpersona, cedula: widget.cedula)));
                             },
                           ),
                           IconButton(
                             icon: const Icon(Icons.monetization_on, color: Colors.blueAccent),
                             tooltip: 'Pagos',
                             onPressed: () {
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => PagoeventoScreen(idevento: widget.sesion.idevento, fecha: widget.sesion.fecha)));
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => PagoeventoScreen(idevento: widget.sesion.idevento, fecha: widget.sesion.fecha, idpersona: widget.idpersona, cedula: widget.cedula)));
                             },
                           ),
                           IconButton(
@@ -242,7 +246,7 @@ class _SesionItemState extends State<SesionItem> {
                             tooltip: 'Detalle',
                             onPressed: () {
                               // Asegúrate de tener TemaDetalleScreen importado
-                               Navigator.push(context, MaterialPageRoute(builder: (_) => TemaDetalleScreen(idtema: widget.sesion.idtema)));
+                               Navigator.push(context, MaterialPageRoute(builder: (_) => TemaDetalleScreen(idtema: widget.sesion.idtema, idpersona: widget.idpersona, cedula: widget.cedula)));
                             },
                           ),
                         ],
@@ -260,7 +264,7 @@ class _SesionItemState extends State<SesionItem> {
                             tooltip: 'Detalle',
                             onPressed: () {
                               // Asegúrate de tener TemaDetalleScreen importado
-                               Navigator.push(context, MaterialPageRoute(builder: (_) => TemaDetalleScreen(idtema: widget.sesion.idtema)));
+                               Navigator.push(context, MaterialPageRoute(builder: (_) => TemaDetalleScreen(idtema: widget.sesion.idtema, idpersona: widget.idpersona, cedula: widget.cedula)));
                             },
                           ),
                         ],

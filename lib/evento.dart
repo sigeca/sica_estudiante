@@ -1361,3 +1361,16 @@ class TipoImpuesto {
     );
   }
 }
+class Perfil {
+  final String idperfil;
+  final String nombre;
+
+  Perfil({required this.idperfil, required this.nombre});
+
+  factory Perfil.fromJson(Map<String, dynamic> json) {
+    return Perfil(
+      idperfil: json['idperfil']?.toString() ?? '',
+      nombre: json['nombreperfil'] ?? json['perfil'] ?? json['nombre'] ?? 'Invitado',
+    );
+  }
+}

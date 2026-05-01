@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_service.dart'; // Asegúrate de que este archivo esté correcto
-import 'evento.dart';     // Asegúrate de que este archivo esté correcto
+import 'evento.dart'; // Asegúrate de que este archivo esté correcto
 import 'portafolio.dart';
 import 'LoginPage.dart';
 import 'LoginPagex.dart';
@@ -14,7 +14,9 @@ import 'MedicacionGestionPage.dart'; // Asumiendo que aquí manejas la lista de 
 import 'AlimentacionGestionPage.dart'; // Asumiendo que aquí manejas la lista de medicación
 import 'EjercitacionGestionPage.dart'; // Asumiendo que aquí manejas la lista de medicación
 import 'tipo_oferta.dart';
-
+import 'RegistroPage.dart';
+import 'SicaAppBar.dart';
+import 'CartController.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,7 +28,8 @@ void main() async {
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent, // Barra superior transparente
     systemNavigationBarColor: Colors.transparent, // Barra inferior transparente
-    statusBarIconBrightness: Brightness.dark, // Iconos oscuros (o light según tu fondo)
+    statusBarIconBrightness:
+        Brightness.dark, // Iconos oscuros (o light según tu fondo)
     systemNavigationBarIconBrightness: Brightness.dark,
   ));
 
@@ -44,7 +47,9 @@ class SicaApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
         primaryColor: Colors.blueAccent,
-        colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.blue).copyWith(secondary: Colors.tealAccent),
+        scaffoldBackgroundColor: const Color(0xFFF5F7FA),
+        colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.blue)
+            .copyWith(secondary: Colors.tealAccent),
       ),
       initialRoute: '/',
       routes: {
@@ -57,6 +62,7 @@ class SicaApp extends StatelessWidget {
           final idpersona = args is String ? args : '';
           return HomeScreen(idpersona: idpersona);
         },
+        '/registro': (context) => const RegistroPage(),
       },
     );
   }
@@ -80,7 +86,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _checkLoginStatus() async {
     // Retraso para mostrar el splash screen al menos 1 segundo
-    await Future.delayed(const Duration(seconds: 1)); 
+    await Future.delayed(const Duration(seconds: 1));
 
     final prefs = await SharedPreferences.getInstance();
     final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
@@ -92,15 +98,15 @@ class _SplashScreenState extends State<SplashScreen> {
     if (isLoggedIn && idpersona != null && idpersona.isNotEmpty) {
       // Si el usuario está logueado y tiene biometría habilitada
       if (isBiometricsEnabled) {
-         // Redirigir a la pantalla de Login Biométrico para autenticación rápida
-        Navigator.pushReplacementNamed(context, '/login'); 
+        // Redirigir a la pantalla de Login Biométrico para autenticación rápida
+        Navigator.pushReplacementNamed(context, '/login');
       } else {
         // Si está logueado pero sin biometría, ir directamente a Home (puede necesitar autenticación manual si la sesión expira)
         Navigator.pushReplacementNamed(context, '/home', arguments: idpersona);
       }
     } else {
       // Si no hay sesión, ir al login de credenciales (asumimos que es la ruta de inicio por defecto)
-      Navigator.pushReplacementNamed(context, '/loginx'); 
+      Navigator.pushReplacementNamed(context, '/loginx');
     }
   }
 
@@ -112,7 +118,7 @@ class _SplashScreenState extends State<SplashScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // Puedes colocar aquí el logo o un placeholder
-            Icon(Icons.school, size: 100, color: Colors.blueAccent), 
+            Icon(Icons.school, size: 100, color: Colors.blueAccent),
             SizedBox(height: 20),
             Text(
               'SICA - Cargando...',
@@ -149,49 +155,70 @@ class _HomeScreenState extends State<HomeScreen> {
     Center(child: CircularProgressIndicator()),
     AcercaDePage(),
   ];
-Persona? _personaInfo; // Para almacenar la info de la persona
+  Persona? _personaInfo; // Para almacenar la info de la persona
+  List<Perfil> _perfiles = []; // Para almacenar los perfiles
+  Perfil? _perfilSeleccionado; // Perfil seleccionado
 
   @override
   void initState() {
     super.initState();
 // 1. Obtener la información de la persona
     _fetchPersonaData();
+    CartController().updateCartCount(widget.idpersona);
 
 //    _pages = <Widget>[
-  //    EventoPage(idpersona: widget.idpersona),
-  //    PortafolioPage(idpersona: widget.idpersona),
-  //    ComUniTiPage(idpersona: widget.idpersona),
-  //    ComUniTiPage(cedula: _personaInfo!.cedula), // Usar .cedula aquí
-  //  ];
+    //    EventoPage(idpersona: widget.idpersona),
+    //    PortafolioPage(idpersona: widget.idpersona),
+    //    ComUniTiPage(idpersona: widget.idpersona),
+    //    ComUniTiPage(cedula: _personaInfo!.cedula), // Usar .cedula aquí
+    //  ];
   }
-Future<void> _fetchPersonaData() async {
+
+  Future<void> _fetchPersonaData() async {
     try {
       final persona = await ApiService.fetchPersonaInfo(widget.idpersona);
       if (mounted) {
         setState(() {
           _personaInfo = persona;
-          // 2. Inicializar _pages después de obtener los datos
-          _pages = <Widget>[
-            EventoPage(idpersona: widget.idpersona, cedula: _personaInfo!.cedula),
-            PortafolioPage(idpersona: widget.idpersona),
-            // Pasar la cédula a ComUniTiPage
-            ComUniTiPage(idpersona: widget.idpersona,cedula: _personaInfo!.cedula), // Usar .cedula aquí
-            SaludPage(idpersona: widget.idpersona,cedula: _personaInfo!.cedula), // Usar .cedula aquí
-            const AcercaDePage(),
-          ];
         });
+
+        // 2. Obtener los perfiles
+        final perfiles = await ApiService.fetchPerfiles(widget.idpersona);
+        if (mounted) {
+          setState(() {
+            _perfiles = perfiles;
+            if (_perfiles.isNotEmpty) {
+              _perfilSeleccionado = _perfiles.first;
+            } else {
+              _perfilSeleccionado = Perfil(idperfil: '0', nombre: 'Invitado');
+            }
+
+            // 3. Inicializar _pages después de obtener los datos
+            _pages = <Widget>[
+              EventoPage(
+                  idpersona: widget.idpersona, cedula: _personaInfo!.cedula),
+              PortafolioPage(idpersona: widget.idpersona),
+              ComUniTiPage(
+                  idpersona: widget.idpersona, cedula: _personaInfo!.cedula),
+              SaludPage(
+                  idpersona: widget.idpersona, cedula: _personaInfo!.cedula),
+              const AcercaDePage(),
+            ];
+          });
+        }
       }
     } catch (e) {
       // Manejo de errores (por si la info de la persona falla)
       print('Error al cargar info de persona en HomeScreen: $e');
       if (mounted) {
         setState(() {
+          _perfilSeleccionado = Perfil(idperfil: '0', nombre: 'Invitado');
           // Inicializar _pages con un valor por defecto o la idpersona si falla la cédula
-           _pages = <Widget>[
+          _pages = <Widget>[
             EventoPage(idpersona: widget.idpersona, cedula: widget.idpersona),
             PortafolioPage(idpersona: widget.idpersona),
-            ComUniTiPage(idpersona:widget.idpersona,cedula: widget.idpersona), // Asumir idpersona como fallback
-            SaludPage(idpersona: widget.idpersona,cedula: widget.idpersona),
+            ComUniTiPage(idpersona: widget.idpersona, cedula: widget.idpersona),
+            SaludPage(idpersona: widget.idpersona, cedula: widget.idpersona),
             const AcercaDePage(),
           ];
         });
@@ -199,53 +226,35 @@ Future<void> _fetchPersonaData() async {
     }
   }
 
-
-
-
-
-
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
   }
-  
+
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear(); // Borra toda la sesión guardada
 
     // Redirige al usuario a la pantalla de login principal.
     if (mounted) {
-       Navigator.of(context).pushNamedAndRemoveUntil('/loginx', (Route<dynamic> route) => false);
+      Navigator.of(context)
+          .pushNamedAndRemoveUntil('/loginx', (Route<dynamic> route) => false);
     }
   }
 
-
   PreferredSizeWidget _buildHeader() {
-    return AppBar(
-      title: Row(
-        children: [
-          Image.network(
-            'https://educaysoft.org/sica/images/logo.jpg',
-            height: 40,
-            errorBuilder: (context, error, stackTrace) => const Icon(Icons.school, size: 40, color: Colors.white),
-          ),
-          const SizedBox(width: 10),
-          const Text('SICA - Educaysoft', style: TextStyle(fontSize: 18)),
-        ],
-      ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.logout),
-          tooltip: 'Cerrar Sesión',
-          onPressed: _logout,
-        ),
-      ],
+    return SicaAppBar(
+      idpersona: widget.idpersona,
+      cedula: _personaInfo?.cedula ?? '',
+      showLogout: true,
+      onLogout: _logout,
     );
   }
 
   Widget _buildUserProfile(Persona persona) {
-    final fotoUrl = "https://educaysoft.org/descargar2.php?archivo=${persona.cedula}.jpg";
+    final fotoUrl =
+        "https://educaysoft.org/descargar2.php?archivo=${persona.cedula}.jpg";
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -297,14 +306,50 @@ Future<void> _fetchPersonaData() async {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                Text(
-                  'Cédula: ${persona.cedula}',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey[500],
-                    letterSpacing: 0.2,
+                if (_perfiles.length > 1)
+                  DropdownButtonHideUnderline(
+                    child: DropdownButton<Perfil>(
+                      value: _perfilSeleccionado,
+                      isDense: true,
+                      icon: const Icon(Icons.arrow_drop_down, size: 18),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.blue[700],
+                        fontWeight: FontWeight.bold,
+                      ),
+                      onChanged: (Perfil? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            _perfilSeleccionado = newValue;
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                  'Usted está logueado como ${newValue.nombre}'),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      },
+                      items:
+                          _perfiles.map<DropdownMenuItem<Perfil>>((Perfil p) {
+                        return DropdownMenuItem<Perfil>(
+                          value: p,
+                          child: Text(p.nombre),
+                        );
+                      }).toList(),
+                    ),
+                  )
+                else
+                  Text(
+                    'Perfil: ${_perfilSeleccionado?.nombre ?? 'Invitado'}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey[500],
+                      letterSpacing: 0.2,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
               ],
             ),
           ),
@@ -326,8 +371,10 @@ Future<void> _fetchPersonaData() async {
       bottomNavigationBar: BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.event), label: 'Eventos'),
-          BottomNavigationBarItem(icon: Icon(Icons.folder), label: 'Portafolio'),
-          BottomNavigationBarItem(icon: Icon(Icons.storefront), label: 'ComUniTi'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.folder), label: 'Portafolio'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.storefront), label: 'ComUniTi'),
           // --- AQUÍ ESTÁ TU NUEVA OPCIÓN ---
           BottomNavigationBarItem(
             icon: Icon(Icons.favorite, color: Colors.red), // Corazón Rojo
@@ -338,7 +385,6 @@ Future<void> _fetchPersonaData() async {
             icon: Icon(Icons.info),
             label: 'Acerca de',
           ),
-
         ],
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
@@ -376,12 +422,10 @@ class _EventoPageState extends State<EventoPage> {
 
   void _fetchData() {
     _eventosFuture = ApiService.fetchEventos(widget.idpersona);
-    _personaInfoFuture = ApiService.fetchPersonaInfo(widget.idpersona); 
+    _personaInfoFuture = ApiService.fetchPersonaInfo(widget.idpersona);
     _asignaturasFuture = ApiService.fetchAsignaturasMalla();
     _tipoOfertaFuture = ApiService.fetchTipoOferta();
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -397,12 +441,15 @@ class _EventoPageState extends State<EventoPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // --- RIBBON 1: EVENTOS ---
-            _buildRibbonHeader('Eventos y cursos tomados', Icons.event_available),
+            _buildRibbonHeader(
+                'Eventos y cursos tomados', Icons.event_available),
             FutureBuilder<List<Evento>>(
               future: _eventosFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SizedBox(height: 200, child: Center(child: CircularProgressIndicator()));
+                  return const SizedBox(
+                      height: 200,
+                      child: Center(child: CircularProgressIndicator()));
                 } else if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}'));
                 } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
@@ -414,31 +461,41 @@ class _EventoPageState extends State<EventoPage> {
                       scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.symmetric(horizontal: 10),
                       itemCount: eventos.length,
-                      itemBuilder: (context, index) => EventoCard(evento: eventos[index], idpersona: widget.idpersona),
+                      itemBuilder: (context, index) => EventoCard(
+                          evento: eventos[index],
+                          idpersona: widget.idpersona,
+                          cedula: widget.cedula),
                     ),
                   );
                 }
-                return const Padding(padding: EdgeInsets.all(20), child: Center(child: Text('No hay eventos.')));
+                return const Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Center(child: Text('No hay eventos.')));
               },
             ),
 
-            // --- RIBBON 2: ASIGNATURAS MOD ---
-            _buildRibbonHeader('Asignaturas (Malla MOD)', Icons.book),
+            // --- RIBBON 2: CURSOS MOOC ---
+            _buildRibbonHeader('Cursos (Malla MOOC)', Icons.book),
             FutureBuilder<List<Asignatura>>(
               future: _asignaturasFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SizedBox(height: 150, child: Center(child: CircularProgressIndicator()));
+                  return const SizedBox(
+                      height: 150,
+                      child: Center(child: CircularProgressIndicator()));
                 } else if (snapshot.hasError) {
                   return Container(
                     padding: const EdgeInsets.all(20),
                     child: Column(
                       children: [
-                        Icon(Icons.error_outline, color: Colors.red[300], size: 40),
+                        Icon(Icons.error_outline,
+                            color: Colors.red[300], size: 40),
                         const SizedBox(height: 8),
                         Text(
                           'No se pudieron cargar las asignaturas',
-                          style: TextStyle(color: Colors.red[700], fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              color: Colors.red[700],
+                              fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -452,7 +509,8 @@ class _EventoPageState extends State<EventoPage> {
                       scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.symmetric(horizontal: 10),
                       itemCount: asignaturas.length,
-                      itemBuilder: (context, index) => AsignaturaCard(asignatura: asignaturas[index]),
+                      itemBuilder: (context, index) =>
+                          AsignaturaCard(asignatura: asignaturas[index]),
                     ),
                   );
                 }
@@ -462,9 +520,12 @@ class _EventoPageState extends State<EventoPage> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.info_outline, color: Colors.grey[400], size: 30),
+                      Icon(Icons.info_outline,
+                          color: Colors.grey[400], size: 30),
                       const SizedBox(height: 8),
-                      Text('No hay asignaturas en esta malla.', style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                      Text('No hay asignaturas en esta malla.',
+                          style:
+                              TextStyle(color: Colors.grey[600], fontSize: 13)),
                     ],
                   ),
                 );
@@ -485,9 +546,10 @@ class _EventoPageState extends State<EventoPage> {
                     imagePath: 'assets/alimentacion.png',
                     color: Colors.green[50]!,
                     onTap: () {
-                      final page=AlimentacionGestionPage(idpersona: widget.idpersona,cedula: widget.cedula);  
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => page));
-
+                      final page = AlimentacionGestionPage(
+                          idpersona: widget.idpersona, cedula: widget.cedula);
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) => page));
                     },
                   ),
                   ActionCard(
@@ -495,11 +557,10 @@ class _EventoPageState extends State<EventoPage> {
                     imagePath: 'assets/medicacion.png',
                     color: Colors.blue[50]!,
                     onTap: () {
-
-                      final page = MedicacionGestionPage(idpersona: widget.idpersona,cedula: widget.cedula);  
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => page));
-
-
+                      final page = MedicacionGestionPage(
+                          idpersona: widget.idpersona, cedula: widget.cedula);
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) => page));
                     },
                   ),
                   ActionCard(
@@ -507,10 +568,10 @@ class _EventoPageState extends State<EventoPage> {
                     imagePath: 'assets/ejercitacion.png',
                     color: Colors.orange[50]!,
                     onTap: () {
-                      final page=EjercitacionGestionPage(idpersona: widget.idpersona,cedula: widget.cedula);  
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => page));
-
-
+                      final page = EjercitacionGestionPage(
+                          idpersona: widget.idpersona, cedula: widget.cedula);
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) => page));
                     },
                   ),
                 ],
@@ -518,12 +579,15 @@ class _EventoPageState extends State<EventoPage> {
             ),
 
             // --- RIBBON 4: COMUNIDAD (TIPO OFERTA) ---
-            _buildRibbonHeader('Comunidad (Marketplace)', Icons.shopping_basket),
+            _buildRibbonHeader(
+                'Comunidad (Marketplace)', Icons.shopping_basket),
             FutureBuilder<List<TipoOferta>>(
               future: _tipoOfertaFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SizedBox(height: 140, child: Center(child: CircularProgressIndicator()));
+                  return const SizedBox(
+                      height: 140,
+                      child: Center(child: CircularProgressIndicator()));
                 } else if (snapshot.hasError) {
                   return const SizedBox(); // Ocultar si hay error
                 } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
@@ -539,21 +603,28 @@ class _EventoPageState extends State<EventoPage> {
                         final tipo = tipos[index];
                         String img = 'assets/servicio.png';
                         Color col = Colors.green[50]!;
-                        
+
                         if (tipo.nombre.toLowerCase().contains('venta')) {
                           img = 'assets/venta.png';
                           col = Colors.blue[50]!;
-                        } else if (tipo.nombre.toLowerCase().contains('alquiler')) {
+                        } else if (tipo.nombre
+                            .toLowerCase()
+                            .contains('alquiler')) {
                           img = 'assets/alquiler.png';
                           col = Colors.orange[50]!;
-                        } else if (tipo.nombre.toLowerCase().contains('trueque')) {
+                        } else if (tipo.nombre
+                            .toLowerCase()
+                            .contains('trueque')) {
                           img = 'assets/trueque.png';
                           col = Colors.teal[50]!;
-                        } else if (tipo.nombre.toLowerCase().contains('donación') || tipo.nombre.toLowerCase().contains('donacion')) {
+                        } else if (tipo.nombre
+                                .toLowerCase()
+                                .contains('donación') ||
+                            tipo.nombre.toLowerCase().contains('donacion')) {
                           img = 'assets/donacion.png';
                           col = Colors.pink[50]!;
                         }
-                        
+
                         return ActionCard(
                           title: tipo.nombre,
                           imagePath: img,
@@ -596,7 +667,8 @@ class _EventoPageState extends State<EventoPage> {
           const SizedBox(width: 8),
           Text(
             title,
-            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+            style: const TextStyle(
+                fontSize: 17, fontWeight: FontWeight.bold, letterSpacing: 0.5),
           ),
         ],
       ),
@@ -646,7 +718,8 @@ class ActionCard extends StatelessWidget {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: color,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(20)),
                 ),
                 child: Image.asset(
                   imagePath,
@@ -688,7 +761,10 @@ class AsignaturaCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 3)),
+          BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 8,
+              offset: const Offset(0, 3)),
         ],
       ),
       child: Material(
@@ -703,20 +779,25 @@ class AsignaturaCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: Colors.blue.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(5),
                   ),
                   child: Text(
                     asignatura.codigo,
-                    style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.blue),
+                    style: const TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue),
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   asignatura.nombre,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 13),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -745,8 +826,13 @@ class AsignaturaCard extends StatelessWidget {
 class EventoCard extends StatefulWidget {
   final Evento evento;
   final String idpersona;
+  final String cedula;
 
-  const EventoCard({super.key, required this.evento, required this.idpersona});
+  const EventoCard(
+      {super.key,
+      required this.evento,
+      required this.idpersona,
+      required this.cedula});
 
   @override
   State<EventoCard> createState() => _EventoCardState();
@@ -775,6 +861,7 @@ class _EventoCardState extends State<EventoCard> {
                 titulo: widget.evento.titulo,
                 idpersona: widget.idpersona,
                 idtipogrupoparticipante: widget.evento.idtipogrupoparticipante,
+                cedula: widget.cedula,
               ),
             ),
           );
@@ -783,7 +870,8 @@ class _EventoCardState extends State<EventoCard> {
           margin: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 4.0),
           elevation: 6,
           shadowColor: Colors.black26,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: Column(
@@ -811,13 +899,15 @@ class _EventoCardState extends State<EventoCard> {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.calendar_today, color: Theme.of(context).primaryColor, size: 18),
+                            Icon(Icons.calendar_today,
+                                color: Theme.of(context).primaryColor,
+                                size: 18),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 widget.evento.titulo,
                                 style: const TextStyle(
-                                  fontWeight: FontWeight.bold, 
+                                  fontWeight: FontWeight.bold,
                                   fontSize: 14,
                                   letterSpacing: -0.5,
                                 ),
@@ -828,31 +918,35 @@ class _EventoCardState extends State<EventoCard> {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        
+
                         // DESCRIPCIÓN CON "LEER MÁS"
                         Expanded(
                           child: SingleChildScrollView(
-                            physics: _isExpanded ? const BouncingScrollPhysics() : const NeverScrollableScrollPhysics(),
+                            physics: _isExpanded
+                                ? const BouncingScrollPhysics()
+                                : const NeverScrollableScrollPhysics(),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   widget.evento.detalle,
                                   style: TextStyle(
-                                    fontSize: 12, 
+                                    fontSize: 12,
                                     color: Colors.grey[700],
                                     height: 1.3,
                                   ),
                                   maxLines: _isExpanded ? 10 : 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                if (widget.evento.detalle.length > 50) 
+                                if (widget.evento.detalle.length > 50)
                                   GestureDetector(
                                     onTap: _toggleExpanded,
                                     child: Padding(
                                       padding: const EdgeInsets.only(top: 4.0),
                                       child: Text(
-                                        _isExpanded ? 'Ver menos' : 'Leer más...',
+                                        _isExpanded
+                                            ? 'Ver menos'
+                                            : 'Leer más...',
                                         style: TextStyle(
                                           color: Theme.of(context).primaryColor,
                                           fontWeight: FontWeight.bold,
@@ -871,22 +965,26 @@ class _EventoCardState extends State<EventoCard> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 5),
                               decoration: BoxDecoration(
-                                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                                color: Theme.of(context)
+                                    .primaryColor
+                                    .withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(15),
                               ),
                               child: Text(
                                 'REF: ${widget.evento.idevento}',
                                 style: TextStyle(
-                                  color: Theme.of(context).primaryColor, 
-                                  fontSize: 10, 
+                                  color: Theme.of(context).primaryColor,
+                                  fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 0.5,
                                 ),
                               ),
                             ),
-                            Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey[400]),
+                            Icon(Icons.arrow_forward_ios,
+                                size: 14, color: Colors.grey[400]),
                           ],
                         ),
                       ],
@@ -922,13 +1020,11 @@ class _PortafolioPageState extends State<PortafolioPage> {
     super.initState();
     _fetchData();
   }
-  
+
   void _fetchData() {
     _portafolioFuture = ApiService.fetchPortafolio(widget.idpersona);
     _personaInfoFuture = ApiService.fetchPersonaInfo(widget.idpersona);
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -936,21 +1032,23 @@ class _PortafolioPageState extends State<PortafolioPage> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildRibbonHeader('Portafolios de la persona', Icons.folder_shared),
-        
         Expanded(
-          child: RefreshIndicator( 
+          child: RefreshIndicator(
             onRefresh: () async {
               setState(() {
                 _fetchData();
               });
             },
             child: FutureBuilder<List<Portafolio>>(
-              future: _portafolioFuture,
-              builder: (context, snapshot) {
-                 if (snapshot.connectionState == ConnectionState.waiting) {
+                future: _portafolioFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   } else if (snapshot.hasError) {
-                    return Center(child: Text('Error al cargar portafolios: ${snapshot.error}', style: TextStyle(color: Colors.red[700])));
+                    return Center(
+                        child: Text(
+                            'Error al cargar portafolios: ${snapshot.error}',
+                            style: TextStyle(color: Colors.red[700])));
                   } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
                     final portafolios = snapshot.data!;
                     return ListView.builder(
@@ -958,20 +1056,24 @@ class _PortafolioPageState extends State<PortafolioPage> {
                       itemBuilder: (context, index) {
                         final p = portafolios[index];
                         return Card(
-                          margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                          margin: const EdgeInsets.symmetric(
+                              horizontal: 12.0, vertical: 6.0),
                           elevation: 3,
                           child: ListTile(
-                            leading: const Icon(Icons.folder_open, color: Colors.orange),
+                            leading: const Icon(Icons.folder_open,
+                                color: Colors.orange),
                             title: Text('Portafolio: ${p.idportafolio}'),
                             subtitle: Text('${p.lapersona} - ${p.elperiodo}'),
                             trailing: IconButton(
-                              icon: const Icon(Icons.open_in_new, color: Colors.blueAccent),
+                              icon: const Icon(Icons.open_in_new,
+                                  color: Colors.blueAccent),
                               tooltip: "Ver documentos",
                               onPressed: () {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) => DocumentosPortafolioScreen(idportafolio: p.idportafolio),
+                                    builder: (_) => DocumentosPortafolioScreen(
+                                        idportafolio: p.idportafolio),
                                   ),
                                 );
                               },
@@ -981,10 +1083,10 @@ class _PortafolioPageState extends State<PortafolioPage> {
                       },
                     );
                   } else {
-                    return const Center(child: Text('No hay portafolios para mostrar.'));
+                    return const Center(
+                        child: Text('No hay portafolios para mostrar.'));
                   }
-              }
-            ),
+                }),
           ),
         ),
       ],
@@ -1000,17 +1102,16 @@ class _PortafolioPageState extends State<PortafolioPage> {
           const SizedBox(width: 8),
           Text(
             title,
-            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+            style: const TextStyle(
+                fontSize: 17, fontWeight: FontWeight.bold, letterSpacing: 0.5),
           ),
         ],
       ),
     );
   }
 }
-        
 
-
-// Las clases 'ComUniTiPage', 'DocumentosPortafolioScreen', 'EventoDetalleScreen', 'Portafolio', 'Persona', etc., 
+// Las clases 'ComUniTiPage', 'DocumentosPortafolioScreen', 'EventoDetalleScreen', 'Portafolio', 'Persona', etc.,
 // se asumen que están definidas en otros archivos (como 'portafolio.dart', 'evento.dart') o en archivos dedicados.
 
 class AcercaDePage extends StatelessWidget {
@@ -1027,12 +1128,18 @@ class AcercaDePage extends StatelessWidget {
             Image.network(
               'https://educaysoft.org/sica/images/logo.jpg',
               height: 100,
-              errorBuilder: (context, error, stackTrace) => const Icon(Icons.business, size: 100, color: Colors.blueAccent),
+              errorBuilder: (context, error, stackTrace) => const Icon(
+                  Icons.business,
+                  size: 100,
+                  color: Colors.blueAccent),
             ),
             const SizedBox(height: 24),
             const Text(
               'SICA',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.blueAccent),
+              style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blueAccent),
             ),
             const SizedBox(height: 8),
             Text(
@@ -1064,7 +1171,9 @@ class AcercaDePage extends StatelessWidget {
                   ElevatedButton.icon(
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Funcionalidad de donaciones en construcción.')),
+                        const SnackBar(
+                            content: Text(
+                                'Funcionalidad de donaciones en construcción.')),
                       );
                     },
                     icon: const Icon(Icons.favorite),

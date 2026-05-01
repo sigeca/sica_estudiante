@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'evento.dart';
 import 'api_service.dart';
 import 'CarritoProductoPage.dart';
+import 'SicaAppBar.dart';
+import 'CartController.dart';
 
 class ProductosVendedorPage extends StatefulWidget {
   final String idpersona;
@@ -129,6 +131,7 @@ class _ProductosVendedorPageState extends State<ProductosVendedorPage> {
     setState(() {
       _productosFuture = ApiService.fetchProductosPorVendedor(widget.idpersona);
       _itemQuantities.remove(producto.idproducto); // Resetear la cantidad local seleccionada
+      CartController().updateCartCount(widget.idpersona1); // Actualizar contador global
     });
   } else {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -145,10 +148,9 @@ class _ProductosVendedorPageState extends State<ProductosVendedorPage> {
   Widget build(BuildContext context) {
 return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        title: const Text('Productos del Vendedor', style: TextStyle(fontSize: 16)),
-      backgroundColor: const Color(0xFFF5F7FA),
-        elevation: 0,
+      appBar: SicaAppBar(
+        idpersona: widget.idpersona1,
+        cedula: widget.cedula1,
       ),
     body: Column(
         children: [

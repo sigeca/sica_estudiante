@@ -3,16 +3,21 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 // import 'evento.dart'; // Evento might not be directly used in this screen, but keep if needed elsewhere
 import 'evento.dart'; // Import the Participante model
-import 'api_service.dart'; // Assuming ApiService still has fetchParticipantes
+import 'api_service.dart'; 
+import 'SicaAppBar.dart';
 
 class PagoeventoScreen extends StatefulWidget { // Renamed class
   final String idevento;
   final String fecha;
+  final String idpersona;
+  final String cedula;
 
   const PagoeventoScreen({
     Key? key,
     required this.idevento,
     required this.fecha,
+    required this.idpersona,
+    required this.cedula,
   }) : super(key: key);
 
   @override
@@ -339,7 +344,11 @@ class _PagoeventoScreenState extends State<PagoeventoScreen> { // Renamed state 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Pagos de Evento')), // Updated AppBar title
+      appBar: SicaAppBar(
+        idpersona: widget.idpersona,
+        cedula: widget.cedula,
+        title: 'Pagos de Evento',
+      ),
       body: FutureBuilder<List<Pagoevento>>( // Changed to Pagoevento
         future: _pagoeventosFuture, // Changed future
         builder: (context, snapshot) {

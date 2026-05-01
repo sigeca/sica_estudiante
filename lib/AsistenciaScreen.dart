@@ -2,16 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'evento.dart'; // Import the Estudiante model
-import 'api_service.dart'; // Assuming ApiService has the necessary methods
+import 'api_service.dart'; 
+import 'SicaAppBar.dart';
 
 class AsistenciaScreen extends StatefulWidget {
   final String idevento;
   final String fecha;
+  final String idpersona;
+  final String cedula;
 
   const AsistenciaScreen({
     super.key,
     required this.idevento,
     required this.fecha,
+    required this.idpersona,
+    required this.cedula,
   });
 
   @override
@@ -99,7 +104,11 @@ class _AsistenciaScreenState extends State<AsistenciaScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Asistencia')),
+      appBar: SicaAppBar(
+        idpersona: widget.idpersona,
+        cedula: widget.cedula,
+        title: 'Asistencia',
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

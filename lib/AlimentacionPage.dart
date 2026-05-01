@@ -48,7 +48,6 @@ class _AlimentacionPageState extends State<AlimentacionPage> with SingleTickerPr
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFF8FAFC),
       appBar: AppBar(
         title: Text("Plan Alimenticio", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87)),
         backgroundColor: Colors.white,
@@ -347,7 +346,6 @@ class _AlimentoCatalogoPageState extends State<AlimentoCatalogoPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFF5F7FA),
       appBar: AppBar(
         title: Text("Diccionario de Alimentos", style: TextStyle(fontSize: 16, color: Colors.white)),
         backgroundColor: Color(0xFF2D3142),

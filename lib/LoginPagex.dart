@@ -273,9 +273,31 @@ class _LoginPagexState extends State<LoginPagex> {
                   ),
                 ElevatedButton(
                   onPressed: _loading ? null : _login,
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                   child: _loading
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text('Iniciar sesión'),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton(
+                  onPressed: _loading ? null : () => Navigator.pushNamed(context, '/registro'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    side: const BorderSide(color: Colors.blueAccent),
+                  ),
+                  child: const Text('Registrarse'),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: _loading ? null : () => Navigator.pushNamed(context, '/registro'),
+                  child: const Text(
+                    '¿Olvidó su contraseña?',
+                    style: TextStyle(color: Colors.grey, decoration: TextDecoration.underline),
+                  ),
                 ),
                 
                 // Botón para volver al login de biometría
