@@ -1461,12 +1461,12 @@ print("RESPUESTA BRUTA DEL SERVIDOR: ${response.body}");
     }
   }
 
-  static Future<List<Perfil>> fetchPerfiles(String idpersona) async {
+  static Future<List<Perfil>> fetchPerfiles(String idusuario) async {
     final url = Uri.parse('https://educaysoft.org/sica/index.php/perfil/perfil_personaflutter');
     final response = await http.post(
       url,
       body: {
-        'idpersona': idpersona,
+        'idusuario': idusuario,
       },
     );
     if (response.statusCode == 200) {

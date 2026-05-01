@@ -153,6 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
     Center(child: CircularProgressIndicator()),
     Center(child: CircularProgressIndicator()),
     Center(child: CircularProgressIndicator()),
+    Center(child: CircularProgressIndicator()),
     AcercaDePage(),
   ];
   Persona? _personaInfo; // Para almacenar la info de la persona
@@ -183,7 +184,7 @@ class _HomeScreenState extends State<HomeScreen> {
         });
 
         // 2. Obtener los perfiles
-        final perfiles = await ApiService.fetchPerfiles(widget.idpersona);
+        final perfiles = await ApiService.fetchPerfiles(_personaInfo!.idusuario);
         if (mounted) {
           setState(() {
             _perfiles = perfiles;
@@ -202,6 +203,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   idpersona: widget.idpersona, cedula: _personaInfo!.cedula),
               SaludPage(
                   idpersona: widget.idpersona, cedula: _personaInfo!.cedula),
+              PerfilUsuarioPage(
+                  persona: _personaInfo,
+                  perfil: _perfilSeleccionado,
+                  perfiles: _perfiles,
+                  onPerfilChanged: (p) => setState(() => _perfilSeleccionado = p)),
               const AcercaDePage(),
             ];
           });
@@ -219,6 +225,11 @@ class _HomeScreenState extends State<HomeScreen> {
             PortafolioPage(idpersona: widget.idpersona),
             ComUniTiPage(idpersona: widget.idpersona, cedula: widget.idpersona),
             SaludPage(idpersona: widget.idpersona, cedula: widget.idpersona),
+            PerfilUsuarioPage(
+                persona: _personaInfo,
+                perfil: _perfilSeleccionado,
+                perfiles: _perfiles,
+                onPerfilChanged: (p) => setState(() => _perfilSeleccionado = p)),
             const AcercaDePage(),
           ];
         });
@@ -375,10 +386,14 @@ class _HomeScreenState extends State<HomeScreen> {
               icon: Icon(Icons.folder), label: 'Portafolio'),
           BottomNavigationBarItem(
               icon: Icon(Icons.storefront), label: 'ComUniTi'),
-          // --- AQUÍ ESTÁ TU NUEVA OPCIÓN ---
           BottomNavigationBarItem(
             icon: Icon(Icons.favorite, color: Colors.red), // Corazón Rojo
             label: 'Salud',
+          ),
+          // --- AQUÍ ESTÁ TU NUEVA OPCIÓN 'TÚ' ---
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Tú',
           ),
 // ---------------------------------
           BottomNavigationBarItem(
@@ -1113,6 +1128,194 @@ class _PortafolioPageState extends State<PortafolioPage> {
 
 // Las clases 'ComUniTiPage', 'DocumentosPortafolioScreen', 'EventoDetalleScreen', 'Portafolio', 'Persona', etc.,
 // se asumen que están definidas en otros archivos (como 'portafolio.dart', 'evento.dart') o en archivos dedicados.
+
+// ---------------------- PERFIL USUARIO PAGE (TÚ) ---------------------------------
+
+class PerfilUsuarioPage extends StatelessWidget {
+  final Persona? persona;
+  final Perfil? perfil;
+  final List<Perfil> perfiles;
+  final Function(Perfil)? onPerfilChanged;
+
+  const PerfilUsuarioPage(
+      {Key? key,
+      this.persona,
+      this.perfil,
+      this.perfiles = const [],
+      this.onPerfilChanged})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    if (persona == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final fotoUrl =
+        "https://educaysoft.org/descargar2.php?archivo=${persona!.cedula}.jpg";
+
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFFF5F7FA),
+      child: Column(
+        children: [
+          const SizedBox(height: 40),
+          // Imagen del usuario en el centro superior
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: ClipOval(
+              child: Image.network(
+                fotoUrl,
+                width: 120,
+                height: 120,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  width: 120,
+                  height: 120,
+                  color: Colors.grey[200],
+                  child: const Icon(Icons.person, size: 60, color: Colors.grey),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          // ID del usuario
+          Text(
+            'Usuario ID: ${persona!.idusuario}',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.blueAccent.withOpacity(0.8),
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          // Nombres del usuario
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Text(
+              persona!.lapersona,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2D3142),
+                letterSpacing: -0.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Cédula: ${persona!.cedula}',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[500],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 30),
+          
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              children: [
+                Icon(Icons.badge, size: 20, color: Colors.blueAccent),
+                SizedBox(width: 8),
+                Text(
+                  'Tus Perfiles',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2D3142),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          
+          // Listado de perfiles
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              itemCount: perfiles.length,
+              itemBuilder: (context, index) {
+                final p = perfiles[index];
+                final isSelected = p.idperfil == perfil?.idperfil;
+                
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: isSelected ? Colors.blueAccent.withOpacity(0.05) : Colors.white,
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(
+                      color: isSelected ? Colors.blueAccent : Colors.transparent,
+                      width: 1.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: isSelected ? Colors.blueAccent : Colors.grey[100],
+                      child: Icon(
+                        Icons.person_outline,
+                        color: isSelected ? Colors.white : Colors.blueAccent,
+                      ),
+                    ),
+                    title: Text(
+                      p.nombre,
+                      style: TextStyle(
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected ? Colors.blueAccent : Colors.black87,
+                      ),
+                    ),
+                    trailing: isSelected 
+                      ? const Icon(Icons.check_circle, color: Colors.blueAccent)
+                      : const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+                    onTap: () {
+                      if (onPerfilChanged != null) {
+                        onPerfilChanged!(p);
+                      }
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+          
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Text(
+              'SICA - Gestión de Perfil',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[400],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class AcercaDePage extends StatelessWidget {
   const AcercaDePage({Key? key}) : super(key: key);

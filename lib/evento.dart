@@ -101,14 +101,16 @@ class Persona {
     final String idpersona;
     final String lapersona;
     final String cedula;
+    final String idusuario;
   
-    Persona({required this.idpersona, required this.cedula, required this.lapersona});
+    Persona({required this.idpersona, required this.cedula, required this.lapersona, required this.idusuario});
   
     factory Persona.fromJson(Map<String, dynamic> json) {
       return Persona(
         idpersona: json['idpersona'].toString(),
         cedula: json['cedula'] ?? '',
         lapersona: json['lapersona'] ?? '',
+        idusuario: json['idusuario']?.toString() ?? '',
       );
     }
   }
@@ -472,11 +474,13 @@ class DocumentoPortafolio {
 class Login {
 
   final String idpersona;
+  final String idusuario;
   final String email;
 //  final String password;
 
   Login({
     required this.idpersona,
+    required this.idusuario,
     required this.email,
   //  required this.password,
   });
@@ -484,6 +488,7 @@ class Login {
   factory Login.fromJson(Map<String, dynamic> json) {
     return Login(
       idpersona: json['idpersona']?.toString() ?? 'Desconocido',
+      idusuario: json['idusuario']?.toString() ?? 'Desconocido',
       email: json['email'] ?? 'Sin correo',
  //     password: json['password'] ?? '',
     );

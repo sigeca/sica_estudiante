@@ -109,11 +109,12 @@ class _LoginPagexState extends State<LoginPagex> {
   }
 
 
-  Future<void> _saveUserSession(String email, String idpersona, {bool biometricsEnabled = false}) async {
+  Future<void> _saveUserSession(String email, String idpersona, String idusuario, {bool biometricsEnabled = false}) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', true);
     await prefs.setString('email', email);
     await prefs.setString('idpersona', idpersona);
+    await prefs.setString('idusuario', idusuario);
     await prefs.setBool('biometrics_enabled', biometricsEnabled);
   }
 
@@ -138,9 +139,10 @@ class _LoginPagexState extends State<LoginPagex> {
       
       if (logins.isNotEmpty) {
         final idpersona = logins[0].idpersona;
+        final idusuario = logins[0].idusuario;
         
         // Guardamos la sesión inicial SIN habilitar biometría todavía.
-        await _saveUserSession(_emailController.text.trim(), idpersona, biometricsEnabled: false);
+        await _saveUserSession(_emailController.text.trim(), idpersona, idusuario, biometricsEnabled: false);
 
         if (mounted) setState(() => _loading = false);
 
@@ -194,7 +196,7 @@ class _LoginPagexState extends State<LoginPagex> {
                 
                 if (authenticated) {
                     // Solo si la autenticación de confirmación es exitosa, guardamos 'biometrics_enabled: true'
-                    await _saveUserSession(_emailController.text.trim(), idpersona, biometricsEnabled:true);
+                    await _saveUserSession(_emailController.text.trim(), idpersona, '', biometricsEnabled:true);
                     // El _authenticateBiometrics ya navega a /home si es exitoso.
                 } else {
                     // Si falla, aún lo llevamos a home, pero la opción no estará configurada
