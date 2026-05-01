@@ -565,45 +565,61 @@ class Producto {
   final int idproducto;
   final String elproducto;
   final String detalle;
-  final String idpersona;
+  final String idpersona; // Cliente
+  final String lapersona; // Nombre Cliente
   final String idcarrito;
   final String idcarritoproducto;
+  final String idhistoricocarritoproducto;
   final String elcustodio;
   final String idinstitucion;
   final String lainstitucion;
-  final double precio; // Campo de precio
-  final double stock; // Campo de precio
-  final double cantidad; // Campo de precio
+  final double precio;
+  final double stock;
+  final double cantidad;
+  final String fechacarga;
+  final String fechadescarga;
+  final String elestadoproductocarrito;
 
   Producto({
     required this.idproducto,
     required this.elproducto,
     required this.detalle,
     required this.idpersona,
+    required this.lapersona,
     required this.idcarrito,
     required this.idcarritoproducto,
+    this.idhistoricocarritoproducto = '',
     required this.elcustodio,
     required this.idinstitucion,
     required this.lainstitucion,
     required this.precio,
     required this.stock,
     required this.cantidad,
+    this.fechacarga = '',
+    this.fechadescarga = '',
+    this.elestadoproductocarrito = '',
   });
 
   factory Producto.fromJson(Map<String, dynamic> json) {
     return Producto(
-      idproducto: int.parse(json['idproducto'].toString()),
-      elproducto: json['elproducto'] ?? '',
+      idproducto: int.tryParse(json['idproducto']?.toString() ?? '0') ?? 0,
+      elproducto: json['elproducto'] ?? json['nombre'] ?? '',
       detalle: json['detalle'] ?? '',
       idpersona: json['idpersona']?.toString() ?? '',
+      lapersona: json['lapersona'] ?? '',
       idcarrito: json['idcarrito']?.toString() ?? '',
       idcarritoproducto: json['idcarritoproducto']?.toString() ?? '',
+      idhistoricocarritoproducto:
+          json['idhistoricocarritoproducto']?.toString() ?? '',
       elcustodio: json['elcustodio'] ?? '',
       idinstitucion: json['idinstitucion']?.toString() ?? '',
       lainstitucion: json['lainstitucion'] ?? '',
-      precio: double.tryParse(json['precio'].toString()) ?? 0.0,
-      stock: double.tryParse(json['stock'].toString()) ?? 0.0,
-      cantidad: double.tryParse(json['cantidad'].toString()) ?? 0.0,
+      precio: double.tryParse(json['precio']?.toString() ?? '0.0') ?? 0.0,
+      stock: double.tryParse(json['stock']?.toString() ?? '0.0') ?? 0.0,
+      cantidad: double.tryParse(json['cantidad']?.toString() ?? '0.0') ?? 0.0,
+      fechacarga: json['fechacarga'] ?? '',
+      fechadescarga: json['fechadescarga'] ?? '',
+      elestadoproductocarrito: json['elestadoproductocarrito'] ?? '',
     );
   }
 }

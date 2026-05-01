@@ -1486,4 +1486,30 @@ print("RESPUESTA BRUTA DEL SERVIDOR: ${response.body}");
       return [];
     }
   }
+
+  static Future<List<Producto>> fetchCarritoproductoVendedor(
+      String idcustodio) async {
+    final url = Uri.parse(
+        'https://educaysoft.org/sica/index.php/carritoproducto/carritoproductovendedor_flutter?idcustodio=$idcustodio');
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((e) => Producto.fromJson(e)).toList();
+    } else {
+      throw Exception('Error al cargar productos del vendedor');
+    }
+  }
+
+  static Future<List<Producto>> fetchHistoricocarritoproductoVendedor(
+      String idcustodio) async {
+    final url = Uri.parse(
+        'https://educaysoft.org/sica/index.php/historicocarritoproducto/historicocarritoproductovendedor_flutter?idcustodio=$idcustodio');
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((e) => Producto.fromJson(e)).toList();
+    } else {
+      throw Exception('Error al cargar histórico del vendedor');
+    }
+  }
 }

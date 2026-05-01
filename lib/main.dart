@@ -1290,8 +1290,18 @@ class PerfilUsuarioPage extends StatelessWidget {
                       ? const Icon(Icons.check_circle, color: Colors.blueAccent)
                       : const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
                     onTap: () {
-                      if (onPerfilChanged != null) {
-                        onPerfilChanged!(p);
+                      if (p.nombre.toLowerCase().contains('vendedor')) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => VendedorDashboardPage(
+                                idpersona: persona!.idpersona),
+                          ),
+                        );
+                      } else {
+                        if (onPerfilChanged != null) {
+                          onPerfilChanged!(p);
+                        }
                       }
                     },
                   ),
@@ -1391,6 +1401,234 @@ class AcercaDePage extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ---------------------- VENDEDOR DASHBOARD PAGE ---------------------------------
+
+class VendedorDashboardPage extends StatefulWidget {
+  final String idpersona;
+  const VendedorDashboardPage({Key? key, required this.idpersona})
+      : super(key: key);
+
+  @override
+  State<VendedorDashboardPage> createState() => _VendedorDashboardPageState();
+}
+
+class _VendedorDashboardPageState extends State<VendedorDashboardPage> {
+  int _selectedIndex = 0;
+
+  late List<Widget> _views;
+
+  @override
+  void initState() {
+    super.initState();
+    _views = [
+      VendedorCartsView(idcustodio: widget.idpersona, isHistory: false),
+      VendedorCartsView(idcustodio: widget.idpersona, isHistory: true),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_selectedIndex == 0
+            ? 'Carrito Productos'
+            : 'Histórico Carrito Producto'),
+        backgroundColor: Colors.blueAccent,
+        elevation: 0,
+      ),
+      body: _views[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) => setState(() => _selectedIndex = index),
+        selectedItemColor: Colors.blueAccent,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.shopping_cart),
+            label: 'Carrito',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.history),
+            label: 'Histórico',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class VendedorCartsView extends StatefulWidget {
+  final String idcustodio;
+  final bool isHistory;
+
+  const VendedorCartsView(
+      {Key? key, required this.idcustodio, required this.isHistory})
+      : super(key: key);
+
+  @override
+  State<VendedorCartsView> createState() => _VendedorCartsViewState();
+}
+
+class _VendedorCartsViewState extends State<VendedorCartsView> {
+  late Future<List<Producto>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  void _loadData() {
+    if (widget.isHistory) {
+      _future =
+          ApiService.fetchHistoricocarritoproductoVendedor(widget.idcustodio);
+    } else {
+      _future = ApiService.fetchCarritoproductoVendedor(widget.idcustodio);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: () async {
+        setState(() {
+          _loadData();
+        });
+      },
+      child: FutureBuilder<List<Producto>>(
+        future: _future,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(
+                child: Text(widget.isHistory
+                    ? 'No hay historial disponible'
+                    : 'No hay carritos activos'));
+          }
+
+          final list = snapshot.data!;
+          return ListView.builder(
+            padding: const EdgeInsets.all(12),
+            itemCount: list.length,
+            itemBuilder: (context, index) {
+              final p = list[index];
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15)),
+                elevation: 3,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              p.elproducto,
+                              style: const TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          Text(
+                            '\$${p.precio.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Icon(Icons.person,
+                              size: 16, color: Colors.blueAccent),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Cliente: ${p.lapersona}',
+                            style: TextStyle(
+                                color: Colors.grey[700], fontSize: 14),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.tag, size: 16, color: Colors.grey),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Cantidad: ${p.cantidad}',
+                            style: TextStyle(
+                                color: Colors.grey[700], fontSize: 14),
+                          ),
+                        ],
+                      ),
+                      if (p.fechacarga.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(Icons.calendar_today,
+                                size: 16, color: Colors.grey),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Cargado: ${p.fechacarga}',
+                              style: TextStyle(
+                                  color: Colors.grey[700], fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ],
+                      if (widget.isHistory && p.fechadescarga.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(Icons.check_circle_outline,
+                                size: 16, color: Colors.green),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Descargado: ${p.fechadescarga}',
+                              style: TextStyle(
+                                  color: Colors.grey[700], fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ],
+                      if (widget.isHistory &&
+                          p.elestadoproductocarrito.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.blueAccent.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            p.elestadoproductocarrito,
+                            style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blueAccent),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }
