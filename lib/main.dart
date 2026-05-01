@@ -17,6 +17,7 @@ import 'tipo_oferta.dart';
 import 'RegistroPage.dart';
 import 'SicaAppBar.dart';
 import 'CartController.dart';
+import 'CarritoProducto.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -1291,6 +1292,7 @@ class PerfilUsuarioPage extends StatelessWidget {
                       : const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
                     onTap: () {
                       final lowerName = p.nombre.toLowerCase();
+                      print('Perfil clicado: $lowerName');
                       if (lowerName.contains('vendedor')) {
                         Navigator.push(
                           context,
@@ -1299,15 +1301,22 @@ class PerfilUsuarioPage extends StatelessWidget {
                                 idpersona: persona!.idpersona),
                           ),
                         );
-                      } else if (lowerName.contains('cliente')) {
+                      } else if (lowerName.contains('clien') || lowerName.contains('estud') || lowerName.contains('compr') || lowerName.contains('consum')) {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => ClienteDashboardPage(
-                                idpersona: persona!.idpersona),
+                                idpersona: persona!.idpersona,
+                                cedula: persona!.cedula),
                           ),
                         );
                       } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Perfil: ${p.nombre} seleccionado'),
+                            duration: const Duration(seconds: 1),
+                          ),
+                        );
                         if (onPerfilChanged != null) {
                           onPerfilChanged!(p);
                         }
@@ -1647,7 +1656,9 @@ class _VendedorCartsViewState extends State<VendedorCartsView> {
 
 class ClienteDashboardPage extends StatefulWidget {
   final String idpersona;
-  const ClienteDashboardPage({Key? key, required this.idpersona})
+  final String cedula;
+  const ClienteDashboardPage(
+      {Key? key, required this.idpersona, required this.cedula})
       : super(key: key);
 
   @override
@@ -1663,7 +1674,7 @@ class _ClienteDashboardPageState extends State<ClienteDashboardPage> {
   void initState() {
     super.initState();
     _views = [
-      ClienteCartsView(idpersona: widget.idpersona, isHistory: false),
+      CarritoProductoView(idpersona: widget.idpersona, cedula: widget.cedula),
       ClienteCartsView(idpersona: widget.idpersona, isHistory: true),
     ];
   }
