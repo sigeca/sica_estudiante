@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'CartController.dart';
-import 'CarritoProducto.dart';
+import 'CarritoProductoPage.dart';
 
 class SicaAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String idpersona;

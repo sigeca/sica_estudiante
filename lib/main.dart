@@ -17,7 +17,7 @@ import 'tipo_oferta.dart';
 import 'RegistroPage.dart';
 import 'SicaAppBar.dart';
 import 'CartController.dart';
-import 'CarritoProducto.dart';
+import 'package:sica_estudiante/CarritoProductoPage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -199,7 +199,6 @@ class _HomeScreenState extends State<HomeScreen> {
             _pages = <Widget>[
               EventoPage(
                   idpersona: widget.idpersona, cedula: _personaInfo!.cedula),
-              PortafolioPage(idpersona: widget.idpersona),
               ComUniTiPage(
                   idpersona: widget.idpersona, cedula: _personaInfo!.cedula),
               SaludPage(
@@ -223,7 +222,6 @@ class _HomeScreenState extends State<HomeScreen> {
           // Inicializar _pages con un valor por defecto o la idpersona si falla la cédula
           _pages = <Widget>[
             EventoPage(idpersona: widget.idpersona, cedula: widget.idpersona),
-            PortafolioPage(idpersona: widget.idpersona),
             ComUniTiPage(idpersona: widget.idpersona, cedula: widget.idpersona),
             SaludPage(idpersona: widget.idpersona, cedula: widget.idpersona),
             PerfilUsuarioPage(
@@ -376,15 +374,12 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: _buildHeader(),
       body: Column(
         children: [
-          if (_personaInfo != null) _buildUserProfile(_personaInfo!),
           Expanded(child: _pages[_selectedIndex]),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.event), label: 'Eventos'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.folder), label: 'Portafolio'),
           BottomNavigationBarItem(
               icon: Icon(Icons.storefront), label: 'ComUniTi'),
           BottomNavigationBarItem(
@@ -1016,189 +1011,92 @@ class _EventoCardState extends State<EventoCard> {
   }
 }
 
-// ---------------------- PORTAFOLIO PAGE (Mantenido sin cambios) ---------------------------------
-
-class PortafolioPage extends StatefulWidget {
-  final String idpersona;
-
-  const PortafolioPage({super.key, required this.idpersona});
-
-  @override
-  State<PortafolioPage> createState() => _PortafolioPageState();
-}
-
-class _PortafolioPageState extends State<PortafolioPage> {
-  late Future<List<Portafolio>> _portafolioFuture;
-  late Future<Persona> _personaInfoFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchData();
-  }
-
-  void _fetchData() {
-    _portafolioFuture = ApiService.fetchPortafolio(widget.idpersona);
-    _personaInfoFuture = ApiService.fetchPersonaInfo(widget.idpersona);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _buildRibbonHeader('Portafolios de la persona', Icons.folder_shared),
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: () async {
-              setState(() {
-                _fetchData();
-              });
-            },
-            child: FutureBuilder<List<Portafolio>>(
-                future: _portafolioFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Center(
-                        child: Text(
-                            'Error al cargar portafolios: ${snapshot.error}',
-                            style: TextStyle(color: Colors.red[700])));
-                  } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                    final portafolios = snapshot.data!;
-                    return ListView.builder(
-                      itemCount: portafolios.length,
-                      itemBuilder: (context, index) {
-                        final p = portafolios[index];
-                        return Card(
-                          margin: const EdgeInsets.symmetric(
-                              horizontal: 12.0, vertical: 6.0),
-                          elevation: 3,
-                          child: ListTile(
-                            leading: const Icon(Icons.folder_open,
-                                color: Colors.orange),
-                            title: Text('Portafolio: ${p.idportafolio}'),
-                            subtitle: Text('${p.lapersona} - ${p.elperiodo}'),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.open_in_new,
-                                  color: Colors.blueAccent),
-                              tooltip: "Ver documentos",
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => DocumentosPortafolioScreen(
-                                        idportafolio: p.idportafolio),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  } else {
-                    return const Center(
-                        child: Text('No hay portafolios para mostrar.'));
-                  }
-                }),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRibbonHeader(String title, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: Theme.of(context).primaryColor),
-          const SizedBox(width: 8),
-          Text(
-            title,
-            style: const TextStyle(
-                fontSize: 17, fontWeight: FontWeight.bold, letterSpacing: 0.5),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// Las clases 'ComUniTiPage', 'DocumentosPortafolioScreen', 'EventoDetalleScreen', 'Portafolio', 'Persona', etc.,
-// se asumen que están definidas en otros archivos (como 'portafolio.dart', 'evento.dart') o en archivos dedicados.
-
-// ---------------------- PERFIL USUARIO PAGE (TÚ) ---------------------------------
-
-class PerfilUsuarioPage extends StatelessWidget {
+class PerfilUsuarioPage extends StatefulWidget {
   final Persona? persona;
   final Perfil? perfil;
   final List<Perfil> perfiles;
   final Function(Perfil)? onPerfilChanged;
 
-  const PerfilUsuarioPage(
-      {Key? key,
-      this.persona,
-      this.perfil,
-      this.perfiles = const [],
-      this.onPerfilChanged})
-      : super(key: key);
+  const PerfilUsuarioPage({
+    Key? key,
+    this.persona,
+    this.perfil,
+    this.perfiles = const [],
+    this.onPerfilChanged,
+  }) : super(key: key);
+
+  @override
+  State<PerfilUsuarioPage> createState() => _PerfilUsuarioPageState();
+}
+
+class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
+  late Future<List<Portafolio>> _portafolioFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.persona != null) {
+      _portafolioFuture = ApiService.fetchPortafolio(widget.persona!.idpersona);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (persona == null) {
+    if (widget.persona == null) {
       return const Center(child: CircularProgressIndicator());
     }
 
     final fotoUrl =
-        "https://educaysoft.org/descargar2.php?archivo=${persona!.cedula}.jpg";
+        "https://educaysoft.org/descargar2.php?archivo=${widget.persona!.cedula}.jpg";
 
     return Container(
       width: double.infinity,
       color: const Color(0xFFF5F7FA),
-      child: Column(
+      child: ListView(
         children: [
           const SizedBox(height: 40),
           // Imagen del usuario en el centro superior
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: ClipOval(
-              child: Image.network(
-                fotoUrl,
-                width: 120,
-                height: 120,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
+          Center(
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: ClipOval(
+                child: Image.network(
+                  fotoUrl,
                   width: 120,
                   height: 120,
-                  color: Colors.grey[200],
-                  child: const Icon(Icons.person, size: 60, color: Colors.grey),
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    width: 120,
+                    height: 120,
+                    color: Colors.grey[200],
+                    child: const Icon(Icons.person, size: 60, color: Colors.grey),
+                  ),
                 ),
               ),
             ),
           ),
           const SizedBox(height: 20),
           // ID del usuario
-          Text(
-            'Usuario ID: ${persona!.idusuario}',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.blueAccent.withOpacity(0.8),
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
+          Center(
+            child: Text(
+              'Usuario ID: ${widget.persona!.idusuario}',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.blueAccent.withOpacity(0.8),
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -1206,7 +1104,7 @@ class PerfilUsuarioPage extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
-              persona!.lapersona,
+              widget.persona!.lapersona,
               style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -1217,16 +1115,19 @@ class PerfilUsuarioPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            'Cédula: ${persona!.cedula}',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-              fontWeight: FontWeight.w500,
+          Center(
+            child: Text(
+              'Cédula: ${widget.persona!.cedula}',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[500],
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
           const SizedBox(height: 30),
-          
+
+          // SECCIÓN: TUS PERFILES
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 24),
             child: Row(
@@ -1245,88 +1146,179 @@ class PerfilUsuarioPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          
-          // Listado de perfiles
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              itemCount: perfiles.length,
-              itemBuilder: (context, index) {
-                final p = perfiles[index];
-                final isSelected = p.idperfil == perfil?.idperfil;
-                
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(
-                    color: isSelected ? Colors.blueAccent.withOpacity(0.05) : Colors.white,
-                    borderRadius: BorderRadius.circular(15),
-                    border: Border.all(
-                      color: isSelected ? Colors.blueAccent : Colors.transparent,
-                      width: 1.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+
+          // Listado de perfiles (ahora dentro del ListView)
+          ...widget.perfiles.map((p) {
+            final isSelected = p.idperfil == widget.perfil?.idperfil;
+            return Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? Colors.blueAccent.withOpacity(0.05)
+                    : Colors.white,
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(
+                  color: isSelected ? Colors.blueAccent : Colors.transparent,
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: isSelected ? Colors.blueAccent : Colors.grey[100],
-                      child: Icon(
-                        Icons.person_outline,
-                        color: isSelected ? Colors.white : Colors.blueAccent,
-                      ),
-                    ),
-                    title: Text(
-                      p.nombre,
-                      style: TextStyle(
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        color: isSelected ? Colors.blueAccent : Colors.black87,
-                      ),
-                    ),
-                    trailing: isSelected 
-                      ? const Icon(Icons.check_circle, color: Colors.blueAccent)
-                      : const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
-                    onTap: () {
-                      final lowerName = p.nombre.toLowerCase();
-                      print('Perfil clicado: $lowerName');
-                      if (lowerName.contains('vendedor')) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => VendedorDashboardPage(
-                                idpersona: persona!.idpersona),
-                          ),
-                        );
-                      } else if (lowerName.contains('clien') || lowerName.contains('estud') || lowerName.contains('compr') || lowerName.contains('consum')) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ClienteDashboardPage(
-                                idpersona: persona!.idpersona,
-                                cedula: persona!.cedula),
-                          ),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Perfil: ${p.nombre} seleccionado'),
-                            duration: const Duration(seconds: 1),
-                          ),
-                        );
-                        if (onPerfilChanged != null) {
-                          onPerfilChanged!(p);
-                        }
-                      }
-                    },
+                ],
+              ),
+              child: ListTile(
+                leading: CircleAvatar(
+                  backgroundColor:
+                      isSelected ? Colors.blueAccent : Colors.grey[100],
+                  child: Icon(
+                    Icons.person_outline,
+                    color: isSelected ? Colors.white : Colors.blueAccent,
                   ),
-                );
-              },
+                ),
+                title: Text(
+                  p.nombre,
+                  style: TextStyle(
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    color: isSelected ? Colors.blueAccent : Colors.black87,
+                  ),
+                ),
+                trailing: isSelected
+                    ? const Icon(Icons.check_circle, color: Colors.blueAccent)
+                    : const Icon(Icons.arrow_forward_ios,
+                        size: 14, color: Colors.grey),
+                onTap: () {
+                  final lowerName = p.nombre.toLowerCase();
+                  if (lowerName.contains('vendedor')) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => VendedorDashboardPage(
+                            idpersona: widget.persona!.idpersona),
+                      ),
+                    );
+                  } else if (lowerName.contains('clien') ||
+                      lowerName.contains('estud') ||
+                      lowerName.contains('compr') ||
+                      lowerName.contains('consum')) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ClienteDashboardPage(
+                            idpersona: widget.persona!.idpersona,
+                            cedula: widget.persona!.cedula),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Perfil: ${p.nombre} seleccionado'),
+                        duration: const Duration(seconds: 1),
+                      ),
+                    );
+                    if (widget.onPerfilChanged != null) {
+                      widget.onPerfilChanged!(p);
+                    }
+                  }
+                },
+              ),
+            );
+          }).toList(),
+
+          const SizedBox(height: 30),
+
+          // SECCIÓN: TU PORTAFOLIO
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              children: [
+                Icon(Icons.folder_shared, size: 20, color: Colors.orange),
+                SizedBox(width: 8),
+                Text(
+                  'Tu Portafolio',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2D3142),
+                  ),
+                ),
+              ],
             ),
           ),
+          const SizedBox(height: 12),
+
+          // Listado de portafolios con FutureBuilder
+          FutureBuilder<List<Portafolio>>(
+            future: _portafolioFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Padding(
+                  padding: EdgeInsets.all(20.0),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              } else if (snapshot.hasError) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Text('Error al cargar portafolios',
+                      style: TextStyle(color: Colors.red[700])),
+                );
+              } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                final portafolios = snapshot.data!;
+                return Column(
+                  children: portafolios.map((p) {
+                    return Container(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(15),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.03),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ListTile(
+                        leading: const Icon(Icons.folder_open,
+                            color: Colors.orange, size: 28),
+                        title: Text(
+                          'Portafolio: ${p.idportafolio}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text('${p.lapersona}\n${p.elperiodo}',
+                            style: const TextStyle(fontSize: 12)),
+                        isThreeLine: true,
+                        trailing: IconButton(
+                          icon: const Icon(Icons.open_in_new,
+                              color: Colors.blueAccent),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => DocumentosPortafolioScreen(
+                                    idportafolio: p.idportafolio),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                );
+              } else {
+                return const Padding(
+                  padding: EdgeInsets.all(20.0),
+                  child: Center(child: Text('No hay portafolios para mostrar.')),
+                );
+              }
+            },
+          ),
+
+          const SizedBox(height: 40),
           
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 20),
@@ -1444,6 +1436,7 @@ class _VendedorDashboardPageState extends State<VendedorDashboardPage> {
   void initState() {
     super.initState();
     _views = [
+      VendedorProductosView(idcustodio: widget.idpersona),
       VendedorCartsView(idcustodio: widget.idpersona, isHistory: false),
       VendedorCartsView(idcustodio: widget.idpersona, isHistory: true),
     ];
@@ -1451,11 +1444,13 @@ class _VendedorDashboardPageState extends State<VendedorDashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    String title = 'Mis Productos';
+    if (_selectedIndex == 1) title = 'Carrito Productos';
+    if (_selectedIndex == 2) title = 'Histórico Carrito Producto';
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(_selectedIndex == 0
-            ? 'Carrito Productos'
-            : 'Histórico Carrito Producto'),
+        title: Text(title),
         backgroundColor: Colors.blueAccent,
         elevation: 0,
       ),
@@ -1464,7 +1459,13 @@ class _VendedorDashboardPageState extends State<VendedorDashboardPage> {
         currentIndex: _selectedIndex,
         onTap: (index) => setState(() => _selectedIndex = index),
         selectedItemColor: Colors.blueAccent,
+        unselectedItemColor: Colors.grey,
+        type: BottomNavigationBarType.fixed,
         items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.inventory_2),
+            label: 'Productos',
+          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.shopping_cart),
             label: 'Carrito',
@@ -1474,6 +1475,204 @@ class _VendedorDashboardPageState extends State<VendedorDashboardPage> {
             label: 'Histórico',
           ),
         ],
+      ),
+    );
+  }
+}
+
+class VendedorProductosView extends StatefulWidget {
+  final String idcustodio;
+  const VendedorProductosView({Key? key, required this.idcustodio})
+      : super(key: key);
+
+  @override
+  State<VendedorProductosView> createState() => _VendedorProductosViewState();
+}
+
+class _VendedorProductosViewState extends State<VendedorProductosView> {
+  late Future<List<Producto>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  void _loadData() {
+    _future = ApiService.fetchProductosPorVendedor(widget.idcustodio);
+  }
+
+  void _mostrarZoomImagen(BuildContext context, String url, String nombre) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(10),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            InteractiveViewer(
+              panEnabled: true,
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.network(
+                  url,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return const Center(
+                        child: CircularProgressIndicator(color: Colors.white));
+                  },
+                  errorBuilder: (_, __, ___) => Container(
+                    color: Colors.white,
+                    padding: const EdgeInsets.all(20),
+                    child: const Icon(Icons.image_not_supported,
+                        size: 100, color: Colors.grey),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 10,
+              right: 10,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+            Positioned(
+              bottom: 20,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(20)),
+                child: Text(nombre,
+                    style: const TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: () async {
+        setState(() {
+          _loadData();
+        });
+      },
+      child: FutureBuilder<List<Producto>>(
+        future: _future,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text('No tienes productos asignados'));
+          }
+
+          final list = snapshot.data!;
+          return ListView.builder(
+            padding: const EdgeInsets.all(12),
+            itemCount: list.length,
+            itemBuilder: (context, index) {
+              final p = list[index];
+              final fotoUrl =
+                  "https://educaysoft.org/descargarproducto.php?archivo=producto${p.idproducto}.jpg";
+
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15)),
+                elevation: 3,
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      GestureDetector(
+                        onTap: () =>
+                            _mostrarZoomImagen(context, fotoUrl, p.elproducto),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(
+                            fotoUrl,
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              width: 80,
+                              height: 80,
+                              color: Colors.grey[100],
+                              child: const Icon(Icons.shopping_bag,
+                                  color: Colors.grey),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              p.elproducto,
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              p.detalle,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  fontSize: 12, color: Colors.grey[600]),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Stock: ${p.stock.toStringAsFixed(0)}',
+                                      style: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.blueAccent),
+                                    ),
+                                    Text(
+                                      'Precio: \$${p.precio.toStringAsFixed(2)}',
+                                      style: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.green),
+                                    ),
+                                  ],
+                                ),
+                                Icon(Icons.inventory,
+                                    size: 20, color: Colors.blueAccent.withOpacity(0.5)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }

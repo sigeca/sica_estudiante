@@ -3,26 +3,44 @@ import 'evento.dart';
 import 'api_service.dart';
 import 'FacturaFormPage.dart';
 
-class CarritoProductoPage extends StatefulWidget {
+class CarritoProductoPage extends StatelessWidget {
   final String idpersona;
   final String cedula;
 
   const CarritoProductoPage({Key? key, required this.idpersona, required this.cedula}) : super(key: key);
 
   @override
-  State<CarritoProductoPage> createState() => _CarritoProductoPageState();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Mi Carrito de Compras'),
+        backgroundColor: Colors.teal,
+      ),
+      body: CarritoProductoView(idpersona: idpersona, cedula: cedula),
+    );
+  }
 }
 
-class _CarritoProductoPageState extends State<CarritoProductoPage> {
+class CarritoProductoView extends StatefulWidget {
+  final String idpersona;
+  final String cedula;
+
+  const CarritoProductoView({Key? key, required this.idpersona, required this.cedula}) : super(key: key);
+
+  @override
+  State<CarritoProductoView> createState() => _CarritoProductoViewState();
+}
+
+class _CarritoProductoViewState extends State<CarritoProductoView> {
   final Map<int, int> _itemQuantities = {};
   List<Producto>? _listaProductos;
-  String? _ownerName; // Variable para almacenar el nombre del dueño del carrito
+  String? _ownerName;
 
   @override
   void initState() {
     super.initState();
     _cargarProductos();
-    _cargarDatosPersona(); // Cargar los datos de la persona al iniciar
+    _cargarDatosPersona();
   }
 
   void _cargarDatosPersona() async {
@@ -41,17 +59,14 @@ class _CarritoProductoPageState extends State<CarritoProductoPage> {
       final productos = await ApiService.fetchProductosCarrito(widget.idpersona);
       setState(() {
         _listaProductos = productos;
-        // Sincronizar cantidades iniciales desde la base de datos
         for (var prod in productos) {
-          _itemQuantities[prod.idproducto] = prod.cantidad.toInt(); // Asumiendo que 'cantidad' es el campo del modelo
+          _itemQuantities[prod.idproducto] = prod.cantidad.toInt();
         }
       });
     } catch (e) {
       debugPrint("Error al cargar productos: $e");
     }
   }
-
-  // --- MÉTODOS DE CANTIDAD ---
 
   void _incrementQuantity(int productoId, double maxLimit) {
     setState(() {
@@ -70,10 +85,8 @@ class _CarritoProductoPageState extends State<CarritoProductoPage> {
     });
   }
 
-  // --- LÓGICA DE ELIMINACIÓN ---
-
   Future<void> _restToCart(Producto producto, int quantity) async {
-    if (quantity <= 0) return; // Seguridad extra
+    if (quantity <= 0) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Procesando devolución de ${producto.elproducto}...')),
@@ -84,9 +97,7 @@ class _CarritoProductoPageState extends State<CarritoProductoPage> {
     );
 
     if (exito) {
-      // Refrescar el carrito completo desde el backend para mantener sincronización
       _cargarProductos();
-
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -105,9 +116,6 @@ class _CarritoProductoPageState extends State<CarritoProductoPage> {
       );
     }
   }
-
-  // (El método _mostrarZoomImagen y _procesarPago se mantienen igual...)
-  // ... [Omitidos por brevedad, pero mantenlos en tu archivo] ...
 
   void _mostrarZoomImagen(BuildContext context, String url, String nombre) {
     showDialog(
@@ -153,209 +161,129 @@ class _CarritoProductoPageState extends State<CarritoProductoPage> {
     );
   }
 
+  Future<void> _procesarPago() async {
+    if (_listaProductos == null || _listaProductos!.isEmpty) return;
 
+    final success = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FacturaFormPage(
+          idpersona: widget.idpersona,
+          cedula: widget.cedula,
+          cartItems: _listaProductos!,
+          itemQuantities: _itemQuantities,
+        ),
+      ),
+    );
 
-
-
-Future<void> _procesarPago() async {
-  if (_listaProductos == null || _listaProductos!.isEmpty) return;
-
-  // 1. Mostrar diálogo de carga
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) => const Center(child: CircularProgressIndicator()),
-  );
-
-  // 3. Llamar a la API de verificación de cliente
-  bool esCliente = await ApiService.esCliente(widget.cedula);
-
-  if (!esCliente) {
-    Navigator.pop(context); // Cerrar diálogo de carga
-    _mostrarErrorNoCliente(widget.cedula);
-    return;
+    if (success == true) {
+      _cargarProductos();
+    }
   }
-
-  Navigator.pop(context); // Cerrar diálogo de carga
-  
-  // Navegar al formulario de factura
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => FacturaFormPage(
-        idpersona: widget.idpersona,
-        cedula: widget.cedula,
-        cartItems: _listaProductos!,
-        itemQuantities: _itemQuantities,
-      ),
-    ),
-  );
-}
-
-
-
-
-
-void _mostrarMensajeExito() {
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Text('¡Pago Exitoso!'),
-      content: const Text('Tus productos han sido procesados correctamente.'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Aceptar'),
-        ),
-      ],
-    ),
-  );
-}
-
-
-void _mostrarErrorNoCliente(String cedula) {
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Row(
-        children: [
-          Icon(Icons.warning_amber_rounded, color: Colors.orange),
-          SizedBox(width: 8),
-          Text('Registro Requerido'),
-        ],
-      ),
-      content: Text('No puedes realizar el pago hasta que estés registrado como cliente. '
-          '\n\nCédula consultada: $cedula'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Aceptar'),
-        ),
-      ],
-    ),
-  );
-}
-
-
-
-
-
-
-
-
-
-
-
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        title: Text(
-          _ownerName != null ? 'Carrito de: $_ownerName' : 'Mi Carrito de Compras',
-          style: const TextStyle(fontSize: 16),
-        ),
-        backgroundColor: Colors.blue[700],
-        elevation: 0,
-      ),
-      body: _listaProductos == null
-          ? const Center(child: CircularProgressIndicator())
-          : _listaProductos!.isEmpty
-              ? const Center(child: Text("Tu carrito está vacío"))
-              : ListView.builder(
-                  padding: const EdgeInsets.all(12),
-                  itemCount: _listaProductos!.length,
-                  itemBuilder: (context, index) {
-                    final producto = _listaProductos![index];
-                    final fotoUrl = "https://educaysoft.org/descargarproducto.php?archivo=producto${producto.idproducto}.jpg";
-                    
-                    // Lógica de cantidad y límites
-                    final int quantity = _itemQuantities[producto.idproducto] ?? 0;
-                    final double maxDisponible = producto.cantidad; // Cantidad original en el carrito
-                    final bool tieneCantidad = quantity > 0;
+    return Stack(
+      children: [
+        _listaProductos == null
+            ? const Center(child: CircularProgressIndicator())
+            : _listaProductos!.isEmpty
+                ? const Center(child: Text("Tu carrito está vacío"))
+                : ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 100),
+                    itemCount: _listaProductos!.length,
+                    itemBuilder: (context, index) {
+                      final producto = _listaProductos![index];
+                      final fotoUrl = "https://educaysoft.org/descargarproducto.php?archivo=producto${producto.idproducto}.jpg";
+                      final int quantity = _itemQuantities[producto.idproducto] ?? 0;
+                      final double maxDisponible = producto.cantidad;
+                      final bool tieneCantidad = quantity > 0;
 
-                    return Card(
-                      elevation: 0,
-                      margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: Colors.grey.withOpacity(0.2)),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Imagen (Igual que en ProductoVendedor)
-                            GestureDetector(
-                              onTap: () => _mostrarZoomImagen(context, fotoUrl, producto.elproducto),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  fotoUrl,
-                                  width: 100, height: 100, fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Container(width: 100, height: 100, color: Colors.grey[100], child: const Icon(Icons.shopping_bag)),
+                      return Card(
+                        elevation: 2,
+                        margin: const EdgeInsets.only(bottom: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              GestureDetector(
+                                onTap: () => _mostrarZoomImagen(context, fotoUrl, producto.elproducto),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.network(
+                                    fotoUrl,
+                                    width: 90, height: 90, fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(width: 90, height: 90, color: Colors.grey[100], child: const Icon(Icons.shopping_bag, size: 40)),
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(producto.elproducto, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                                  Text('Máximo en carrito: ${maxDisponible.toInt()}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text('\$${producto.precio.toStringAsFixed(2)}', 
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green)),
-                                      
-                                      // SELECTOR DE CANTIDAD CON LÓGICA DE BLOQUEO
-                                   //   Row(
-                                     //   children: [
-                                    //      IconButton(
-                                      //      icon: const Icon(Icons.remove_circle_outline), 
-                                      //      onPressed: tieneCantidad ? () => _decrementQuantity(producto.idproducto) : null,
-                                      //    ),
-                                       //   Text('$quantity', style: TextStyle(fontWeight: FontWeight.bold, color: tieneCantidad ? Colors.black : Colors.red)),
-                                       //   IconButton(
-                                       //     icon: const Icon(Icons.add_circle_outline), 
-                                        //    onPressed: (quantity < maxDisponible) ? () => _incrementQuantity(producto.idproducto, maxDisponible) : null,
-                                         // ),
-                                     //   ],
-                                    //  ),
-                                    ],
-                                  ),
-                                  // BOTÓN DEVOLVER (Se deshabilita si quantity es 0)
-                                  ElevatedButton.icon(
-                                    onPressed: tieneCantidad ? () => _restToCart(producto, quantity) : null,
-                                    icon: const Icon(Icons.assignment_return, size: 16),
-                                    label: Text(tieneCantidad ? "DEVOLVER" : "SIN CANTIDAD"),
-                                    style: ElevatedButton.styleFrom(
-                                      minimumSize: const Size(double.infinity, 36),
-                                      backgroundColor: tieneCantidad ? Colors.red.shade400 : Colors.grey[300],
-                                      foregroundColor: tieneCantidad ? Colors.white : Colors.grey[600],
+                              const SizedBox(width: 15),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(producto.elproducto, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                    const SizedBox(height: 4),
+                                    Text('Vendedor: ${producto.elcustodio}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text('\$${producto.precio.toStringAsFixed(2)}', 
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.teal)),
+                                        Row(
+                                          children: [
+                                            IconButton(
+                                              icon: const Icon(Icons.remove_circle, color: Colors.redAccent), 
+                                              onPressed: tieneCantidad ? () => _decrementQuantity(producto.idproducto) : null,
+                                            ),
+                                            Text('$quantity', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                            IconButton(
+                                              icon: const Icon(Icons.add_circle, color: Colors.teal), 
+                                              onPressed: (quantity < maxDisponible) ? () => _incrementQuantity(producto.idproducto, maxDisponible) : null,
+                                            ),
+                                          ],
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(height: 8),
+                                    ElevatedButton.icon(
+                                      onPressed: tieneCantidad ? () => _restToCart(producto, quantity) : null,
+                                      icon: const Icon(Icons.delete_outline),
+                                      label: const Text("QUITAR DEL CARRITO"),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.red.shade50,
+                                        foregroundColor: Colors.red,
+                                        elevation: 0,
+                                        minimumSize: const Size(double.infinity, 40),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                ),
-      floatingActionButton: FloatingActionButton.extended(
-         onPressed: (_listaProductos != null && _listaProductos!.isNotEmpty) ? _procesarPago : null,
-        icon: const Icon(Icons.payments_outlined),
-        label: const Text('PAGAR AHORA'),
-        backgroundColor: (_listaProductos != null && _listaProductos!.isNotEmpty) ? Colors.orange.shade800 : Colors.grey,
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+                      );
+                    },
+                  ),
+        if (_listaProductos != null && _listaProductos!.isNotEmpty)
+          Positioned(
+            bottom: 20,
+            left: 20,
+            right: 20,
+            child: FloatingActionButton.extended(
+              onPressed: _procesarPago,
+              icon: const Icon(Icons.check_circle_outline),
+              label: const Text('PAGAR AHORA', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              backgroundColor: Colors.teal,
+              elevation: 4,
+            ),
+          ),
+      ],
     );
   }
 }

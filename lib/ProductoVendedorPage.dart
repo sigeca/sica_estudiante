@@ -155,25 +155,6 @@ return Scaffold(
     body: Column(
         children: [
           // Sección de perfil simplificada (Estilo EjercitacionGestionPage)
-          FutureBuilder<Persona>(
-            future: _personaInfoFuture,
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) return const SizedBox.shrink();
-              final persona = snapshot.data!;
-              final fotoUrl = "https://educaysoft.org/descargar2.php?archivo=${widget.cedula}.jpg";
-              return Container(
-                padding: const EdgeInsets.all(16),
-                color: Colors.white,
-                child: Row(
-                  children: [
-                    CircleAvatar(radius: 25, backgroundImage: NetworkImage(fotoUrl)),
-                    const SizedBox(width: 12),
-                    Text(persona.lapersona, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  ],
-                ),
-              );
-            },
-          ),
           Expanded(
             child: FutureBuilder<List<Producto>>(
               future: _productosFuture,

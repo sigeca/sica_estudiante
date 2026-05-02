@@ -35,8 +35,12 @@ class _FacturaFormPageState extends State<FacturaFormPage> {
   // Data for Selects
   Map<String, dynamic>? _initialData;
   List<EstadoFactura> _estados = [];
+  List<TipoPagoFactura> _tiposPago = [];
+  List<Tipoentregaproducto> _tiposEntrega = [];
   List<TipoImpuesto> _impuestos = [];
   String? _selectedEstado;
+  String? _selectedPago;
+  String? _selectedEntrega;
   String? _idCliente;
   String? _nombreCliente;
 
@@ -69,10 +73,14 @@ class _FacturaFormPageState extends State<FacturaFormPage> {
           _idCliente = data['cliente']['idcliente'].toString();
           _nombreCliente = data['cliente']['elcliente'];
         }
-        _estados = (data['estados'] as List).map((e) => EstadoFactura.fromJson(e)).toList();
-        _impuestos = (data['impuestos'] as List).map((e) => TipoImpuesto.fromJson(e)).toList();
+        _estados = ((data['estados'] ?? []) as List).map((e) => EstadoFactura.fromJson(e)).toList();
+        _tiposPago = ((data['tipopagos'] ?? []) as List).map((e) => TipoPagoFactura.fromJson(e)).toList();
+        _tiposEntrega = ((data['tipoentregas'] ?? []) as List).map((e) => Tipoentregaproducto.fromJson(e)).toList();
+        _impuestos = ((data['impuestos'] ?? []) as List).map((e) => TipoImpuesto.fromJson(e)).toList();
         
         if (_estados.isNotEmpty) _selectedEstado = _estados.first.idestadofactura;
+        if (_tiposPago.isNotEmpty) _selectedPago = _tiposPago.first.idtipopagofactura;
+        if (_tiposEntrega.isNotEmpty) _selectedEntrega = _tiposEntrega.first.idtipoentregaproducto;
         
         // Initialize Detalles from Cart
         String defaultImpuesto = _impuestos.isNotEmpty ? _impuestos.first.idtipoimpuesto : "0";
@@ -147,7 +155,9 @@ class _FacturaFormPageState extends State<FacturaFormPage> {
       idcliente: _idCliente!,
       fechaemision: DateTime.parse(_fechaEmisionController.text.replaceAll(' ', 'T')),
       fechavencimiento: DateTime.parse(_fechaVencimientoController.text),
-      idestadofactura: _selectedEstado!,
+      idestadofactura: _selectedEstado ?? "1",
+      idtipopagofactura: _selectedPago ?? "1",
+      idtipoentregaproducto: _selectedEntrega ?? "1",
       subtotal: _subtotalGlobal,
       totalimpuesto: _impuestoGlobal,
       totaldescuento: _descuentoGlobal,
@@ -176,7 +186,7 @@ class _FacturaFormPageState extends State<FacturaFormPage> {
           TextButton(
             onPressed: () {
               Navigator.pop(context); // Close dialog
-              Navigator.pop(context); // Back to cart (which should be cleared)
+              Navigator.pop(context, true); // Back to cart with success flag
             },
             child: const Text('Cerrar'),
           ),
@@ -275,6 +285,14 @@ class _FacturaFormPageState extends State<FacturaFormPage> {
                 Expanded(child: _buildDropdownEstado()),
               ],
             ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(child: _buildDropdownPago()),
+                const SizedBox(width: 10),
+                Expanded(child: _buildDropdownEntrega()),
+              ],
+            ),
           ],
         ),
       ),
@@ -303,8 +321,36 @@ class _FacturaFormPageState extends State<FacturaFormPage> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       ),
-      items: _estados.map((e) => DropdownMenuItem(value: e.idestadofactura, child: Text(e.nombre, style: const TextStyle(fontSize: 12)))).toList(),
+      items: _estados.map<DropdownMenuItem<String>>((e) => DropdownMenuItem<String>(value: e.idestadofactura, child: Text(e.nombre, style: const TextStyle(fontSize: 11), overflow: TextOverflow.ellipsis))).toList(),
       onChanged: (val) => setState(() => _selectedEstado = val),
+    );
+  }
+
+  Widget _buildDropdownPago() {
+    return DropdownButtonFormField<String>(
+      value: _selectedPago,
+      decoration: InputDecoration(
+        labelText: 'Pago',
+        labelStyle: const TextStyle(fontSize: 12),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      ),
+      items: _tiposPago.map<DropdownMenuItem<String>>((e) => DropdownMenuItem<String>(value: e.idtipopagofactura, child: Text(e.nombre, style: const TextStyle(fontSize: 11), overflow: TextOverflow.ellipsis))).toList(),
+      onChanged: (val) => setState(() => _selectedPago = val),
+    );
+  }
+
+  Widget _buildDropdownEntrega() {
+    return DropdownButtonFormField<String>(
+      value: _selectedEntrega,
+      decoration: InputDecoration(
+        labelText: 'Entrega',
+        labelStyle: const TextStyle(fontSize: 12),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      ),
+      items: _tiposEntrega.map<DropdownMenuItem<String>>((e) => DropdownMenuItem<String>(value: e.idtipoentregaproducto, child: Text(e.nombre, style: const TextStyle(fontSize: 11), overflow: TextOverflow.ellipsis))).toList(),
+      onChanged: (val) => setState(() => _selectedEntrega = val),
     );
   }
 
