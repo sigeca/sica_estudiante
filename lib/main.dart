@@ -178,7 +178,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _fetchPersonaData() async {
     try {
-      final persona = await ApiService.fetchPersonaInfo(widget.idpersona);
+      final personaInfoFetched = await ApiService.fetchPersonaInfo(widget.idpersona);
+      final prefs = await SharedPreferences.getInstance();
+      final idusuarioStr = prefs.getString('idusuario');
+      final currentIdUsuario = (idusuarioStr != null && idusuarioStr.isNotEmpty) 
+          ? idusuarioStr 
+          : personaInfoFetched.idusuario;
+
+      final persona = Persona(
+        idpersona: personaInfoFetched.idpersona,
+        cedula: personaInfoFetched.cedula,
+        lapersona: personaInfoFetched.lapersona,
+        idusuario: currentIdUsuario,
+      );
+
       if (mounted) {
         setState(() {
           _personaInfo = persona;
@@ -379,7 +392,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.event), label: 'Eventos'),
+          BottomNavigationBarItem(icon: Icon(Icons.event), label: 'Inicio'),
           BottomNavigationBarItem(
               icon: Icon(Icons.storefront), label: 'ComUniTi'),
           BottomNavigationBarItem(
@@ -451,144 +464,6 @@ class _EventoPageState extends State<EventoPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // --- RIBBON 1: EVENTOS ---
-            _buildRibbonHeader(
-                'Eventos y cursos tomados', Icons.event_available),
-            FutureBuilder<List<Evento>>(
-              future: _eventosFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SizedBox(
-                      height: 200,
-                      child: Center(child: CircularProgressIndicator()));
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                  final eventos = snapshot.data!;
-                  return Container(
-                    height: 220,
-                    margin: const EdgeInsets.only(bottom: 10),
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      itemCount: eventos.length,
-                      itemBuilder: (context, index) => EventoCard(
-                          evento: eventos[index],
-                          idpersona: widget.idpersona,
-                          cedula: widget.cedula),
-                    ),
-                  );
-                }
-                return const Padding(
-                    padding: EdgeInsets.all(20),
-                    child: Center(child: Text('No hay eventos.')));
-              },
-            ),
-
-            // --- RIBBON 2: CURSOS MOOC ---
-            _buildRibbonHeader('Cursos (Malla MOOC)', Icons.book),
-            FutureBuilder<List<Asignatura>>(
-              future: _asignaturasFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SizedBox(
-                      height: 150,
-                      child: Center(child: CircularProgressIndicator()));
-                } else if (snapshot.hasError) {
-                  return Container(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        Icon(Icons.error_outline,
-                            color: Colors.red[300], size: 40),
-                        const SizedBox(height: 8),
-                        Text(
-                          'No se pudieron cargar las asignaturas',
-                          style: TextStyle(
-                              color: Colors.red[700],
-                              fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  );
-                } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                  final asignaturas = snapshot.data!;
-                  return Container(
-                    height: 160,
-                    margin: const EdgeInsets.only(bottom: 20),
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      itemCount: asignaturas.length,
-                      itemBuilder: (context, index) =>
-                          AsignaturaCard(asignatura: asignaturas[index]),
-                    ),
-                  );
-                }
-                return Container(
-                  height: 120,
-                  alignment: Alignment.center,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.info_outline,
-                          color: Colors.grey[400], size: 30),
-                      const SizedBox(height: 8),
-                      Text('No hay asignaturas en esta malla.',
-                          style:
-                              TextStyle(color: Colors.grey[600], fontSize: 13)),
-                    ],
-                  ),
-                );
-              },
-            ),
-
-            // --- RIBBON 3: SALUD Y BIENESTAR ---
-            _buildRibbonHeader('Salud y Bienestar', Icons.favorite),
-            Container(
-              height: 140,
-              margin: const EdgeInsets.only(bottom: 30),
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                children: [
-                  ActionCard(
-                    title: 'Alimentación',
-                    imagePath: 'assets/alimentacion.png',
-                    color: Colors.green[50]!,
-                    onTap: () {
-                      final page = AlimentacionGestionPage(
-                          idpersona: widget.idpersona, cedula: widget.cedula);
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (context) => page));
-                    },
-                  ),
-                  ActionCard(
-                    title: 'Medicación',
-                    imagePath: 'assets/medicacion.png',
-                    color: Colors.blue[50]!,
-                    onTap: () {
-                      final page = MedicacionGestionPage(
-                          idpersona: widget.idpersona, cedula: widget.cedula);
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (context) => page));
-                    },
-                  ),
-                  ActionCard(
-                    title: 'Ejercitación',
-                    imagePath: 'assets/ejercitacion.png',
-                    color: Colors.orange[50]!,
-                    onTap: () {
-                      final page = EjercitacionGestionPage(
-                          idpersona: widget.idpersona, cedula: widget.cedula);
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (context) => page));
-                    },
-                  ),
-                ],
-              ),
-            ),
-
             // --- RIBBON 4: COMUNIDAD (TIPO OFERTA) ---
             _buildRibbonHeader(
                 'Comunidad (Marketplace)', Icons.shopping_basket),
@@ -663,6 +538,144 @@ class _EventoPageState extends State<EventoPage> {
                 return const SizedBox();
               },
             ),
+
+            // --- RIBBON 3: SALUD Y BIENESTAR ---
+            _buildRibbonHeader('Salud y Bienestar', Icons.favorite),
+            Container(
+              height: 140,
+              margin: const EdgeInsets.only(bottom: 30),
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                children: [
+                  ActionCard(
+                    title: 'Alimentación',
+                    imagePath: 'assets/alimentacion.png',
+                    color: Colors.green[50]!,
+                    onTap: () {
+                      final page = AlimentacionGestionPage(
+                          idpersona: widget.idpersona, cedula: widget.cedula);
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) => page));
+                    },
+                  ),
+                  ActionCard(
+                    title: 'Medicación',
+                    imagePath: 'assets/medicacion.png',
+                    color: Colors.blue[50]!,
+                    onTap: () {
+                      final page = MedicacionGestionPage(
+                          idpersona: widget.idpersona, cedula: widget.cedula);
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) => page));
+                    },
+                  ),
+                  ActionCard(
+                    title: 'Ejercitación',
+                    imagePath: 'assets/ejercitacion.png',
+                    color: Colors.orange[50]!,
+                    onTap: () {
+                      final page = EjercitacionGestionPage(
+                          idpersona: widget.idpersona, cedula: widget.cedula);
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) => page));
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            // --- RIBBON 2: CURSOS MOOC ---
+            _buildRibbonHeader('Cursos (Malla MOOC)', Icons.book),
+            FutureBuilder<List<Asignatura>>(
+              future: _asignaturasFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SizedBox(
+                      height: 150,
+                      child: Center(child: CircularProgressIndicator()));
+                } else if (snapshot.hasError) {
+                  return Container(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        Icon(Icons.error_outline,
+                            color: Colors.red[300], size: 40),
+                        const SizedBox(height: 8),
+                        Text(
+                          'No se pudieron cargar las asignaturas',
+                          style: TextStyle(
+                              color: Colors.red[700],
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  );
+                } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                  final asignaturas = snapshot.data!;
+                  return Container(
+                    height: 160,
+                    margin: const EdgeInsets.only(bottom: 20),
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      itemCount: asignaturas.length,
+                      itemBuilder: (context, index) =>
+                          AsignaturaCard(asignatura: asignaturas[index]),
+                    ),
+                  );
+                }
+                return Container(
+                  height: 120,
+                  alignment: Alignment.center,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.info_outline,
+                          color: Colors.grey[400], size: 30),
+                      const SizedBox(height: 8),
+                      Text('No hay asignaturas en esta malla.',
+                          style:
+                              TextStyle(color: Colors.grey[600], fontSize: 13)),
+                    ],
+                  ),
+                );
+              },
+            ),
+
+            // --- RIBBON 1: EVENTOS ---
+            _buildRibbonHeader(
+                'Eventos y cursos tomados', Icons.event_available),
+            FutureBuilder<List<Evento>>(
+              future: _eventosFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SizedBox(
+                      height: 200,
+                      child: Center(child: CircularProgressIndicator()));
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                  final eventos = snapshot.data!;
+                  return Container(
+                    height: 220,
+                    margin: const EdgeInsets.only(bottom: 10),
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      itemCount: eventos.length,
+                      itemBuilder: (context, index) => EventoCard(
+                          evento: eventos[index],
+                          idpersona: widget.idpersona,
+                          cedula: widget.cedula),
+                    ),
+                  );
+                }
+                return const Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Center(child: Text('No hay eventos.')));
+              },
+            ),
           ],
         ),
       ),
@@ -708,15 +721,15 @@ class ActionCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: 130,
-        margin: const EdgeInsets.all(8),
+        margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -730,7 +743,7 @@ class ActionCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: color,
                   borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(20)),
+                      const BorderRadius.vertical(top: Radius.circular(16)),
                 ),
                 child: Image.asset(
                   imagePath,
@@ -770,18 +783,19 @@ class AsignaturaCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 8,
-              offset: const Offset(0, 3)),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(16),
           onTap: () {},
           child: Padding(
             padding: const EdgeInsets.all(12.0),
@@ -860,31 +874,40 @@ class _EventoCardState extends State<EventoCard> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return Container(
       width: 200,
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => EventoDetalleScreen(
-                idevento: widget.evento.idevento,
-                titulo: widget.evento.titulo,
-                idpersona: widget.idpersona,
-                idtipogrupoparticipante: widget.evento.idtipogrupoparticipante,
-                cedula: widget.cedula,
+      margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => EventoDetalleScreen(
+                  idevento: widget.evento.idevento,
+                  titulo: widget.evento.titulo,
+                  idpersona: widget.idpersona,
+                  idtipogrupoparticipante: widget.evento.idtipogrupoparticipante,
+                  cedula: widget.cedula,
+                ),
               ),
-            ),
-          );
-        },
-        child: Card(
-          margin: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 4.0),
-          elevation: 6,
-          shadowColor: Colors.black26,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            );
+          },
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
