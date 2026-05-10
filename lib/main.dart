@@ -1862,6 +1862,55 @@ class _VendedorCartsViewState extends State<VendedorCartsView> {
                           ),
                         ),
                       ],
+                      if (!widget.isHistory) ...[
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              // Mostramos Snackbar indicando progreso
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Procesando devolución de ${p.elproducto}...')),
+                              );
+
+                              bool exito = await ApiService.devolverProductoVendedorFlutter(
+                                p.idcarritoproducto.toString()
+                              );
+
+                              if (!context.mounted) return;
+
+                              if (exito) {
+                                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('✅ Producto devuelto y stock restaurado'), 
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                                setState(() {
+                                  _loadData();
+                                });
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('❌ Error al procesar la devolución'), 
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            },
+                            icon: const Icon(Icons.assignment_return, size: 20),
+                            label: const Text('Devolver Producto'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange.shade600,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
