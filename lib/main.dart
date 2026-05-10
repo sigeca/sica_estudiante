@@ -1460,8 +1460,14 @@ class _VendedorDashboardPageState extends State<VendedorDashboardPage> {
     super.initState();
     _views = [
       VendedorProductosView(idcustodio: widget.idpersona),
-      VendedorCartsView(idcustodio: widget.idpersona, isHistory: false),
-      VendedorCartsView(idcustodio: widget.idpersona, isHistory: true),
+      VendedorCartsView(
+          key: const ValueKey('active_carts'),
+          idcustodio: widget.idpersona,
+          isHistory: false),
+      VendedorCartsView(
+          key: const ValueKey('history_carts'),
+          idcustodio: widget.idpersona,
+          isHistory: true),
     ];
   }
 
@@ -1715,6 +1721,7 @@ class VendedorCartsView extends StatefulWidget {
 
 class _VendedorCartsViewState extends State<VendedorCartsView> {
   late Future<List<Producto>> _future;
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -1733,33 +1740,73 @@ class _VendedorCartsViewState extends State<VendedorCartsView> {
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: () async {
-        setState(() {
-          _loadData();
-        });
-      },
-      child: FutureBuilder<List<Producto>>(
-        future: _future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(
-                child: Text(widget.isHistory
-                    ? 'No hay historial disponible'
-                    : 'No hay carritos activos'));
-          }
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: TextField(
+            decoration: InputDecoration(
+              hintText: 'Buscar producto, cliente o fecha...',
+              prefixIcon: const Icon(Icons.search),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(vertical: 0),
+            ),
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value.toLowerCase();
+              });
+            },
+          ),
+        ),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () async {
+              setState(() {
+                _loadData();
+              });
+            },
+            child: FutureBuilder<List<Producto>>(
+              future: _future,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Center(
+                      child: Text(widget.isHistory
+                          ? 'No hay historial disponible'
+                          : 'No hay carritos activos'));
+                }
 
-          final list = snapshot.data!;
-          return ListView.builder(
-            padding: const EdgeInsets.all(12),
-            itemCount: list.length,
-            itemBuilder: (context, index) {
-              final p = list[index];
-              return Card(
+                final allItems = snapshot.data!;
+                final list = allItems.where((p) {
+                  if (_searchQuery.isEmpty) return true;
+                  final search = _searchQuery;
+                  bool matchesProd = p.elproducto.toLowerCase().contains(search);
+                  bool matchesClient = p.lapersona.toLowerCase().contains(search);
+                  bool matchesCarga = p.fechacarga.toLowerCase().contains(search);
+                  bool matchesDescarga = false;
+                  if (widget.isHistory) {
+                    matchesDescarga = p.fechadescarga.toLowerCase().contains(search);
+                  }
+                  return matchesProd || matchesClient || matchesCarga || matchesDescarga;
+                }).toList();
+
+                if (list.isEmpty) {
+                  return const Center(child: Text('No hay coincidencias'));
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  itemCount: list.length,
+                  itemBuilder: (context, index) {
+                    final p = list[index];
+                    return Card(
                 margin: const EdgeInsets.only(bottom: 12),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(15)),
@@ -1919,6 +1966,8 @@ class _VendedorCartsViewState extends State<VendedorCartsView> {
           );
         },
       ),
+    ),
+    ],
     );
   }
 }
