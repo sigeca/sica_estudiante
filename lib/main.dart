@@ -1967,6 +1967,7 @@ class _VendedorCartsViewState extends State<VendedorCartsView> {
         },
       ),
     ),
+    ),
     ],
     );
   }
