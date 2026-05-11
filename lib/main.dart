@@ -18,6 +18,7 @@ import 'RegistroPage.dart';
 import 'SicaAppBar.dart';
 import 'CartController.dart';
 import 'package:sica_estudiante/CarritoProductoPage.dart';
+import 'VendedorReportesView.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -1468,6 +1469,7 @@ class _VendedorDashboardPageState extends State<VendedorDashboardPage> {
           key: const ValueKey('history_carts'),
           idcustodio: widget.idpersona,
           isHistory: true),
+      VendedorReportesView(idcustodio: widget.idpersona),
     ];
   }
 
@@ -1476,6 +1478,7 @@ class _VendedorDashboardPageState extends State<VendedorDashboardPage> {
     String title = 'Mis Productos';
     if (_selectedIndex == 1) title = 'Carrito Productos';
     if (_selectedIndex == 2) title = 'Histórico Carrito Producto';
+    if (_selectedIndex == 3) title = 'Reportes de Histórico';
 
     return Scaffold(
       appBar: AppBar(
@@ -1502,6 +1505,10 @@ class _VendedorDashboardPageState extends State<VendedorDashboardPage> {
           BottomNavigationBarItem(
             icon: Icon(Icons.history),
             label: 'Histórico',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.picture_as_pdf),
+            label: 'Reportes',
           ),
         ],
       ),
