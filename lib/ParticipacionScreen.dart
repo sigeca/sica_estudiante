@@ -57,10 +57,10 @@ class _ParticipacionScreenState extends State<ParticipacionScreen> {
 
   Future<void> _registrarParticipacion(Participacion nuevaParticipacion) async {
     final response = await http.post(
-      Uri.parse('https://educaysoft.org/sica/index.php/participacion/save'),
+      Uri.parse('https://educaysoft.org/sica/index.php/participacion/save_nota'),
       body: {
         'idevento': nuevaParticipacion.idevento,
-        'fecha': nuevaParticipacion.fecha.toIso8601String(),
+        'fecha': nuevaParticipacion.fecha.toIso8601String().split('T')[0],
         'porcentaje': nuevaParticipacion.porcentaje.toString(),
         'ayuda': nuevaParticipacion.ayuda.toString(),
         'idpersona': nuevaParticipacion.idpersona,
@@ -84,11 +84,10 @@ class _ParticipacionScreenState extends State<ParticipacionScreen> {
 
   Future<void> _modificarParticipacion(Participacion participacion) async {
     final response = await http.post(
-      Uri.parse('URL_DE_TU_API/modificar_participacion'),
+      Uri.parse('https://educaysoft.org/sica/index.php/participacion/save_nota'),
       body: {
-        'idparticipacion': participacion.idparticipacion.toString(),
         'idevento': participacion.idevento,
-        'fecha': participacion.fecha.toIso8601String(),
+        'fecha': participacion.fecha.toIso8601String().split('T')[0],
         'porcentaje': participacion.porcentaje.toString(),
         'ayuda': participacion.ayuda.toString(),
         'idpersona': participacion.idpersona,
