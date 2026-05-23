@@ -1358,16 +1358,21 @@ static Future<bool> addProductoCarrito({
   required int idproducto,
   required int cantidad,
   required double precio,
+  String? idcarrito,
 }) async {
   final url = Uri.parse('https://educaysoft.org/sica/index.php/carritoproducto/save_flutter');
   
   try {
-    final response = await http.post(url, body: {
+    final Map<String, String> body = {
       'idpersona': idpersona,
       'idproducto': idproducto.toString(),
       'cantidad': cantidad.toString(),
       'precio': precio.toString(),
-    });
+    };
+    if (idcarrito != null) {
+      body['idcarrito'] = idcarrito;
+    }
+    final response = await http.post(url, body: body);
 
 print("RESPUESTA BRUTA DEL SERVIDOR: ${response.body}");
 
@@ -1378,6 +1383,37 @@ print("RESPUESTA BRUTA DEL SERVIDOR: ${response.body}");
     return false;
   } catch (e) {
     print("Error en añadirProductoCarrito: $e");
+    return false;
+  }
+}
+
+static Future<bool> addProductoCarritoHistorico({
+  required String idpersona,
+  required int idproducto,
+  required int cantidad,
+  required double precio,
+  required String idcarrito,
+}) async {
+  final url = Uri.parse('https://educaysoft.org/sica/index.php/historicocarritoproducto/save_flutter');
+  
+  try {
+    final response = await http.post(url, body: {
+      'idpersona': idpersona,
+      'idproducto': idproducto.toString(),
+      'cantidad': cantidad.toString(),
+      'precio': precio.toString(),
+      'idcarrito': idcarrito,
+    });
+
+    print("RESPUESTA BRUTA DEL SERVIDOR (HISTORICO): ${response.body}");
+
+    if (response.statusCode == 200) {
+      final decoded = json.decode(response.body);
+      return decoded['status'] == true;
+    }
+    return false;
+  } catch (e) {
+    print("Error en addProductoCarritoHistorico: $e");
     return false;
   }
 }

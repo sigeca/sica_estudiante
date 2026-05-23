@@ -1527,15 +1527,70 @@ class VendedorProductosView extends StatefulWidget {
 
 class _VendedorProductosViewState extends State<VendedorProductosView> {
   late Future<List<Producto>> _future;
+  List<Map<String, String>> _historicCarritos = [];
+  bool _loadingCarritos = true;
 
   @override
   void initState() {
     super.initState();
     _loadData();
+    _loadCarritos();
   }
 
   void _loadData() {
     _future = ApiService.fetchProductosPorVendedor(widget.idcustodio);
+  }
+
+  Future<void> _loadCarritos() async {
+    try {
+      final List<Map<String, String>> carritos = [];
+      final Set<String> seenCarritos = {};
+
+      try {
+        final activeList = await ApiService.fetchCarritoproductoVendedor(widget.idcustodio);
+        for (var p in activeList) {
+          if (p.idcarrito.isNotEmpty && p.idcarrito != '0' && !seenCarritos.contains(p.idcarrito)) {
+            seenCarritos.add(p.idcarrito);
+            carritos.add({
+              'id': p.idcarrito,
+              'name': p.lapersona.isNotEmpty ? p.lapersona : 'Carrito ${p.idcarrito}',
+              'idpersona': p.idpersona,
+            });
+          }
+        }
+      } catch (e) {
+        print("Error fetching active carritos: $e");
+      }
+
+      try {
+        final historicList = await ApiService.fetchHistoricocarritoproductoVendedor(widget.idcustodio);
+        for (var p in historicList) {
+          if (p.idcarrito.isNotEmpty && p.idcarrito != '0' && !seenCarritos.contains(p.idcarrito)) {
+            seenCarritos.add(p.idcarrito);
+            carritos.add({
+              'id': p.idcarrito,
+              'name': p.lapersona.isNotEmpty ? p.lapersona : 'Carrito ${p.idcarrito}',
+              'idpersona': p.idpersona,
+            });
+          }
+        }
+      } catch (e) {
+        print("Error fetching historic carritos: $e");
+      }
+
+      if (mounted) {
+        setState(() {
+          _historicCarritos = carritos;
+          _loadingCarritos = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _loadingCarritos = false;
+        });
+      }
+    }
   }
 
   void _mostrarZoomImagen(BuildContext context, String url, String nombre) {
@@ -1596,12 +1651,206 @@ class _VendedorProductosViewState extends State<VendedorProductosView> {
     );
   }
 
+  void _mostrarDialogoAgregarCarrito(BuildContext context, Producto p) {
+    if (_loadingCarritos) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cargando carritos registrados...')),
+      );
+      return;
+    }
+    if (_historicCarritos.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Sin Carritos Registrados'),
+          content: const Text('No hay carritos registrados para este vendedor. No se puede añadir el producto.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cerrar'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    String? selectedCarritoId = _historicCarritos.first['id'];
+    String selectedPersonaId = _historicCarritos.first['idpersona'] ?? '';
+    int cantidad = 1;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final double stockMax = p.stock;
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Row(
+                children: [
+                  const Icon(Icons.add_shopping_cart, color: Colors.green),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Añadir a Carrito',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                    ),
+                  ),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      p.elproducto,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      p.detalle,
+                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Seleccionar Carrito:',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                    const SizedBox(height: 6),
+                    DropdownButtonFormField<String>(
+                      isExpanded: true,
+                      value: selectedCarritoId,
+                      decoration: InputDecoration(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      items: _historicCarritos.map((c) {
+                        return DropdownMenuItem<String>(
+                          value: c['id'],
+                          child: Text('${c['name']} (ID: ${c['id']})'),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        if (val != null) {
+                          setDialogState(() {
+                            selectedCarritoId = val;
+                            final found = _historicCarritos.firstWhere((element) => element['id'] == val);
+                            selectedPersonaId = found['idpersona'] ?? '';
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Cantidad:',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                        Row(
+                          children: [
+                            IconButton(
+                              onPressed: cantidad > 1
+                                  ? () {
+                                      setDialogState(() {
+                                        cantidad--;
+                                      });
+                                    }
+                                  : null,
+                              icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                            ),
+                            Text(
+                              '$cantidad',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                            IconButton(
+                              onPressed: cantidad < stockMax
+                                  ? () {
+                                      setDialogState(() {
+                                        cantidad++;
+                                      });
+                                    }
+                                  : null,
+                              icon: const Icon(Icons.add_circle_outline, color: Colors.green),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Text(
+                      'Disponible: ${stockMax.toStringAsFixed(0)} unidades',
+                      style: TextStyle(color: Colors.blueAccent[700], fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: (selectedCarritoId == null || stockMax <= 0)
+                      ? null
+                      : () async {
+                          Navigator.pop(context);
+                          // Show a loading indicator
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Guardando en carrito de compras...')),
+                          );
+                          final success = await ApiService.addProductoCarrito(
+                            idpersona: selectedPersonaId,
+                            idproducto: p.idproducto,
+                            cantidad: cantidad,
+                            precio: p.precio,
+                            idcarrito: selectedCarritoId,
+                          );
+                          if (success) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Producto añadido con éxito al carrito de compras.'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                            // Refresh product list and carritos
+                            setState(() {
+                              _loadData();
+                              _loadCarritos();
+                            });
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Error al añadir el producto al carrito.'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                  child: const Text('Añadir'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
       onRefresh: () async {
         setState(() {
           _loadData();
+          _loadCarritos();
         });
       },
       child: FutureBuilder<List<Producto>>(
@@ -1695,8 +1944,13 @@ class _VendedorProductosViewState extends State<VendedorProductosView> {
                                     ),
                                   ],
                                 ),
-                                Icon(Icons.inventory,
-                                    size: 20, color: Colors.blueAccent.withOpacity(0.5)),
+                                IconButton(
+                                  icon: const Icon(Icons.add_shopping_cart, color: Colors.green),
+                                  tooltip: 'Añadir a Carrito Histórico',
+                                  onPressed: p.stock > 0
+                                      ? () => _mostrarDialogoAgregarCarrito(context, p)
+                                      : null,
+                                ),
                               ],
                             ),
                           ],
