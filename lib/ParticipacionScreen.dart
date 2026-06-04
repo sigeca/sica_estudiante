@@ -136,8 +136,8 @@ class _ParticipacionScreenState extends State<ParticipacionScreen> {
     final _porcentajeController = TextEditingController(text: participacion?.porcentaje.toString() ?? '');
     final _ponderacionController = TextEditingController(text: participacion?.ponderacion.toString() ?? '');
     final _ayudaController = TextEditingController(text: participacion?.ayuda.toString() ?? '');
-    //final _comentarioController = TextEditingController(text: participacion?.comentario ?? '');
-    final _comentarioController = TextEditingController(text: widget.temacorto);
+    final _comentarioController = TextEditingController(text: participacion != null ? participacion.comentario : widget.temacorto);
+    participanteSeleccionado = null;
 
     showDialog(
       context: context,
@@ -243,6 +243,7 @@ class _ParticipacionScreenState extends State<ParticipacionScreen> {
                         ElevatedButton(
                           onPressed: () {
                             if (_formKey.currentState!.validate()) {
+                              final partToSave = participanteSeleccionado ?? participanteSeleccionadoLocal!;
                               final nuevaParticipacion = Participacion(
                                 idparticipacion: participacion?.idparticipacion ?? '',
                                 idevento: widget.idevento,
@@ -252,8 +253,8 @@ class _ParticipacionScreenState extends State<ParticipacionScreen> {
 																ponderacion: double.tryParse(_ponderacionController.text)?.toString() ?? '0.0',
                              //   ponderacion: double.parse(_ponderacionController.text).toString(),
                                 ayuda: double.tryParse(_ayudaController.text) ?? 0.0,
-                                idpersona: participanteSeleccionado!.idpersona,
-                                nombres: participanteSeleccionado!.nombres,
+                                idpersona: partToSave.idpersona,
+                                nombres: partToSave.nombres,
                                 comentario: _comentarioController.text,
                               );
                               if (participacion == null) {
@@ -354,14 +355,23 @@ class _ParticipacionScreenState extends State<ParticipacionScreen> {
               Text('Comentario: ${participacion.comentario}'),
             ],
           ),
-                      trailing: Text(                                                                                                                                                                        
-                         '${porcentajeTotal.toStringAsFixed(2)}%',
-                         style: TextStyle(
-                           fontSize: 18,
-                           fontWeight: FontWeight.bold,
-                           color: porcentajeTextColor, // Color rojo si hay ayuda, sino naranja o verde
-                         ),
-                       ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${porcentajeTotal.toStringAsFixed(2)}%',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: porcentajeTextColor,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.edit, color: Colors.blue),
+                onPressed: () => _mostrarFormularioParticipacion(participacion),
+              ),
+            ],
+          ),
        ),
         );
       },
