@@ -579,6 +579,7 @@ class Producto {
   final String fechacarga;
   final String fechadescarga;
   final String elestadoproductocarrito;
+  final int idtipooferta;
 
   Producto({
     required this.idproducto,
@@ -598,6 +599,7 @@ class Producto {
     this.fechacarga = '',
     this.fechadescarga = '',
     this.elestadoproductocarrito = '',
+    this.idtipooferta = 0,
   });
 
   factory Producto.fromJson(Map<String, dynamic> json) {
@@ -620,6 +622,7 @@ class Producto {
       fechacarga: json['fechacarga'] ?? '',
       fechadescarga: json['fechadescarga'] ?? '',
       elestadoproductocarrito: json['elestadoproductocarrito'] ?? '',
+      idtipooferta: int.tryParse(json['idtipooferta']?.toString() ?? '0') ?? 0,
     );
   }
 }

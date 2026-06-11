@@ -183,6 +183,11 @@ class _CarritoProductoViewState extends State<CarritoProductoView> {
 
   @override
   Widget build(BuildContext context) {
+    bool tienePrestamo = false;
+    if (_listaProductos != null) {
+      tienePrestamo = _listaProductos!.any((p) => p.idtipooferta == 4);
+    }
+
     return Stack(
       children: [
         _listaProductos == null
@@ -198,6 +203,9 @@ class _CarritoProductoViewState extends State<CarritoProductoView> {
                       final int quantity = _itemQuantities[producto.idproducto] ?? 0;
                       final double maxDisponible = producto.cantidad;
                       final bool tieneCantidad = quantity > 0;
+                      final bool esPrestamo = producto.idtipooferta == 4;
+                      final bool canRemove = tieneCantidad && !esPrestamo;
+                      final bool canAdd = (quantity < maxDisponible) && !esPrestamo;
 
                       return Card(
                         elevation: 2,
@@ -236,13 +244,13 @@ class _CarritoProductoViewState extends State<CarritoProductoView> {
                                         Row(
                                           children: [
                                             IconButton(
-                                              icon: const Icon(Icons.remove_circle, color: Colors.redAccent), 
-                                              onPressed: tieneCantidad ? () => _decrementQuantity(producto.idproducto) : null,
+                                              icon: Icon(Icons.remove_circle, color: esPrestamo ? Colors.grey : Colors.redAccent), 
+                                              onPressed: canRemove ? () => _decrementQuantity(producto.idproducto) : null,
                                             ),
                                             Text('$quantity', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                                             IconButton(
-                                              icon: const Icon(Icons.add_circle, color: Colors.teal), 
-                                              onPressed: (quantity < maxDisponible) ? () => _incrementQuantity(producto.idproducto, maxDisponible) : null,
+                                              icon: Icon(Icons.add_circle, color: esPrestamo ? Colors.grey : Colors.teal), 
+                                              onPressed: canAdd ? () => _incrementQuantity(producto.idproducto, maxDisponible) : null,
                                             ),
                                           ],
                                         ),
@@ -250,12 +258,12 @@ class _CarritoProductoViewState extends State<CarritoProductoView> {
                                     ),
                                     const SizedBox(height: 8),
                                     ElevatedButton.icon(
-                                      onPressed: tieneCantidad ? () => _restToCart(producto, quantity) : null,
+                                      onPressed: canRemove ? () => _restToCart(producto, quantity) : null,
                                       icon: const Icon(Icons.delete_outline),
                                       label: const Text("QUITAR DEL CARRITO"),
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.red.shade50,
-                                        foregroundColor: Colors.red,
+                                        backgroundColor: esPrestamo ? Colors.grey.shade200 : Colors.red.shade50,
+                                        foregroundColor: esPrestamo ? Colors.grey : Colors.red,
                                         elevation: 0,
                                         minimumSize: const Size(double.infinity, 40),
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -276,10 +284,10 @@ class _CarritoProductoViewState extends State<CarritoProductoView> {
             left: 20,
             right: 20,
             child: FloatingActionButton.extended(
-              onPressed: _procesarPago,
+              onPressed: tienePrestamo ? null : _procesarPago,
               icon: const Icon(Icons.check_circle_outline),
               label: const Text('PAGAR AHORA', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              backgroundColor: Colors.teal,
+              backgroundColor: tienePrestamo ? Colors.grey : Colors.teal,
               elevation: 4,
             ),
           ),
