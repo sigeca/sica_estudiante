@@ -14,6 +14,7 @@ import 'MedicacionGestionPage.dart'; // Asumiendo que aquí manejas la lista de 
 import 'AlimentacionGestionPage.dart'; // Asumiendo que aquí manejas la lista de medicación
 import 'EjercitacionGestionPage.dart'; // Asumiendo que aquí manejas la lista de medicación
 import 'tipo_oferta.dart';
+import 'salud.dart';
 import 'RegistroPage.dart';
 import 'SicaAppBar.dart';
 import 'CartController.dart';
