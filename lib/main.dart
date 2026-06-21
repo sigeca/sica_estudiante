@@ -438,6 +438,7 @@ class _EventoPageState extends State<EventoPage> {
   late Future<List<Evento>> _eventosFuture;
   late Future<List<Asignatura>> _asignaturasFuture;
   late Future<List<TipoOferta>> _tipoOfertaFuture;
+  late Future<List<Salud>> _saludFuture;
 
   @override
   void initState() {
@@ -450,6 +451,7 @@ class _EventoPageState extends State<EventoPage> {
     _personaInfoFuture = ApiService.fetchPersonaInfo(widget.idpersona);
     _asignaturasFuture = ApiService.fetchAsignaturasMalla();
     _tipoOfertaFuture = ApiService.fetchTipoOferta();
+    _saludFuture = ApiService.fetchSalud();
   }
 
   @override
@@ -480,7 +482,7 @@ class _EventoPageState extends State<EventoPage> {
                 } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
                   final tipos = snapshot.data!;
                   return Container(
-                    height: 140,
+                    height: 160,
                     margin: const EdgeInsets.only(bottom: 30),
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
@@ -514,6 +516,7 @@ class _EventoPageState extends State<EventoPage> {
 
                         return ActionCard(
                           title: tipo.nombre,
+                          subtitle: tipo.descripcion,
                           imagePath: img,
                           color: col,
                           onTap: () {
@@ -542,48 +545,59 @@ class _EventoPageState extends State<EventoPage> {
 
             // --- RIBBON 3: SALUD Y BIENESTAR ---
             _buildRibbonHeader('Salud y Bienestar', Icons.favorite),
-            Container(
-              height: 140,
-              margin: const EdgeInsets.only(bottom: 30),
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                children: [
-                  ActionCard(
-                    title: 'Alimentación',
-                    imagePath: 'assets/alimentacion.png',
-                    color: Colors.green[50]!,
-                    onTap: () {
-                      final page = AlimentacionGestionPage(
-                          idpersona: widget.idpersona, cedula: widget.cedula);
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (context) => page));
-                    },
-                  ),
-                  ActionCard(
-                    title: 'Medicación',
-                    imagePath: 'assets/medicacion.png',
-                    color: Colors.blue[50]!,
-                    onTap: () {
-                      final page = MedicacionGestionPage(
-                          idpersona: widget.idpersona, cedula: widget.cedula);
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (context) => page));
-                    },
-                  ),
-                  ActionCard(
-                    title: 'Ejercitación',
-                    imagePath: 'assets/ejercitacion.png',
-                    color: Colors.orange[50]!,
-                    onTap: () {
-                      final page = EjercitacionGestionPage(
-                          idpersona: widget.idpersona, cedula: widget.cedula);
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (context) => page));
-                    },
-                  ),
-                ],
-              ),
+            FutureBuilder<List<Salud>>(
+              future: _saludFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SizedBox(
+                      height: 160,
+                      child: Center(child: CircularProgressIndicator()));
+                } else if (snapshot.hasError) {
+                  return const SizedBox();
+                } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                  final saluds = snapshot.data!;
+                  return Container(
+                    height: 160,
+                    margin: const EdgeInsets.only(bottom: 30),
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      itemCount: saluds.length,
+                      itemBuilder: (context, index) {
+                        final salud = saluds[index];
+                        String img = 'assets/alimentacion.png'; // default fallback
+                        Color col = Colors.grey[50]!;
+                        Widget targetPage = Scaffold(appBar: AppBar(title: Text(salud.nombre)), body: Center(child: Text('Página en construcción')));
+
+                        if (salud.nombre.toLowerCase().contains('aliment')) {
+                          img = 'assets/alimentacion.png';
+                          col = Colors.green[50]!;
+                          targetPage = AlimentacionGestionPage(idpersona: widget.idpersona, cedula: widget.cedula);
+                        } else if (salud.nombre.toLowerCase().contains('medic')) {
+                          img = 'assets/medicacion.png';
+                          col = Colors.blue[50]!;
+                          targetPage = MedicacionGestionPage(idpersona: widget.idpersona, cedula: widget.cedula);
+                        } else if (salud.nombre.toLowerCase().contains('ejercit')) {
+                          img = 'assets/ejercitacion.png';
+                          col = Colors.orange[50]!;
+                          targetPage = EjercitacionGestionPage(idpersona: widget.idpersona, cedula: widget.cedula);
+                        }
+
+                        return ActionCard(
+                          title: salud.nombre,
+                          subtitle: salud.descripcion,
+                          imagePath: img,
+                          color: col,
+                          onTap: () {
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => targetPage));
+                          },
+                        );
+                      },
+                    ),
+                  );
+                }
+                return const SizedBox();
+              },
             ),
 
             // --- RIBBON 2: CURSOS MOOC ---
@@ -704,6 +718,7 @@ class _EventoPageState extends State<EventoPage> {
 // ---------------------- ACTION CARD WIDGET (Health) ---------------------------
 class ActionCard extends StatelessWidget {
   final String title;
+  final String? subtitle;
   final String imagePath;
   final Color color;
   final VoidCallback onTap;
@@ -711,6 +726,7 @@ class ActionCard extends StatelessWidget {
   const ActionCard({
     super.key,
     required this.title,
+    this.subtitle,
     required this.imagePath,
     required this.color,
     required this.onTap,
@@ -721,7 +737,7 @@ class ActionCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 130,
+        width: 140,
         margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -753,15 +769,34 @@ class ActionCard extends StatelessWidget {
               ),
             ),
             Expanded(
-              flex: 1,
-              child: Center(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                    color: Colors.black87,
-                  ),
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: Colors.black87,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    if (subtitle != null && subtitle!.isNotEmpty)
+                      Text(
+                        subtitle!,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.black54,
+                          height: 1.1,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
                 ),
               ),
             ),

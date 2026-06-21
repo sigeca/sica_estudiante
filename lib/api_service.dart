@@ -4,6 +4,7 @@ import 'package:intl/intl.dart'; // 🎯 SOLUCIÓN: IMPORTAR ESTO
 import 'evento.dart';
 import 'portafolio.dart';
 import 'tipo_oferta.dart';
+import 'salud.dart';
 import 'package:flutter/foundation.dart';
 
 class ApiService {
@@ -1510,6 +1511,26 @@ static Future<bool> addProductoCarritoHistorico({
     } catch (e) {
       print('Error en fetchTipoOferta: $e');
       throw Exception('Error al cargar tipos de oferta.');
+    }
+  }
+
+  static Future<List<Salud>> fetchSalud() async {
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/salud/salud_flutter');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> json = jsonDecode(response.body);
+        if (json.containsKey('data')) {
+           final List data = json['data'];
+           return data.map((e) => Salud.fromJson(e)).toList();
+        }
+        return [];
+      } else {
+        throw Exception('Error del servidor: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error en fetchSalud: $e');
+      throw Exception('Error al cargar opciones de salud.');
     }
   }
 
