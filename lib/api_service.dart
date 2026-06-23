@@ -587,19 +587,32 @@ static Future<List<Medicacion>> fetchMedicaciones(String idpersona) async {
 
 
 
-  // 4. Eliminar un Signo Vital
-  static Future<void> eliminarCumplimiento(String iddetallemedicacion,DateTime fecha) async {
-
-        final String fechaString = DateFormat('yyyy-MM-dd').format(fecha);
+  // 4. Eliminar un Cumplimiento de medicación
+  static Future<void> eliminarCumplimiento(String idcumplimiento) async {
     final url = Uri.parse('https://educaysoft.org/sica/index.php/cumplimientomedicacion/delete_flutter');
     
     final response = await http.post(url, body: {
-      'iddetallemedicacion': iddetallemedicacion,
-      'fecha' : fechaString,
+      'idcumplimientomedicacion': idcumplimiento
     });
 
     if (response.statusCode != 200) {
-      throw Exception('Error al eliminar signo vital');
+      throw Exception('Error al eliminar cumplimiento');
+    }
+  }
+
+  // 5. Actualizar un Cumplimiento de medicación
+  static Future<void> actualizarCumplimiento(String idcumplimiento, DateTime fechaHora, int cumplimiento) async {
+    final String fechaHoraString = DateFormat('yyyy-MM-dd HH:mm:ss').format(fechaHora);
+    final url = Uri.parse('https://educaysoft.org/sica/index.php/cumplimientomedicacion/update_flutter');
+    
+    final response = await http.post(url, body: {
+      'idcumplimientomedicacion': idcumplimiento,
+      'fechahora': fechaHoraString,
+      'cumplimiento': cumplimiento.toString(),
+    });
+
+    if (response.statusCode != 200) {
+      throw Exception('Error al actualizar cumplimiento');
     }
   }
  

@@ -19,8 +19,8 @@ class CumplimientoPage extends StatefulWidget {
 }
 
 class _CumplimientoPageState extends State<CumplimientoPage> {
-  // Ahora guardamos la hora formateada: "2023-10-25" -> "14:30"
-  Map<String, String> _horasCumplimiento = {}; 
+  // Ahora guardamos la lista de cumplimientos por fecha
+  Map<String, List<Cumplimiento>> _cumplimientosPorFecha = {}; 
   bool isLoading = true;
   List<DateTime> _diasTratamiento = [];
 
@@ -56,17 +56,18 @@ class _CumplimientoPageState extends State<CumplimientoPage> {
     try {
       final cumplimientos = await ApiService.fetchCumplimientos(widget.detalle.iddetallemedicacion);
       
-      Map<String, String> tempMap = {};
+      Map<String, List<Cumplimiento>> tempMap = {};
       for (var c in cumplimientos) {
-        // Extraemos la fecha para la llave y la hora para mostrarla
         final fechaKey = c.fechahora.substring(0, 10);
-        final DateTime horaDt = DateTime.parse(c.fechahora);
-        tempMap[fechaKey] = DateFormat('HH:mm').format(horaDt);
+        if (!tempMap.containsKey(fechaKey)) {
+          tempMap[fechaKey] = [];
+        }
+        tempMap[fechaKey]!.add(c);
       }
 
       if (mounted) {
         setState(() {
-          _horasCumplimiento = tempMap;
+          _cumplimientosPorFecha = tempMap;
           isLoading = false;
         });
       }
@@ -76,30 +77,90 @@ class _CumplimientoPageState extends State<CumplimientoPage> {
     }
   }
 
-  Future<void> _toggleCheck(DateTime fecha) async {
-    final String fechaString = DateFormat('yyyy-MM-dd').format(fecha);
-    final bool yaEstaCumplido = _horasCumplimiento.containsKey(fechaString);
+  void _mostrarOpcionesDia(DateTime fecha) {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            String fechaStr = DateFormat('yyyy-MM-dd').format(fecha);
+            List<Cumplimiento> tomasActualizadas = _cumplimientosPorFecha[fechaStr] ?? [];
 
-    try {
-      // Si ya está cumplido y se toca de nuevo, actualizamos la hora (o puedes implementar borrar con un longPress)
-      // En este caso, según tu requerimiento, actualizaremos la hora a "Ahora"
-      final DateTime fechaHoraToma = DateTime.now();
-      
-      await ApiService.registrarCumplimiento(
-          widget.detalle.iddetallemedicacion, 
-          fechaHoraToma, 
-          1 
-      );
-
-      // Recargamos para obtener la hora exacta grabada en el servidor
-      await _cargarDatos();
-
-    } catch (e) {
-      print('Error en la operación: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("No se pudo actualizar el cumplimiento"))
-      );
-    }
+            return Container(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text("Tomas del ${DateFormat('dd MMM yyyy', 'es').format(fecha)}", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Divider(),
+                  if (tomasActualizadas.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text("No hay tomas registradas en este día.", style: TextStyle(color: Colors.grey)),
+                    ),
+                  ...tomasActualizadas.map((toma) {
+                    DateTime dt = DateTime.parse(toma.fechahora);
+                    return ListTile(
+                      leading: Icon(Icons.check_circle, color: Colors.green),
+                      title: Text("Toma a las ${DateFormat('HH:mm').format(dt)}", style: TextStyle(fontWeight: FontWeight.w500)),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.edit, color: Colors.blue),
+                            onPressed: () async {
+                              final TimeOfDay? pickedTime = await showTimePicker(
+                                context: context,
+                                initialTime: TimeOfDay.fromDateTime(dt),
+                                helpText: "EDITAR HORA DE TOMA",
+                              );
+                              if (pickedTime != null) {
+                                DateTime newDate = DateTime(fecha.year, fecha.month, fecha.day, pickedTime.hour, pickedTime.minute);
+                                await ApiService.actualizarCumplimiento(toma.idcumplimiento, newDate, 1);
+                                await _cargarDatos();
+                                setModalState(() {});
+                              }
+                            },
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.delete, color: Colors.red),
+                            onPressed: () async {
+                              await ApiService.eliminarCumplimiento(toma.idcumplimiento);
+                              await _cargarDatos();
+                              setModalState(() {});
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  SizedBox(height: 10),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      final TimeOfDay? pickedTime = await showTimePicker(
+                        context: context,
+                        initialTime: TimeOfDay.now(),
+                        helpText: "AGREGAR NUEVA TOMA",
+                      );
+                      if (pickedTime != null) {
+                        DateTime newDate = DateTime(fecha.year, fecha.month, fecha.day, pickedTime.hour, pickedTime.minute);
+                        await ApiService.registrarCumplimiento(widget.detalle.iddetallemedicacion, newDate, 1);
+                        await _cargarDatos();
+                        setModalState(() {});
+                      }
+                    },
+                    icon: Icon(Icons.add),
+                    label: Text("Añadir toma"),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.teal, foregroundColor: Colors.white),
+                  )
+                ],
+              ),
+            );
+          }
+        );
+      }
+    );
   }
 
   @override
@@ -146,14 +207,15 @@ class _CumplimientoPageState extends State<CumplimientoPage> {
                     String diaNumero = DateFormat('d').format(fecha);
                     diaSemana = "${diaSemana[0].toUpperCase()}${diaSemana.substring(1)}";
                     
-                    bool cumplido = _horasCumplimiento.containsKey(fechaStr);
-                    String? horaToma = _horasCumplimiento[fechaStr];
+                    bool cumplido = _cumplimientosPorFecha.containsKey(fechaStr) && _cumplimientosPorFecha[fechaStr]!.isNotEmpty;
+                    List<Cumplimiento> tomas = _cumplimientosPorFecha[fechaStr] ?? [];
+                    List<String> horasToma = tomas.map((t) => DateFormat('HH:mm').format(DateTime.parse(t.fechahora))).toList();
                     bool esHoy = DateFormat('yyyy-MM-dd').format(DateTime.now()) == fechaStr;
 
                     return Material(
                       color: cumplido ? Colors.green.withOpacity(0.05) : (esHoy ? Colors.teal.withOpacity(0.05) : Colors.white),
                       child: InkWell(
-                        onTap: () => _toggleCheck(fecha),
+                        onTap: () => _mostrarOpcionesDia(fecha),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
                           child: Row(
@@ -178,7 +240,7 @@ class _CumplimientoPageState extends State<CumplimientoPage> {
                                   children: [
                                     Text(diaSemana, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: cumplido ? Colors.green[700] : Colors.black87)),
                                     if (cumplido) 
-                                      Text("Tomado a las: $horaToma", style: TextStyle(color: Colors.green[600], fontSize: 13, fontWeight: FontWeight.w500))
+                                      Text("Tomas a las: ${horasToma.join(', ')}", style: TextStyle(color: Colors.green[600], fontSize: 13, fontWeight: FontWeight.w500))
                                     else
                                       Text("Pendiente", style: TextStyle(color: Colors.grey, fontSize: 12)),
                                   ],
