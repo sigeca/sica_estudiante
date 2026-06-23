@@ -77,6 +77,46 @@ class _CumplimientoPageState extends State<CumplimientoPage> {
     }
   }
 
+  Future<void> _registrarNuevaToma(DateTime initialDate) async {
+    // 1. Seleccionar Fecha
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      helpText: "SELECCIONE FECHA DE CUMPLIMIENTO",
+    );
+
+    if (pickedDate == null) return;
+
+    // 2. Seleccionar Hora
+    final TimeOfDay? pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+      helpText: "SELECCIONE HORA DE CUMPLIMIENTO",
+    );
+
+    if (pickedTime != null) {
+      try {
+        DateTime newDate = DateTime(pickedDate.year, pickedDate.month, pickedDate.day, pickedTime.hour, pickedTime.minute);
+        
+        await ApiService.registrarCumplimiento(
+            widget.detalle.iddetallemedicacion, 
+            newDate, 
+            1
+        );
+
+        await _cargarDatos();
+
+      } catch (e) {
+        print('Error en la operación: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("No se pudo registrar la toma"))
+        );
+      }
+    }
+  }
+
   void _mostrarOpcionesDia(DateTime fecha) {
     showModalBottomSheet(
       context: context,
@@ -193,19 +233,33 @@ class _CumplimientoPageState extends State<CumplimientoPage> {
                 ),
               ),
               Expanded(
-                child: _diasTratamiento.isEmpty 
-                ? Center(child: Text("Sin fechas registradas"))
-                : ListView.separated(
-                  padding: EdgeInsets.zero,
-                  itemCount: _diasTratamiento.length,
-                  separatorBuilder: (ctx, i) => Divider(height: 1, indent: 70),
-                  itemBuilder: (context, index) {
-                    DateTime fecha = _diasTratamiento[index];
-                    String fechaStr = DateFormat('yyyy-MM-dd').format(fecha);
-                    String diaSemana = DateFormat('EEEE', 'es').format(fecha);
-                    String mes = DateFormat('MMM', 'es').format(fecha).toUpperCase();
-                    String diaNumero = DateFormat('d').format(fecha);
-                    diaSemana = "${diaSemana[0].toUpperCase()}${diaSemana.substring(1)}";
+                child: Builder(
+                  builder: (context) {
+                    final Set<String> allDateStrings = {};
+                    for (var d in _diasTratamiento) {
+                      allDateStrings.add(DateFormat('yyyy-MM-dd').format(d));
+                    }
+                    allDateStrings.addAll(_cumplimientosPorFecha.keys);
+                    
+                    // Siempre asegurar que hoy esté visible
+                    allDateStrings.add(DateFormat('yyyy-MM-dd').format(DateTime.now()));
+
+                    final List<DateTime> displayDates = allDateStrings.map((s) => DateTime.parse(s)).toList();
+                    displayDates.sort((a, b) => b.compareTo(a)); // Más reciente arriba
+
+                    if (displayDates.isEmpty) return Center(child: Text("Sin fechas registradas"));
+
+                    return ListView.separated(
+                      padding: EdgeInsets.zero,
+                      itemCount: displayDates.length,
+                      separatorBuilder: (ctx, i) => Divider(height: 1, indent: 70),
+                      itemBuilder: (context, index) {
+                        DateTime fecha = displayDates[index];
+                        String fechaStr = DateFormat('yyyy-MM-dd').format(fecha);
+                        String diaSemana = DateFormat('EEEE', 'es').format(fecha);
+                        String mes = DateFormat('MMM', 'es').format(fecha).toUpperCase();
+                        String diaNumero = DateFormat('d').format(fecha);
+                        diaSemana = "${diaSemana[0].toUpperCase()}${diaSemana.substring(1)}";
                     
                     bool cumplido = _cumplimientosPorFecha.containsKey(fechaStr) && _cumplimientosPorFecha[fechaStr]!.isNotEmpty;
                     List<Cumplimiento> tomas = _cumplimientosPorFecha[fechaStr] ?? [];
@@ -257,10 +311,17 @@ class _CumplimientoPageState extends State<CumplimientoPage> {
                       ),
                     );
                   },
-                ),
+                );
+              }),
               ),
             ],
           ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _registrarNuevaToma(DateTime.now()),
+        backgroundColor: Colors.teal,
+        label: Text("REGISTRAR TOMA"),
+        icon: Icon(Icons.add_task),
+      ),
     );
   }
 }
