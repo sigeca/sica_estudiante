@@ -18,6 +18,7 @@ class MedicacionGestionPage extends StatefulWidget {
 class _MedicacionGestionPageState extends State<MedicacionGestionPage> {
   List<Medicacion> medicaciones = [];
   String filter = "";
+  String filterEstado = "Todos";
   bool isLoading = true;
 
   @override
@@ -65,7 +66,7 @@ class _MedicacionGestionPageState extends State<MedicacionGestionPage> {
     );
   }
 
-  Widget _buildLastTakenDate(String? dateString) {
+  Widget _buildDetalleSubtitle(String? dateString, int porcentaje) {
     if (dateString == null || dateString.isEmpty) {
       return Text("Sin registro de toma", 
         style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey, fontSize: 10));
@@ -74,8 +75,6 @@ class _MedicacionGestionPageState extends State<MedicacionGestionPage> {
     try {
       final DateTime lastTaken = DateTime.parse(dateString);
       final DateTime today = DateTime.now();
-      final DateFormat formatter = DateFormat('dd/MM/yyyy HH:mm');
-      final String formattedDate = formatter.format(lastTaken);
       
       final lastTakenDateOnly = DateTime(lastTaken.year, lastTaken.month, lastTaken.day);
       final todayDateOnly = DateTime(today.year, today.month, today.day);
@@ -84,12 +83,9 @@ class _MedicacionGestionPageState extends State<MedicacionGestionPage> {
       String text;
       Color color;
 
-      if (difference == 0) {
-        text = "¡Hoy! ($formattedDate)";
+      if (difference == 0 || difference == 1) {
+        text = "$porcentaje ${porcentaje == 1 ? 'vez' : 'veces'}";
         color = Colors.green.shade700;
-      } else if (difference == 1) {
-        text = "Ayer";
-        color = Colors.orange.shade700;
       } else {
         text = "Hace $difference días";
         color = Colors.red.shade700;
@@ -98,7 +94,7 @@ class _MedicacionGestionPageState extends State<MedicacionGestionPage> {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.history, size: 10, color: color),
+          Icon(difference <= 1 ? Icons.check_circle : Icons.history, size: 10, color: color),
           SizedBox(width: 4),
           Text(text, style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.bold)),
         ],
@@ -170,8 +166,18 @@ class _MedicacionGestionPageState extends State<MedicacionGestionPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Filtrar por el nombre de la medicación
-    final filtrados = medicaciones.where((m) => m.nombre.toLowerCase().contains(filter.toLowerCase())).toList();
+    // Filtrar por el nombre y el estado de la medicación
+    final filtrados = medicaciones.where((m) {
+      final matchesSearch = m.nombre.toLowerCase().contains(filter.toLowerCase());
+      final matchesEstado = filterEstado == 'Todos' || m.elestadomedicacion == filterEstado;
+      return matchesSearch && matchesEstado;
+    }).toList();
+
+    // Obtener estados disponibles únicos para el menú horizontal
+    List<String> estadosDisponibles = ['Todos'];
+    final estados = medicaciones.map((m) => m.elestadomedicacion).toSet().toList();
+    estados.sort();
+    estadosDisponibles.addAll(estados);
 
     return Scaffold(
       appBar: SicaAppBar(
@@ -181,8 +187,32 @@ class _MedicacionGestionPageState extends State<MedicacionGestionPage> {
       ),
       body: Column(
         children: [
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: estadosDisponibles.map((estado) {
+                final isSelected = filterEstado == estado;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: FilterChip(
+                    label: Text(estado, style: TextStyle(fontSize: 12, color: isSelected ? Colors.white : Colors.black87)),
+                    selected: isSelected,
+                    selectedColor: Colors.blue,
+                    backgroundColor: Colors.grey.shade200,
+                    showCheckmark: false,
+                    onSelected: (bool selected) {
+                      setState(() {
+                        filterEstado = estado;
+                      });
+                    },
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
           Padding(
-            padding: EdgeInsets.all(16),
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: TextField(
               style: TextStyle(fontSize: 12),
               decoration: InputDecoration(
@@ -205,55 +235,100 @@ class _MedicacionGestionPageState extends State<MedicacionGestionPage> {
                   itemBuilder: (context, index) {
                     final med = filtrados[index];
 
-                    // Cálculo de última toma global del plan
-                    String? ultimaTomaGlobal;
-                    for (var detalle in med.detalles) {
-                      if (detalle.ultimaFechaCumplimiento != null && detalle.ultimaFechaCumplimiento!.isNotEmpty) {
-                        try {
-                          final current = DateTime.parse(detalle.ultimaFechaCumplimiento!);
-                          if (ultimaTomaGlobal == null || current.isAfter(DateTime.parse(ultimaTomaGlobal!))) {
-                            ultimaTomaGlobal = detalle.ultimaFechaCumplimiento;
-                          }
-                        } catch(_) {}
-                      }
-                    }
-
                     return Card(
-                      elevation: 0,
-                      margin: EdgeInsets.only(bottom: 12),
+                      elevation: 3,
+                      margin: EdgeInsets.only(bottom: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12), 
-                        side: BorderSide(color: Colors.grey.withOpacity(0.1))
+                        side: BorderSide(color: Colors.blueGrey.withOpacity(0.3), width: 1)
                       ),
-                      child: ExpansionTile(
-                        leading: InkWell(
-                          onTap: () => _mostrarDialogoMedicacion(medicacionExistente: med),
-                          child: CircleAvatar(
-                            radius: 15,
-                            backgroundColor: Colors.blue.withOpacity(0.1),
-                            child: Icon(Icons.edit, color: Colors.blue, size: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ListTile(
+                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            leading: ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: med.imagenMedicacion.isNotEmpty
+                                ? Image.network(
+                                    'https://educaysoft.org/descargar.php?archivo=imagenes/${med.imagenMedicacion}',
+                                    width: 40,
+                                    height: 40,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) => Container(
+                                      width: 40,
+                                      height: 40,
+                                      color: Colors.blue.withOpacity(0.1),
+                                      child: Icon(Icons.medication, color: Colors.blue, size: 24),
+                                    ),
+                                  )
+                                : Container(
+                                    width: 40,
+                                    height: 40,
+                                    color: Colors.blue.withOpacity(0.1),
+                                    child: Icon(Icons.medication, color: Colors.blue, size: 24),
+                                  ),
+                            ),
+                            title: Text(med.nombre, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.blue.shade900)),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (med.tipo != null && med.tipo!.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4.0),
+                                    child: Text(med.tipo!, style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
+                                  ),
+                                SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    _buildEstadoChip(med.elestadomedicacion, _getColorEstado(med.idestadomedicacion)),
+                                    SizedBox(width: 8),
+                                    GestureDetector(
+                                      onTap: () => _mostrarDialogoMedicacion(medicacionExistente: med),
+                                      child: Container(
+                                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue.withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.edit, color: Colors.blue, size: 12),
+                                            SizedBox(width: 4),
+                                            Text("Editar", style: TextStyle(fontSize: 10, color: Colors.blue, fontWeight: FontWeight.bold)),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        title: Text(med.nombre, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildEstadoChip(med.elestadomedicacion, _getColorEstado(med.idestadomedicacion)),
-                            _buildLastTakenDate(ultimaTomaGlobal),
-                          ],
-                        ),
-                        children: med.detalles.map((d) => ListTile(
-                          dense: true,
-                          title: Text(d.detalle, style: TextStyle(fontSize: 12)),
-                          subtitle: Text("Progreso: ${d.porcentaje.toStringAsFixed(0)} veces", style: TextStyle(fontSize: 10)),
-                          trailing: Icon(Icons.chevron_right, size: 16, color: Colors.blue),
-                          onTap: () async {
-                            await Navigator.push(context, MaterialPageRoute(
-                              builder: (context) => CumplimientoPage(detalle: d, nombreMedicamento: med.nombre)
-                            ));
-                            _cargarMedicaciones(); 
-                          },
-                        )).toList(),
+                          Divider(height: 1, color: Colors.grey.shade300),
+                          ...med.detalles.map((d) => ListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            title: Text(d.elmedicamento.isNotEmpty ? d.elmedicamento : "Detalle de medicación", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(height: 2),
+                                Text(d.detalle, style: TextStyle(fontSize: 12, color: Colors.black87)),
+                                SizedBox(height: 4),
+                                _buildDetalleSubtitle(d.ultimaFechaCumplimiento, d.porcentaje.toInt()),
+                              ],
+                            ),
+                            trailing: Icon(Icons.chevron_right, size: 16, color: Colors.blue),
+                            onTap: () async {
+                              await Navigator.push(context, MaterialPageRoute(
+                                builder: (context) => CumplimientoPage(detalle: d, nombreMedicamento: med.nombre)
+                              ));
+                              _cargarMedicaciones(); 
+                            },
+                          )).toList(),
+                          SizedBox(height: 8),
+                        ],
                       ),
                     );
                   },

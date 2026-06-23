@@ -225,35 +225,39 @@ class _EjercitacionGestionPageState extends State<EjercitacionGestionPage> {
                         borderRadius: BorderRadius.circular(12), 
                         side: BorderSide(color: Colors.grey.withOpacity(0.1))
                       ),
-                      child: ExpansionTile(
-                        leading: InkWell(
-                          onTap: () => _mostrarDialogoEjercitacion(ejercitacionExistente: eje),
-                          child: CircleAvatar(
-                            radius: 15,
-                            backgroundColor: Colors.blue.withOpacity(0.1),
-                            child: Icon(Icons.edit, color: Colors.blue, size: 16),
+                      child: Column(
+                        children: [
+                          ListTile(
+                            leading: InkWell(
+                              onTap: () => _mostrarDialogoEjercitacion(ejercitacionExistente: eje),
+                              child: CircleAvatar(
+                                radius: 15,
+                                backgroundColor: Colors.blue.withOpacity(0.1),
+                                child: Icon(Icons.edit, color: Colors.blue, size: 16),
+                              ),
+                            ),
+                            title: Text(eje.nombre, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildEstadoChip(eje.elestadoejercitacion, _getColorEstado(eje.idestadoejercitacion)),
+                                _buildLastTakenDate(ultimaTomaGlobal),
+                              ],
+                            ),
                           ),
-                        ),
-                        title: Text(eje.nombre, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildEstadoChip(eje.elestadoejercitacion, _getColorEstado(eje.idestadoejercitacion)),
-                            _buildLastTakenDate(ultimaTomaGlobal),
-                          ],
-                        ),
-                        children: eje.detalles.map((d) => ListTile(
-                          dense: true,
-                          title: Text(d.detalle, style: TextStyle(fontSize: 12)),
-                          subtitle: Text("Progreso: ${d.porcentaje.toStringAsFixed(0)} veces", style: TextStyle(fontSize: 10)),
-                          trailing: Icon(Icons.chevron_right, size: 16, color: Colors.blue),
-                          onTap: () async {
-                            await Navigator.push(context, MaterialPageRoute(
-                              builder: (context) => CumplimientoEjercitacionPage(detalle: d, nombreEjercicio: eje.nombre)
-                            ));
-                            _cargarEjercitaciones(); 
-                          },
-                        )).toList(),
+                          ...eje.detalles.map((d) => ListTile(
+                            dense: true,
+                            title: Text(d.detalle, style: TextStyle(fontSize: 12)),
+                            subtitle: Text("Progreso: ${d.porcentaje.toStringAsFixed(0)} veces", style: TextStyle(fontSize: 10)),
+                            trailing: Icon(Icons.chevron_right, size: 16, color: Colors.blue),
+                            onTap: () async {
+                              await Navigator.push(context, MaterialPageRoute(
+                                builder: (context) => CumplimientoEjercitacionPage(detalle: d, nombreEjercicio: eje.nombre)
+                              ));
+                              _cargarEjercitaciones(); 
+                            },
+                          )).toList(),
+                        ],
                       ),
                     );
                   },

@@ -250,24 +250,27 @@ class _AlimentacionGestionPageState extends State<AlimentacionGestionPage> {
                         borderRadius: BorderRadius.circular(12), 
                         side: BorderSide(color: Colors.grey.withOpacity(0.1))
                       ),
-                      child: ExpansionTile(
-                        leading: InkWell(
-                          onTap: () => _mostrarDialogoAlimentacion(alimentacionExistente: ali),
-                          child: CircleAvatar(
-                            radius: 15,
-                            backgroundColor: Colors.blue.withOpacity(0.1),
-                            child: Icon(Icons.edit, color: Colors.blue, size: 16),
-                          ),
-                        ),
-                        title: Text(ali.nombre, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildEstadoChip(ali.elestadoalimentacion, _getColorEstado(ali.idestadoalimentacion)),
-                            _buildLastTakenDate(ultimaTomaGlobal),
-                          ],
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          ListTile(
+                            leading: InkWell(
+                              onTap: () => _mostrarDialogoAlimentacion(alimentacionExistente: ali),
+                              child: CircleAvatar(
+                                radius: 15,
+                                backgroundColor: Colors.blue.withOpacity(0.1),
+                                child: Icon(Icons.edit, color: Colors.blue, size: 16),
+                              ),
+                            ),
+                            title: Text(ali.nombre, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildEstadoChip(ali.elestadoalimentacion, _getColorEstado(ali.idestadoalimentacion)),
+                                _buildLastTakenDate(ultimaTomaGlobal),
+                              ],
+                            ),
+                          ),
                           if (ali.videos.isNotEmpty) ...[
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),

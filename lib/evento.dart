@@ -732,6 +732,7 @@ class Medicacion {
    final String fechadesde;
   final String fechahasta;
   final String elestadomedicacion; // NUEVO
+  final String imagenMedicacion; // NUEVO
   List<DetalleMedicacion> detalles;
 
   Medicacion({
@@ -745,7 +746,7 @@ class Medicacion {
     required this.detalles,
     required this.fechadesde,
     required this.fechahasta,
-
+    required this.imagenMedicacion,
   });
 
   factory Medicacion.fromJson(Map<String, dynamic> json) {
@@ -768,6 +769,7 @@ class Medicacion {
       elestadomedicacion: json['elestadomedicacion'] ?? 'Activo',
       fechadesde: json['fechadesde'] ?? '',
       fechahasta: json['fechahasta'] ?? '',
+      imagenMedicacion: json['imagen_medicacion'] ?? '',
       detalles: listaDetalles,
     );
   }

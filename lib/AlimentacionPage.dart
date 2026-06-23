@@ -122,10 +122,13 @@ class _AlimentacionPageState extends State<AlimentacionPage> with SingleTickerPr
         return Card(
           elevation: 0,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.withOpacity(0.1))),
-          child: ExpansionTile(
-            title: Text(plan.laalimentacion, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-            subtitle: Text("ID: ${plan.idalimentacion}", style: TextStyle(fontSize: 10, color: Colors.grey)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              ListTile(
+                title: Text(plan.laalimentacion, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                subtitle: Text("ID: ${plan.idalimentacion}", style: TextStyle(fontSize: 10, color: Colors.grey)),
+              ),
               if (plan.videos.isNotEmpty) ...[
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),

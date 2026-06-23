@@ -119,15 +119,19 @@ class _EjercitacionPageState extends State<EjercitacionPage> with SingleTickerPr
         return Card(
           margin: EdgeInsets.only(bottom: 8),
           elevation: 0.5,
-          child: ExpansionTile(
-            title: Text(rut.laejercitacion, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-            children: rut.detalles.map((d) => ListTile(
-              dense: true,
-              title: Text(d.detalle, style: TextStyle(fontSize: 12)),
-              subtitle: Text("Progreso: ${d.porcentaje}%", style: TextStyle(fontSize: 10)),
-              trailing: Icon(Icons.play_circle_fill, color: Colors.indigo, size: 18),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => CumplimientoEjercitacionPage(detalle: d, nombreEjercicio: d.elejercicio))),
-            )).toList(),
+          child: Column(
+            children: [
+              ListTile(
+                title: Text(rut.laejercitacion, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+              ),
+              ...rut.detalles.map((d) => ListTile(
+                dense: true,
+                title: Text(d.detalle, style: TextStyle(fontSize: 12)),
+                subtitle: Text("Progreso: ${d.porcentaje}%", style: TextStyle(fontSize: 10)),
+                trailing: Icon(Icons.play_circle_fill, color: Colors.indigo, size: 18),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => CumplimientoEjercitacionPage(detalle: d, nombreEjercicio: d.elejercicio))),
+              )).toList(),
+            ],
           ),
         );
       },
