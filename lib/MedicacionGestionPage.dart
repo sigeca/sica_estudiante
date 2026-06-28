@@ -309,7 +309,7 @@ class _MedicacionGestionPageState extends State<MedicacionGestionPage> {
                           ...med.detalles.map((d) => ListTile(
                             dense: true,
                             contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                            title: Text(d.elmedicamento.isNotEmpty ? d.elmedicamento : "Detalle de medicación", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                            title: Text(d.elmedicamento.isNotEmpty ? d.elmedicamento : med.nombre, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
