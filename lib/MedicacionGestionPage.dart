@@ -4,6 +4,9 @@ import 'api_service.dart';
 import 'evento.dart';
 import 'CumplimientoPage.dart';
 import 'SicaAppBar.dart';
+import 'AlimentacionGestionPage.dart';
+import 'EjercitacionGestionPage.dart';
+import 'SicaDrawer.dart';
 
 class MedicacionGestionPage extends StatefulWidget {
   final String idpersona;
@@ -184,7 +187,9 @@ class _MedicacionGestionPageState extends State<MedicacionGestionPage> {
         idpersona: widget.idpersona,
         cedula: widget.cedula,
         title: "Control de Medicación",
+        showDrawer: true,
       ),
+      drawer: SicaDrawer(idpersona: widget.idpersona, cedula: widget.cedula),
       body: Column(
         children: [
           SingleChildScrollView(

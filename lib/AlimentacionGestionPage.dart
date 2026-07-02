@@ -5,6 +5,7 @@ import 'api_service.dart';
 import 'evento.dart';
 import 'CumplimientoAlimentacionPage.dart';
 import 'SicaAppBar.dart';
+import 'SicaDrawer.dart';
 
 class AlimentacionGestionPage extends StatefulWidget {
   final String idpersona;
@@ -203,7 +204,9 @@ class _AlimentacionGestionPageState extends State<AlimentacionGestionPage> {
         idpersona: widget.idpersona,
         cedula: widget.cedula,
         title: "Control de Alimentación",
+        showDrawer: true,
       ),
+      drawer: SicaDrawer(idpersona: widget.idpersona, cedula: widget.cedula),
       body: Column(
         children: [
           Padding(

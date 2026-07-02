@@ -9,6 +9,7 @@ class SicaAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool showLogout;
   final VoidCallback? onLogout;
   final String? title;
+  final bool showDrawer;
 
   const SicaAppBar({
     Key? key,
@@ -18,17 +19,25 @@ class SicaAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.showLogout = false,
     this.onLogout,
     this.title,
+    this.showDrawer = false,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      leading: Navigator.of(context).canPop() 
-          ? IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => Navigator.of(context).pop(),
+      leading: showDrawer
+          ? Builder(
+              builder: (context) => IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
             )
-          : null,
+          : Navigator.of(context).canPop() 
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => Navigator.of(context).pop(),
+                )
+              : null,
       title: Row(
         children: [
           Image.network(

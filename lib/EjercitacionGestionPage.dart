@@ -4,6 +4,7 @@ import 'api_service.dart';
 import 'evento.dart';
 import 'CumplimientoEjercitacionPage.dart';
 import 'SicaAppBar.dart';
+import 'SicaDrawer.dart';
 
 class EjercitacionGestionPage extends StatefulWidget {
   final String idpersona;
@@ -178,7 +179,9 @@ class _EjercitacionGestionPageState extends State<EjercitacionGestionPage> {
         idpersona: widget.idpersona,
         cedula: widget.cedula,
         title: "Control de Ejercitación",
+        showDrawer: true,
       ),
+      drawer: SicaDrawer(idpersona: widget.idpersona, cedula: widget.cedula),
       body: Column(
         children: [
           Padding(
