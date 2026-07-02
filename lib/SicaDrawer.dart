@@ -66,7 +66,7 @@ class SicaDrawer extends StatelessWidget {
               ListTile(
                 leading: const Padding(padding: EdgeInsets.only(left: 16), child: Icon(Icons.fastfood, size: 20)),
                 title: const Text('Venta de alimentos', style: TextStyle(fontSize: 14)),
-                onTap: () => _navigateToMarketplace(context, 'Venta de alimentos'),
+                onTap: () => _navigateToMarketplace(context, 'venta alimentos'),
               ),
               ListTile(
                 leading: const Padding(padding: EdgeInsets.only(left: 16), child: Icon(Icons.real_estate_agent, size: 20)),
@@ -76,17 +76,17 @@ class SicaDrawer extends StatelessWidget {
               ListTile(
                 leading: const Padding(padding: EdgeInsets.only(left: 16), child: Icon(Icons.point_of_sale, size: 20)),
                 title: const Text('Ventas', style: TextStyle(fontSize: 14)),
-                onTap: () => _navigateToMarketplace(context, 'Ventas'),
+                onTap: () => _navigateToMarketplace(context, 'Venta productos'),
               ),
               ListTile(
                 leading: const Padding(padding: EdgeInsets.only(left: 16), child: Icon(Icons.miscellaneous_services, size: 20)),
                 title: const Text('Servicios', style: TextStyle(fontSize: 14)),
-                onTap: () => _navigateToMarketplace(context, 'Servicios'),
+                onTap: () => _navigateToMarketplace(context, 'Venta servicio'),
               ),
               ListTile(
                 leading: const Padding(padding: EdgeInsets.only(left: 16), child: Icon(Icons.account_balance, size: 20)),
                 title: const Text('Préstamos', style: TextStyle(fontSize: 14)),
-                onTap: () => _navigateToMarketplace(context, 'Préstamos'),
+                onTap: () => _navigateToMarketplace(context, 'Prestamos'),
               ),
             ],
           ),

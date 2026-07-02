@@ -41,6 +41,7 @@ class _ComUniTiPageState extends State<ComUniTiPage> {
   void _onCategorySelected(String category) {
     setState(() {
       _selectedCategory = category;
+      _currentTab = 'Custodio'; // Switch to Custodio view automatically
     });
   }
 
