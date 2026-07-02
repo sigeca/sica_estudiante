@@ -20,6 +20,7 @@ import 'SicaAppBar.dart';
 import 'CartController.dart';
 import 'package:sica_estudiante/CarritoProductoPage.dart';
 import 'VendedorReportesView.dart';
+import 'SicaDrawer.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -273,6 +274,7 @@ class _HomeScreenState extends State<HomeScreen> {
       idpersona: widget.idpersona,
       cedula: _personaInfo?.cedula ?? '',
       showLogout: true,
+      showDrawer: true,
       onLogout: _logout,
     );
   }
@@ -387,6 +389,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _buildHeader(),
+      drawer: SicaDrawer(
+        idpersona: widget.idpersona,
+        cedula: _personaInfo?.cedula ?? '',
+      ),
       body: Column(
         children: [
           Expanded(child: _pages[_selectedIndex]),
