@@ -91,8 +91,9 @@ class _ComUniTiPageState extends State<ComUniTiPage> {
         ),
 
         // Dynamic Filtros Ribbon
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12.0),
+        if (!widget.showBackButton)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12.0),
           child: FutureBuilder<List<TipoOferta>>(
             future: _tiposFuture,
             builder: (context, snapshot) {
@@ -139,7 +140,8 @@ class _ComUniTiPageState extends State<ComUniTiPage> {
           ),
         ),
         
-        const SizedBox(height: 10),
+        if (!widget.showBackButton)
+          const SizedBox(height: 10),
 
         // Título de la oferta y botones
         Padding(
