@@ -3,6 +3,7 @@ import 'MedicacionGestionPage.dart';
 import 'AlimentacionGestionPage.dart';
 import 'EjercitacionGestionPage.dart';
 import 'ComUniTiPage.dart';
+import 'EventosActivosPage.dart';
 
 class SicaDrawer extends StatelessWidget {
   final String idpersona;
@@ -60,6 +61,7 @@ class SicaDrawer extends StatelessWidget {
           ExpansionTile(
             leading: const Icon(Icons.store),
             title: const Text('Marketplace'),
+            initiallyExpanded: true,
             children: [
               ListTile(
                 leading: const Padding(padding: EdgeInsets.only(left: 16), child: Icon(Icons.fastfood, size: 20)),
@@ -91,7 +93,6 @@ class SicaDrawer extends StatelessWidget {
           ExpansionTile(
             leading: const Icon(Icons.health_and_safety),
             title: const Text('Salud'),
-            initiallyExpanded: true,
             children: [
               ListTile(
                 leading: const Padding(padding: EdgeInsets.only(left: 16), child: Icon(Icons.medication, size: 20)),
@@ -142,6 +143,29 @@ class SicaDrawer extends StatelessWidget {
                 },
               ),
             ],
+          ),
+          ListTile(
+            leading: const Icon(Icons.menu_book),
+            title: const Text('Cursos MOOC'),
+            onTap: () {
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.event_available),
+            title: const Text('Eventos Activos'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => EventosActivosPage(
+                    idpersona: idpersona,
+                    cedula: cedula,
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),

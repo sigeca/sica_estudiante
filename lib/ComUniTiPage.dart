@@ -28,6 +28,7 @@ class _ComUniTiPageState extends State<ComUniTiPage> {
   late Future<List<TipoOferta>> _tiposFuture;
   String _selectedCategory = 'Todos'; // 'Todos', 'Venta', 'Alquiler', 'Servicio', etc.
   String _searchQuery = '';
+  String _currentTab = 'Custodio';
 
   @override
   void initState() {
@@ -140,7 +141,49 @@ class _ComUniTiPageState extends State<ComUniTiPage> {
         
         const SizedBox(height: 10),
 
-        // GridView de Productos
+        // Título de la oferta y botones
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Column(
+            children: [
+              Text(
+                _selectedCategory,
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.indigo),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => setState(() => _currentTab = 'Custodio'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _currentTab == 'Custodio' ? Colors.blue.shade800 : Colors.grey.shade300,
+                        foregroundColor: _currentTab == 'Custodio' ? Colors.white : Colors.black,
+                      ),
+                      child: const Text('Custodio'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => setState(() => _currentTab = 'Producto'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _currentTab == 'Producto' ? Colors.blue.shade800 : Colors.grey.shade300,
+                        foregroundColor: _currentTab == 'Producto' ? Colors.white : Colors.black,
+                      ),
+                      child: const Text('Producto'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        
+        const SizedBox(height: 10),
+
+        // GridView de Productos o Custodios
         Expanded(
           child: FutureBuilder<List<ProductoFeed>>(
             future: _productosFuture,
@@ -169,25 +212,109 @@ class _ComUniTiPageState extends State<ComUniTiPage> {
                 }
 
                 final screenWidth = MediaQuery.of(context).size.width;
-                final crossAxisCount = screenWidth > 600 ? 4 : 2;
 
-                return GridView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: crossAxisCount,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 0.68, // Ajustado para dar más espacio vertical al texto
-                  ),
-                  itemCount: productos.length,
-                  itemBuilder: (context, index) {
-                    return ProductoFeedCard(
-                      producto: productos[index],
-                      currentUserPersonaId: widget.idpersona,
-                      currentUserCedula: widget.cedula,
-                    );
-                  },
-                );
+                if (_currentTab == 'Custodio') {
+                  // Obtener custodios únicos
+                  Map<int, Map<String, dynamic>> custodiosMap = {};
+                  for (var p in productos) {
+                    if (!custodiosMap.containsKey(p.idvendedor)) {
+                      custodiosMap[p.idvendedor] = {
+                        'idvendedor': p.idvendedor,
+                        'cedulavendedor': p.cedulavendedor,
+                        'nombrevendedor': p.nombrevendedor,
+                      };
+                    }
+                  }
+                  List<Map<String, dynamic>> custodios = custodiosMap.values.toList();
+
+                  if (custodios.isEmpty) {
+                    return const Center(child: Text('No hay custodios en esta categoría.'));
+                  }
+
+                  final crossAxisCount = screenWidth > 600 ? 4 : 2;
+
+                  return GridView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: crossAxisCount,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 0.8,
+                    ),
+                    itemCount: custodios.length,
+                    itemBuilder: (context, index) {
+                      final c = custodios[index];
+                      final String cedulaPad = c['cedulavendedor'].toString().padLeft(10, '0');
+                      final fotoVendedorUrl = "https://educaysoft.org/descargar2.php?archivo=$cedulaPad.jpg";
+                      return InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ProductosVendedorPage(
+                                idpersona: c['idvendedor'].toString(),
+                                cedula: c['cedulavendedor'],
+                                idpersona1: widget.idpersona,
+                                cedula1: widget.cedula,
+                              ),
+                            ),
+                          );
+                        },
+                        child: Card(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 2,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(
+                                child: ClipRRect(
+                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                                  child: Image.network(
+                                    fotoVendedorUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(
+                                      color: Colors.grey[200],
+                                      child: const Icon(Icons.person, size: 50, color: Colors.grey),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                  c['nombrevendedor'],
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                } else {
+                  final crossAxisCount = screenWidth > 600 ? 4 : 2;
+                  return GridView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: crossAxisCount,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: 0.68,
+                    ),
+                    itemCount: productos.length,
+                    itemBuilder: (context, index) {
+                      return ProductoFeedCard(
+                        producto: productos[index],
+                        currentUserPersonaId: widget.idpersona,
+                        currentUserCedula: widget.cedula,
+                      );
+                    },
+                  );
+                }
               } else {
                 return const Center(child: Text('No hay productos disponibles.'));
               }
@@ -269,8 +396,9 @@ class ProductoFeedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String cedulaPad = producto.cedulavendedor.toString().padLeft(10, '0');
     final fotoProductoUrl = "https://educaysoft.org/descargarproducto.php?archivo=producto${producto.idproducto}.jpg";
-    final fotoVendedorUrl = "https://educaysoft.org/descargar2.php?archivo=${producto.cedulavendedor}.jpg";
+    final fotoVendedorUrl = "https://educaysoft.org/descargar2.php?archivo=$cedulaPad.jpg";
 
     return InkWell(
       onTap: () {
