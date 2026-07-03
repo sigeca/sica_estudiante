@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'CartController.dart';
 import 'CarritoProductoPage.dart';
+import 'ChatbotScreen.dart';
 
 class SicaAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String idpersona;
@@ -103,6 +104,16 @@ class SicaAppBar extends StatelessWidget implements PreferredSizeWidget {
                     ),
                   ),
               ],
+            );
+          },
+        ),
+        IconButton(
+          icon: const Icon(Icons.smart_toy),
+          tooltip: 'Asistente IA (Reglamentos)',
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ChatbotScreen()),
             );
           },
         ),

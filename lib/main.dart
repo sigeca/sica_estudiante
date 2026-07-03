@@ -21,6 +21,7 @@ import 'CartController.dart';
 import 'package:sica_estudiante/CarritoProductoPage.dart';
 import 'VendedorReportesView.dart';
 import 'SicaDrawer.dart';
+import 'ChatbotScreen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -397,6 +398,17 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Expanded(child: _pages[_selectedIndex]),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ChatbotScreen()),
+          );
+        },
+        backgroundColor: Colors.blueAccent,
+        child: const Icon(Icons.smart_toy, color: Colors.white),
+        tooltip: 'Chatbot Reglamentos',
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const [
