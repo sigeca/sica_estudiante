@@ -4,6 +4,7 @@ import 'AlimentacionGestionPage.dart';
 import 'EjercitacionGestionPage.dart';
 import 'ComUniTiPage.dart';
 import 'EventosActivosPage.dart';
+import 'CursosMoocPage.dart';
 
 class SicaDrawer extends StatelessWidget {
   final String idpersona;
@@ -149,6 +150,15 @@ class SicaDrawer extends StatelessWidget {
             title: const Text('Cursos MOOC'),
             onTap: () {
               Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CursosMoocPage(
+                    idpersona: idpersona,
+                    cedula: cedula,
+                  ),
+                ),
+              );
             },
           ),
           ListTile(
