@@ -450,7 +450,26 @@ class EventoPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox.shrink();
+    return Center(
+      child: Opacity(
+        opacity: 0.15,
+        child: Image.network(
+          'https://educaysoft.org/sica/images/logoeysutlvt.png',
+          width: 250,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) =>
+              const Icon(Icons.school_outlined, size: 120, color: Colors.grey),
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return const SizedBox(
+              width: 250,
+              height: 250,
+              child: Center(child: CircularProgressIndicator()),
+            );
+          },
+        ),
+      ),
+    );
   }
 }
 
