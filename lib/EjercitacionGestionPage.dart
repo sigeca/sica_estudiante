@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; 
+import 'package:url_launcher/url_launcher.dart'; 
 import 'api_service.dart';
 import 'evento.dart';
 import 'CumplimientoEjercitacionPage.dart';
@@ -109,6 +110,54 @@ class _EjercitacionGestionPageState extends State<EjercitacionGestionPage> {
     } catch (e) {
       return Text("Error en fecha", style: TextStyle(fontSize: 10, color: Colors.grey));
     }
+  }
+
+  // --- FUNCIÓN PARA ABRIR VIDEO ---
+  Future<void> _lanzarURL(String? urlString) async {
+    if (urlString == null || urlString.isEmpty) return;
+
+    // Si es solo el ID de YouTube, construimos la URL
+    String finalUrl = urlString.trim();
+    if (!finalUrl.startsWith('http')) {
+      finalUrl = 'https://www.youtube.com/watch?v=$finalUrl';
+    }
+
+    final Uri uri = Uri.parse(finalUrl);
+    try {
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        throw Exception('No se pudo lanzar $uri');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No se pudo abrir el video: $e')),
+        );
+      }
+    }
+  }
+
+  String? _getYouTubeThumbnail(String? urlString) {
+    if (urlString == null || urlString.isEmpty) return null;
+    String finalUrl = urlString.trim();
+    String videoId = "";
+    if (!finalUrl.startsWith('http')) {
+      videoId = finalUrl;
+    } else {
+      try {
+        Uri uri = Uri.parse(finalUrl);
+        if (uri.host.contains('youtube.com')) {
+          videoId = uri.queryParameters['v'] ?? "";
+        } else if (uri.host.contains('youtu.be')) {
+          videoId = uri.pathSegments.isNotEmpty ? uri.pathSegments.first : "";
+        }
+      } catch (e) {
+        return null;
+      }
+    }
+    if (videoId.isNotEmpty) {
+      return 'https://img.youtube.com/vi/$videoId/0.jpg';
+    }
+    return null;
   }
 
   // --- DIÁLOGOS DE GESTIÓN ---
@@ -250,12 +299,68 @@ class _EjercitacionGestionPageState extends State<EjercitacionGestionPage> {
                               ],
                             ),
                           ),
-                          ...eje.detalles.map((d) => ListTile(
-                            dense: true,
-                            title: Text(d.detalle, style: TextStyle(fontSize: 12)),
-                            subtitle: Text("Progreso: ${d.porcentaje.toStringAsFixed(0)} veces", style: TextStyle(fontSize: 10)),
-                            trailing: Icon(Icons.fitness_center, size: 16, color: Colors.blueGrey),
-                          )).toList(),
+                          if (eje.videos.isNotEmpty) ...[
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.video_library, size: 14, color: Colors.blue),
+                                      SizedBox(width: 6),
+                                      Text("RUTINA MULTIMEDIA", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blue)),
+                                    ],
+                                  ),
+                                  ...eje.videos.map((v) {
+                                    String? thumbUrl = _getYouTubeThumbnail(v.enlace);
+                                    return InkWell(
+                                      onTap: () => _lanzarURL(v.enlace),
+                                      child: Container(
+                                        padding: EdgeInsets.symmetric(vertical: 6),
+                                        child: Row(
+                                          children: [
+                                            if (thumbUrl != null)
+                                              ClipRRect(
+                                                borderRadius: BorderRadius.circular(6),
+                                                child: Image.network(thumbUrl, width: 70, height: 40, fit: BoxFit.cover, errorBuilder: (_,__,___) => Icon(Icons.play_circle_fill, color: Colors.red, size: 40)),
+                                              )
+                                            else
+                                              Icon(Icons.play_circle_fill, color: Colors.red, size: 40),
+                                            SizedBox(width: 10),
+                                            Expanded(
+                                              child: Text(v.nombre, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+                                            ),
+                                            Icon(Icons.open_in_new, size: 14, color: Colors.grey),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ],
+                              ),
+                            ),
+                            Divider(height: 1),
+                          ],
+                          ...eje.detalles.map((d) {
+                            String? detailThumbUrl = _getYouTubeThumbnail(d.videoEnlace);
+                            return ListTile(
+                              dense: true,
+                              title: Text(d.detalle, style: TextStyle(fontSize: 12)),
+                              subtitle: Text("Progreso: ${d.porcentaje.toStringAsFixed(0)} veces", style: TextStyle(fontSize: 10)),
+                              trailing: d.videoEnlace != null && d.videoEnlace!.isNotEmpty
+                                ? InkWell(
+                                    onTap: () => _lanzarURL(d.videoEnlace),
+                                    child: detailThumbUrl != null 
+                                        ? ClipRRect(
+                                            borderRadius: BorderRadius.circular(4),
+                                            child: Image.network(detailThumbUrl, width: 60, height: 34, fit: BoxFit.cover, errorBuilder: (_,__,___) => Icon(Icons.play_circle_fill, color: Colors.red, size: 30)),
+                                          )
+                                        : Icon(Icons.play_circle_fill, color: Colors.red, size: 30),
+                                  )
+                                : Icon(Icons.fitness_center, size: 16, color: Colors.blueGrey),
+                            );
+                          }).toList(),
                           Divider(height: 1),
                           ListTile(
                             dense: true,
