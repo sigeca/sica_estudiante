@@ -1282,20 +1282,18 @@ static Future<List<Ejercitacion>> fetchEjercitaciones(String idpersona) async {
 
 
 
-  // Marcar o desmarcar un día
   static Future<void> registrarCumplimientoEjercitacion(
-      String iddetalleejercitacion, 
-      DateTime fechaHora, 
-      int cumplimiento
+      String idejercitacion, 
+      String fecha, 
+      String hora
       ) async {
-        final String fechaHoraString = DateFormat('yyyy-MM-dd HH:mm:ss').format(fechaHora);
 
     final url = Uri.parse('https://educaysoft.org/sica/index.php/cumplimientoejercitacion/save_flutter');
     
     final response= await http.post(url, body: {
-      'iddetalleejercitacion': iddetalleejercitacion,
-      'fechahora': fechaHoraString,
-      'cumplimiento': cumplimiento.toString(), // 1 o 0
+      'idejercitacion': idejercitacion,
+      'fecha': fecha,
+      'hora': hora,
     });
     if(response.statusCode != 200){
         throw Exception('Error al registrar cumplimiento: ${response.body}');
@@ -1310,15 +1308,15 @@ static Future<List<Ejercitacion>> fetchEjercitaciones(String idpersona) async {
 
 
 //static Future<Map<String, bool>> fetchCumplimientosEjercitacion(String iddetalle) async {
-static Future<List<Cumplimiento>> fetchCumplimientosEjercitacion(String iddetalle) async {
+static Future<List<CumplimientoEjercitacion>> fetchCumplimientosEjercitacion(String idejercitacion) async {
   //final response = await http.get(Uri.parse('https://educaysoft.org/sica/index.php/cumplimientoejercitacion/get_cumplimientos_flutter?iddetalle=$iddetalle'));
     final url = Uri.parse('https://educaysoft.org/sica/index.php/cumplimientoejercitacion/get_cumplimientos_flutter');
-    final response = await http.post(url, body: {'iddetalleejercitacion': iddetalle});
+    final response = await http.post(url, body: {'idejercitacion': idejercitacion});
 
     if (response.statusCode == 200) {
       final decoded = json.decode(response.body);
       if (decoded['data'] != null) {
-        return (decoded['data'] as List).map((e) => Cumplimiento.fromJson(e)).toList();
+        return (decoded['data'] as List).map((e) => CumplimientoEjercitacion.fromJson(e)).toList();
       }
       return [];
     } else {

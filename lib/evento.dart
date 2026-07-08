@@ -670,6 +670,22 @@ class CumplimientoAlimentacion {
   }
 }
 
+class CumplimientoEjercitacion {
+  final String idcumplimiento;
+  final String fecha;
+  final String hora;
+
+  CumplimientoEjercitacion({required this.idcumplimiento, required this.fecha, required this.hora});
+
+  factory CumplimientoEjercitacion.fromJson(Map<String, dynamic> json) {
+    return CumplimientoEjercitacion(
+      idcumplimiento: json['idcumplimientoejercitacion']?.toString() ?? '',
+      fecha: json['fecha'] ?? '',
+      hora: json['hora'] ?? '',
+    );
+  }
+}
+
 // Actualiza esta clase existente
 
 class DetalleMedicacion {
@@ -1076,6 +1092,7 @@ class Ejercitacion {
   final String fechahasta;
   final String elestadoejercitacion; // NUEVO
   List<DetalleEjercitacion> detalles;
+  List<VideoPlan> videos; // NUEVO
 
   Ejercitacion({
     required this.idejercitacion,
@@ -1088,14 +1105,35 @@ class Ejercitacion {
     required this.detalles,
     required this.fechadesde,
     required this.fechahasta,
-
+    required this.videos,
   });
 
   factory Ejercitacion.fromJson(Map<String, dynamic> json) {
     List<DetalleEjercitacion> listaDetalles = [];
-    if (json['detalles'] != null) {
+    if (json['detalles'] != null && json['detalles'] is List) {
       listaDetalles = (json['detalles'] as List)
-          .map((i) => DetalleEjercitacion.fromJson(i))
+          .map((i) {
+            try {
+              return DetalleEjercitacion.fromJson(i);
+            } catch (e) {
+              return null;
+            }
+          })
+          .whereType<DetalleEjercitacion>()
+          .toList();
+    }
+
+    List<VideoPlan> listaVideos = [];
+    if (json['videos'] != null && json['videos'] is List) {
+      listaVideos = (json['videos'] as List)
+          .map((i) {
+             try {
+               return VideoPlan.fromJson(i);
+             } catch (e) {
+               return null;
+             }
+          })
+          .whereType<VideoPlan>()
           .toList();
     }
 
@@ -1112,6 +1150,7 @@ class Ejercitacion {
       fechadesde: json['fechadesde'] ?? '',
       fechahasta: json['fechahasta'] ?? '',
       detalles: listaDetalles,
+      videos: listaVideos,
     );
   }
 }
@@ -1168,6 +1207,7 @@ class DetalleEjercitacion {
   final double porcentaje; // <-- NUEVO CAMPO
   // 🎯 NUEVO CAMPO: Ultima fecha en que se registró un cumplimiento
   final String? ultimaFechaCumplimiento;
+  final String? videoEnlace;
 
   DetalleEjercitacion({
     required this.iddetalleejercitacion,
@@ -1179,6 +1219,7 @@ class DetalleEjercitacion {
     required this.fechahasta,
     required this.porcentaje, // <-- Requerido
     this.ultimaFechaCumplimiento, // 🎯 AÑADIR A CONSTRUCTOR
+    this.videoEnlace,
   });
 
   factory DetalleEjercitacion.fromJson(Map<String, dynamic> json) {
@@ -1194,6 +1235,7 @@ class DetalleEjercitacion {
       porcentaje: double.tryParse(json['porcentaje']?.toString() ?? '0') ?? 0.0,
       // 🎯 NUEVA LÍNEA: Leer el valor del JSON (asumiendo que la API lo proporcionará)
       ultimaFechaCumplimiento: json['ultima_fecha_cumplimiento'],
+      videoEnlace: json['video_enlace'],
     );
   }
 }
@@ -1203,6 +1245,7 @@ class EjercicioVista {
   final String nombre;
   final String detalle;
   final String detalleejercicio;
+  final String? videoEnlace;
   int totalRegistros; // Nuevo campo
 
   EjercicioVista({
@@ -1210,6 +1253,7 @@ class EjercicioVista {
     required this.nombre, 
     required this.detalle,
     required this.detalleejercicio,
+    this.videoEnlace,
     this.totalRegistros = 1,
   });
 
@@ -1219,6 +1263,7 @@ class EjercicioVista {
       nombre: json['elejercicio'] ?? '',
       detalle: json['detalle'] ?? '',
       detalleejercicio: json['detalleejercicio'] ?? '',
+      videoEnlace: json['video_enlace'],
     );
   }
 }
