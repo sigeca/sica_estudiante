@@ -347,6 +347,24 @@ class _MedicacionGestionPageState extends State<MedicacionGestionPage> {
         label: Text("AÑADIR PLAN", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
         icon: Icon(Icons.add, size: 18),
       ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 0,
+        selectedItemColor: Colors.blue.shade700,
+        unselectedItemColor: Colors.grey,
+        onTap: (index) {
+          if (index == 0) return;
+          if (index == 1) {
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => AlimentacionGestionPage(idpersona: widget.idpersona, cedula: widget.cedula)));
+          } else if (index == 2) {
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => EjercitacionGestionPage(idpersona: widget.idpersona, cedula: widget.cedula)));
+          }
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.medical_services), label: "Medicación"),
+          BottomNavigationBarItem(icon: Icon(Icons.restaurant), label: "Alimentación"),
+          BottomNavigationBarItem(icon: Icon(Icons.fitness_center), label: "Ejercitación"),
+        ],
+      ),
     );
   }
 }
