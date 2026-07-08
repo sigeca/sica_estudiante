@@ -176,6 +176,26 @@ class _MedicacionGestionPageState extends State<MedicacionGestionPage> {
       return matchesSearch && matchesEstado;
     }).toList();
 
+    // Ordenar por última toma (más reciente primero)
+    filtrados.sort((a, b) {
+      String? aDate;
+      for (var d in a.detalles) {
+        if (d.ultimaFechaCumplimiento != null && d.ultimaFechaCumplimiento!.isNotEmpty) {
+          if (aDate == null || d.ultimaFechaCumplimiento!.compareTo(aDate) > 0) aDate = d.ultimaFechaCumplimiento;
+        }
+      }
+      String? bDate;
+      for (var d in b.detalles) {
+        if (d.ultimaFechaCumplimiento != null && d.ultimaFechaCumplimiento!.isNotEmpty) {
+          if (bDate == null || d.ultimaFechaCumplimiento!.compareTo(bDate) > 0) bDate = d.ultimaFechaCumplimiento;
+        }
+      }
+      if (aDate == null && bDate == null) return 0;
+      if (aDate == null) return 1;
+      if (bDate == null) return -1;
+      return bDate.compareTo(aDate);
+    });
+
     // Obtener estados disponibles únicos para el menú horizontal
     List<String> estadosDisponibles = ['Todos'];
     final estados = medicaciones.map((m) => m.elestadomedicacion).toSet().toList();

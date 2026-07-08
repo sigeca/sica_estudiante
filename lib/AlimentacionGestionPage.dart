@@ -23,6 +23,7 @@ class _AlimentacionGestionPageState extends State<AlimentacionGestionPage> {
   List<Alimentacion> alimentaciones = [];
   Map<String, String?> ultimasTomas = {};
   String filter = "";
+  String filterEstado = "Todos";
   bool isLoading = true;
 
   @override
@@ -243,8 +244,43 @@ class _AlimentacionGestionPageState extends State<AlimentacionGestionPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Filtrar por el nombre de la alimentacion
-    final filtrados = alimentaciones.where((m) => m.nombre.toLowerCase().contains(filter.toLowerCase())).toList();
+    // Filtrar por el nombre y el estado de la alimentacion
+    final filtrados = alimentaciones.where((m) {
+      final matchesSearch = m.nombre.toLowerCase().contains(filter.toLowerCase());
+      final matchesEstado = filterEstado == 'Todos' || m.elestadoalimentacion == filterEstado;
+      return matchesSearch && matchesEstado;
+    }).toList();
+
+    // Obtener última fecha helper
+    String? getUltimaToma(Alimentacion ali) {
+      String? ultima = ultimasTomas[ali.idalimentacion];
+      if (ultima == null) {
+        for (var d in ali.detalles) {
+          if (d.ultimaFechaCumplimiento != null && d.ultimaFechaCumplimiento!.isNotEmpty) {
+            if (ultima == null || d.ultimaFechaCumplimiento!.compareTo(ultima) > 0) {
+              ultima = d.ultimaFechaCumplimiento;
+            }
+          }
+        }
+      }
+      return ultima;
+    }
+
+    // Ordenar por última toma
+    filtrados.sort((a, b) {
+      String? aDate = getUltimaToma(a);
+      String? bDate = getUltimaToma(b);
+      if (aDate == null && bDate == null) return 0;
+      if (aDate == null) return 1;
+      if (bDate == null) return -1;
+      return bDate.compareTo(aDate);
+    });
+
+    // Obtener estados disponibles únicos
+    List<String> estadosDisponibles = ['Todos'];
+    final estados = alimentaciones.map((m) => m.elestadoalimentacion).toSet().toList();
+    estados.sort();
+    estadosDisponibles.addAll(estados);
 
     return Scaffold(
       appBar: SicaAppBar(
@@ -256,8 +292,32 @@ class _AlimentacionGestionPageState extends State<AlimentacionGestionPage> {
       drawer: SicaDrawer(idpersona: widget.idpersona, cedula: widget.cedula),
       body: Column(
         children: [
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: estadosDisponibles.map((estado) {
+                final isSelected = filterEstado == estado;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: FilterChip(
+                    label: Text(estado, style: TextStyle(fontSize: 12, color: isSelected ? Colors.white : Colors.black87)),
+                    selected: isSelected,
+                    selectedColor: Colors.blue,
+                    backgroundColor: Colors.grey.shade200,
+                    showCheckmark: false,
+                    onSelected: (bool selected) {
+                      setState(() {
+                        filterEstado = estado;
+                      });
+                    },
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
           Padding(
-            padding: EdgeInsets.all(16),
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: TextField(
               style: TextStyle(fontSize: 12),
               decoration: InputDecoration(

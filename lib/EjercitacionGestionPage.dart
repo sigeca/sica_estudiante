@@ -22,6 +22,7 @@ class EjercitacionGestionPage extends StatefulWidget {
 class _EjercitacionGestionPageState extends State<EjercitacionGestionPage> {
   List<Ejercitacion> ejercitaciones = [];
   String filter = "";
+  String filterEstado = "Todos";
   bool isLoading = true;
 
   @override
@@ -222,8 +223,41 @@ class _EjercitacionGestionPageState extends State<EjercitacionGestionPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Filtrar por el nombre de la ejercitación
-    final filtrados = ejercitaciones.where((m) => m.nombre.toLowerCase().contains(filter.toLowerCase())).toList();
+    // Filtrar por el nombre y el estado
+    final filtrados = ejercitaciones.where((m) {
+      final matchesSearch = m.nombre.toLowerCase().contains(filter.toLowerCase());
+      final matchesEstado = filterEstado == 'Todos' || m.elestadoejercitacion == filterEstado;
+      return matchesSearch && matchesEstado;
+    }).toList();
+
+    // Obtener última fecha helper
+    String? getUltimaToma(Ejercitacion eje) {
+      String? ultima;
+      for (var d in eje.detalles) {
+        if (d.ultimaFechaCumplimiento != null && d.ultimaFechaCumplimiento!.isNotEmpty) {
+          if (ultima == null || d.ultimaFechaCumplimiento!.compareTo(ultima) > 0) {
+            ultima = d.ultimaFechaCumplimiento;
+          }
+        }
+      }
+      return ultima;
+    }
+
+    // Ordenar por última toma
+    filtrados.sort((a, b) {
+      String? aDate = getUltimaToma(a);
+      String? bDate = getUltimaToma(b);
+      if (aDate == null && bDate == null) return 0;
+      if (aDate == null) return 1;
+      if (bDate == null) return -1;
+      return bDate.compareTo(aDate);
+    });
+
+    // Obtener estados disponibles únicos
+    List<String> estadosDisponibles = ['Todos'];
+    final estados = ejercitaciones.map((m) => m.elestadoejercitacion).toSet().toList();
+    estados.sort();
+    estadosDisponibles.addAll(estados);
 
     return Scaffold(
       appBar: SicaAppBar(
@@ -235,8 +269,32 @@ class _EjercitacionGestionPageState extends State<EjercitacionGestionPage> {
       drawer: SicaDrawer(idpersona: widget.idpersona, cedula: widget.cedula),
       body: Column(
         children: [
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: estadosDisponibles.map((estado) {
+                final isSelected = filterEstado == estado;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: FilterChip(
+                    label: Text(estado, style: TextStyle(fontSize: 12, color: isSelected ? Colors.white : Colors.black87)),
+                    selected: isSelected,
+                    selectedColor: Colors.blue,
+                    backgroundColor: Colors.grey.shade200,
+                    showCheckmark: false,
+                    onSelected: (bool selected) {
+                      setState(() {
+                        filterEstado = estado;
+                      });
+                    },
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
           Padding(
-            padding: EdgeInsets.all(16),
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: TextField(
               style: TextStyle(fontSize: 12),
               decoration: InputDecoration(
