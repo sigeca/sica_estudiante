@@ -254,14 +254,41 @@ class _EjercitacionGestionPageState extends State<EjercitacionGestionPage> {
                             dense: true,
                             title: Text(d.detalle, style: TextStyle(fontSize: 12)),
                             subtitle: Text("Progreso: ${d.porcentaje.toStringAsFixed(0)} veces", style: TextStyle(fontSize: 10)),
-                            trailing: Icon(Icons.chevron_right, size: 16, color: Colors.blue),
+                            trailing: Icon(Icons.fitness_center, size: 16, color: Colors.blueGrey),
+                          )).toList(),
+                          Divider(height: 1),
+                          ListTile(
+                            dense: true,
+                            tileColor: Colors.blue.withOpacity(0.05),
+                            leading: Icon(Icons.check_circle_outline, color: Colors.blue),
+                            title: Text("VER CUMPLIMIENTO DE LA RUTINA", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blue)),
+                            subtitle: Text("Registrar sesiones y ver progreso", style: TextStyle(fontSize: 10)),
+                            trailing: Icon(Icons.chevron_right, color: Colors.blue),
                             onTap: () async {
+                              String instruccion = "Sin instrucción específica";
+                              String fechaDesde = "";
+                              String fechaHasta = "";
+                              String? videoEnlace;
+                              if (eje.detalles.isNotEmpty) {
+                                final firstDetail = eje.detalles.first;
+                                instruccion = firstDetail.detalle;
+                                fechaDesde = firstDetail.fechadesde;
+                                fechaHasta = firstDetail.fechahasta;
+                                videoEnlace = firstDetail.videoEnlace;
+                              }
                               await Navigator.push(context, MaterialPageRoute(
-                                builder: (context) => CumplimientoEjercitacionPage(detalle: d, nombreEjercicio: eje.nombre)
+                                builder: (context) => CumplimientoEjercitacionPage(
+                                  idejercitacion: eje.idejercitacion,
+                                  nombreEjercicio: eje.laejercitacion,
+                                  instruccion: instruccion,
+                                  fechaDesde: fechaDesde,
+                                  fechaHasta: fechaHasta,
+                                  videoEnlace: videoEnlace,
+                                )
                               ));
                               _cargarEjercitaciones(); 
                             },
-                          )).toList(),
+                          ),
                         ],
                       ),
                     );
