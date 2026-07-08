@@ -21,6 +21,7 @@ class AlimentacionGestionPage extends StatefulWidget {
 
 class _AlimentacionGestionPageState extends State<AlimentacionGestionPage> {
   List<Alimentacion> alimentaciones = [];
+  Map<String, String?> ultimasTomas = {};
   String filter = "";
   bool isLoading = true;
 
@@ -33,9 +34,29 @@ class _AlimentacionGestionPageState extends State<AlimentacionGestionPage> {
   Future<void> _cargarAlimentaciones() async {
     try {
       final data = await ApiService.fetchAlimentaciones(widget.idpersona);
+      
+      Map<String, String?> tomasTemp = {};
+      for (var ali in data) {
+        try {
+          final cumplimientos = await ApiService.fetchCumplimientosAlimentacion(ali.idalimentacion);
+          String? ultima;
+          for (var c in cumplimientos) {
+             if (c.fecha.isNotEmpty && c.hora.isNotEmpty) {
+                 final time = c.hora.length == 5 ? "${c.hora}:00" : c.hora;
+                 final fechaHoraStr = "${c.fecha} $time";
+                 if (ultima == null || fechaHoraStr.compareTo(ultima) > 0) {
+                     ultima = fechaHoraStr;
+                 }
+             }
+          }
+          tomasTemp[ali.idalimentacion] = ultima;
+        } catch(_) {}
+      }
+
       if (mounted) {
         setState(() {
           alimentaciones = data;
+          ultimasTomas = tomasTemp;
           isLoading = false;
         });
       }
@@ -260,15 +281,18 @@ class _AlimentacionGestionPageState extends State<AlimentacionGestionPage> {
                     final ali = filtrados[index];
 
                     // Cálculo de última toma global del plan
-                    String? ultimaTomaGlobal;
-                    for (var detalle in ali.detalles) {
-                      if (detalle.ultimaFechaCumplimiento != null && detalle.ultimaFechaCumplimiento!.isNotEmpty) {
-                        try {
-                          final current = DateTime.parse(detalle.ultimaFechaCumplimiento!);
-                          if (ultimaTomaGlobal == null || current.isAfter(DateTime.parse(ultimaTomaGlobal!))) {
-                            ultimaTomaGlobal = detalle.ultimaFechaCumplimiento;
-                          }
-                        } catch(_) {}
+                    String? ultimaTomaGlobal = ultimasTomas[ali.idalimentacion];
+                    
+                    if (ultimaTomaGlobal == null) {
+                      for (var detalle in ali.detalles) {
+                        if (detalle.ultimaFechaCumplimiento != null && detalle.ultimaFechaCumplimiento!.isNotEmpty) {
+                          try {
+                            final current = DateTime.parse(detalle.ultimaFechaCumplimiento!);
+                            if (ultimaTomaGlobal == null || current.isAfter(DateTime.parse(ultimaTomaGlobal!))) {
+                              ultimaTomaGlobal = detalle.ultimaFechaCumplimiento;
+                            }
+                          } catch(_) {}
+                        }
                       }
                     }
 
