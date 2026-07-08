@@ -371,20 +371,28 @@ class _AlimentacionGestionPageState extends State<AlimentacionGestionPage> {
                             subtitle: Text("Registrar tomas, ver historial y progreso", style: TextStyle(fontSize: 10)),
                             trailing: Icon(Icons.chevron_right, color: Colors.teal),
                             onTap: () async {
+                              String instruccion = "Sin instrucción específica";
+                              String fechaDesde = "";
+                              String fechaHasta = "";
+                              String? videoEnlace;
                               if (ali.detalles.isNotEmpty) {
                                 final firstDetail = ali.detalles.first;
-                                await Navigator.push(context, MaterialPageRoute(
-                                  builder: (context) => CumplimientoAlimentacionPage(
-                                    idalimentacion: ali.idalimentacion, 
-                                    nombreAlimento: ali.nombre,
-                                    instruccion: firstDetail.detalle,
-                                    fechaDesde: firstDetail.fechadesde,
-                                    fechaHasta: firstDetail.fechahasta,
-                                    videoEnlace: firstDetail.videoEnlace,
-                                  )
-                                ));
-                                _cargarAlimentaciones();
+                                instruccion = firstDetail.detalle;
+                                fechaDesde = firstDetail.fechadesde;
+                                fechaHasta = firstDetail.fechahasta;
+                                videoEnlace = firstDetail.videoEnlace;
                               }
+                              await Navigator.push(context, MaterialPageRoute(
+                                builder: (context) => CumplimientoAlimentacionPage(
+                                  idalimentacion: ali.idalimentacion, 
+                                  nombreAlimento: ali.nombre,
+                                  instruccion: instruccion,
+                                  fechaDesde: fechaDesde,
+                                  fechaHasta: fechaHasta,
+                                  videoEnlace: videoEnlace,
+                                )
+                              ));
+                              _cargarAlimentaciones();
                             },
                           ),
                         ],

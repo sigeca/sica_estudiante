@@ -197,19 +197,27 @@ class _AlimentacionPageState extends State<AlimentacionPage> with SingleTickerPr
                 subtitle: Text("Registrar tomas y ver progreso", style: TextStyle(fontSize: 10)),
                 trailing: Icon(Icons.chevron_right, color: Colors.orange),
                 onTap: () {
+                  String instruccion = "Sin instrucción específica";
+                  String fechaDesde = "";
+                  String fechaHasta = "";
+                  String? videoEnlace;
                   if (plan.detalles.isNotEmpty) {
                     final firstDetail = plan.detalles.first;
-                    Navigator.push(context, MaterialPageRoute(
-                      builder: (context) => CumplimientoAlimentacionPage(
-                        idalimentacion: plan.idalimentacion,
-                        nombreAlimento: plan.laalimentacion,
-                        instruccion: firstDetail.detalle,
-                        fechaDesde: firstDetail.fechadesde,
-                        fechaHasta: firstDetail.fechahasta,
-                        videoEnlace: firstDetail.videoEnlace,
-                      )
-                    ));
+                    instruccion = firstDetail.detalle;
+                    fechaDesde = firstDetail.fechadesde;
+                    fechaHasta = firstDetail.fechahasta;
+                    videoEnlace = firstDetail.videoEnlace;
                   }
+                  Navigator.push(context, MaterialPageRoute(
+                    builder: (context) => CumplimientoAlimentacionPage(
+                      idalimentacion: plan.idalimentacion,
+                      nombreAlimento: plan.laalimentacion,
+                      instruccion: instruccion,
+                      fechaDesde: fechaDesde,
+                      fechaHasta: fechaHasta,
+                      videoEnlace: videoEnlace,
+                    )
+                  ));
                 },
               ),
             ],
