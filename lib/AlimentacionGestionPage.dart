@@ -247,11 +247,11 @@ class _AlimentacionGestionPageState extends State<AlimentacionGestionPage> {
                     }
 
                     return Card(
-                      elevation: 0,
-                      margin: EdgeInsets.only(bottom: 12),
+                      elevation: 3,
+                      margin: EdgeInsets.only(bottom: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12), 
-                        side: BorderSide(color: Colors.grey.withOpacity(0.1))
+                        side: BorderSide(color: Colors.blueGrey.withOpacity(0.3), width: 1)
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

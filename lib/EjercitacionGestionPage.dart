@@ -222,11 +222,11 @@ class _EjercitacionGestionPageState extends State<EjercitacionGestionPage> {
                     }
 
                     return Card(
-                      elevation: 0,
-                      margin: EdgeInsets.only(bottom: 12),
+                      elevation: 3,
+                      margin: EdgeInsets.only(bottom: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12), 
-                        side: BorderSide(color: Colors.grey.withOpacity(0.1))
+                        side: BorderSide(color: Colors.blueGrey.withOpacity(0.3), width: 1)
                       ),
                       child: Column(
                         children: [
@@ -427,11 +427,11 @@ class _EjercicioCatalogoPageState extends State<EjercicioCatalogoPage> {
                     final String urlImagen = "https://educaysoft.org/descargar.php?archivo=ejercicios/ejercicio${eje.idEjercicio}.jpg";
 
                     return Card(
-                      elevation: 0,
-                      margin: EdgeInsets.only(bottom: 10),
+                      elevation: 3,
+                      margin: EdgeInsets.only(bottom: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: Colors.grey.withOpacity(0.1)),
+                        side: BorderSide(color: Colors.blueGrey.withOpacity(0.3), width: 1)
                       ),
                       child: ListTile(
                         contentPadding: EdgeInsets.all(10),

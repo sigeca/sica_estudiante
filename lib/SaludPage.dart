@@ -318,11 +318,11 @@ class _MedicamentoCatalogoPageState extends State<MedicamentoCatalogoPage> {
                     final String urlImagen = "https://educaysoft.org/descargar.php?archivo=medicamentos/medicamento${med.idmedicamento}.jpg";
 
                     return Card(
-                      elevation: 0,
-                      margin: EdgeInsets.only(bottom: 10),
+                      elevation: 3,
+                      margin: EdgeInsets.only(bottom: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: Colors.grey.withOpacity(0.1)),
+                        side: BorderSide(color: Colors.blueGrey.withOpacity(0.3), width: 1)
                       ),
                       child: ListTile(
                         contentPadding: EdgeInsets.all(10),

@@ -120,8 +120,11 @@ class _AlimentacionPageState extends State<AlimentacionPage> with SingleTickerPr
       itemBuilder: (context, index) {
         final plan = filtered[index];
         return Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.withOpacity(0.1))),
+          elevation: 3,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12), 
+            side: BorderSide(color: Colors.blueGrey.withOpacity(0.3), width: 1)
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -384,11 +387,11 @@ class _AlimentoCatalogoPageState extends State<AlimentoCatalogoPage> {
                     final String urlImagen = "https://educaysoft.org/descargar.php?archivo=alimentos/alimento${ali.idalimento}.jpg";
 
                     return Card(
-                      elevation: 0,
-                      margin: EdgeInsets.only(bottom: 10),
+                      elevation: 3,
+                      margin: EdgeInsets.only(bottom: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: Colors.grey.withOpacity(0.1)),
+                        side: BorderSide(color: Colors.blueGrey.withOpacity(0.3), width: 1)
                       ),
                       child: ListTile(
                         contentPadding: EdgeInsets.all(10),
