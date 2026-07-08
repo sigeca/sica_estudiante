@@ -134,6 +134,30 @@ class _AlimentacionGestionPageState extends State<AlimentacionGestionPage> {
     }
   }
 
+  String? _getYouTubeThumbnail(String? urlString) {
+    if (urlString == null || urlString.isEmpty) return null;
+    String finalUrl = urlString.trim();
+    String videoId = "";
+    if (!finalUrl.startsWith('http')) {
+      videoId = finalUrl;
+    } else {
+      try {
+        Uri uri = Uri.parse(finalUrl);
+        if (uri.host.contains('youtube.com')) {
+          videoId = uri.queryParameters['v'] ?? "";
+        } else if (uri.host.contains('youtu.be')) {
+          videoId = uri.pathSegments.isNotEmpty ? uri.pathSegments.first : "";
+        }
+      } catch (e) {
+        return null;
+      }
+    }
+    if (videoId.isNotEmpty) {
+      return 'https://img.youtube.com/vi/$videoId/0.jpg';
+    }
+    return null;
+  }
+
   // --- DIÁLOGOS DE GESTIÓN ---
 
   void _mostrarDialogoAlimentacion({Alimentacion? alimentacionExistente}) {
@@ -287,31 +311,55 @@ class _AlimentacionGestionPageState extends State<AlimentacionGestionPage> {
                                       Text("PREPARACIÓN MULTIMEDIA", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.deepOrange)),
                                     ],
                                   ),
-                                  ...ali.videos.map((v) => ListTile(
-                                    dense: true,
-                                    visualDensity: VisualDensity.compact,
-                                    leading: Icon(Icons.play_circle_fill, color: Colors.red, size: 22),
-                                    title: Text(v.nombre, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-                                    trailing: Icon(Icons.open_in_new, size: 14, color: Colors.grey),
-                                    onTap: () => _lanzarURL(v.enlace),
-                                  )).toList(),
+                                  ...ali.videos.map((v) {
+                                    String? thumbUrl = _getYouTubeThumbnail(v.enlace);
+                                    return InkWell(
+                                      onTap: () => _lanzarURL(v.enlace),
+                                      child: Container(
+                                        padding: EdgeInsets.symmetric(vertical: 6),
+                                        child: Row(
+                                          children: [
+                                            if (thumbUrl != null)
+                                              ClipRRect(
+                                                borderRadius: BorderRadius.circular(6),
+                                                child: Image.network(thumbUrl, width: 70, height: 40, fit: BoxFit.cover, errorBuilder: (_,__,___) => Icon(Icons.play_circle_fill, color: Colors.red, size: 40)),
+                                              )
+                                            else
+                                              Icon(Icons.play_circle_fill, color: Colors.red, size: 40),
+                                            SizedBox(width: 10),
+                                            Expanded(
+                                              child: Text(v.nombre, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+                                            ),
+                                            Icon(Icons.open_in_new, size: 14, color: Colors.grey),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
                                 ],
                               ),
                             ),
                             Divider(height: 1),
                           ],
-                          ...ali.detalles.map((d) => ListTile(
-                            dense: true,
-                            title: Text(d.detalle, style: TextStyle(fontSize: 12)),
-                            subtitle: Text("Ingrediente / Instrucción", style: TextStyle(fontSize: 10, color: Colors.grey)),
-                            trailing: d.videoEnlace != null && d.videoEnlace!.isNotEmpty
-                              ? IconButton(
-                                  icon: Icon(Icons.play_circle_fill, color: Colors.red, size: 22),
-                                  onPressed: () => _lanzarURL(d.videoEnlace),
-                                  tooltip: "Ver Video Tutorial",
-                                )
-                              : null,
-                          )).toList(),
+                          ...ali.detalles.map((d) {
+                            String? detailThumbUrl = _getYouTubeThumbnail(d.videoEnlace);
+                            return ListTile(
+                              dense: true,
+                              title: Text(d.detalle, style: TextStyle(fontSize: 12)),
+                              subtitle: Text("Ingrediente / Instrucción", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                              trailing: d.videoEnlace != null && d.videoEnlace!.isNotEmpty
+                                ? InkWell(
+                                    onTap: () => _lanzarURL(d.videoEnlace),
+                                    child: detailThumbUrl != null 
+                                        ? ClipRRect(
+                                            borderRadius: BorderRadius.circular(4),
+                                            child: Image.network(detailThumbUrl, width: 60, height: 34, fit: BoxFit.cover, errorBuilder: (_,__,___) => Icon(Icons.play_circle_fill, color: Colors.red, size: 30)),
+                                          )
+                                        : Icon(Icons.play_circle_fill, color: Colors.red, size: 30),
+                                  )
+                                : null,
+                            );
+                          }).toList(),
                           Divider(height: 1),
                           ListTile(
                             dense: true,
