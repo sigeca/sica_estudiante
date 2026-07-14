@@ -203,7 +203,7 @@ class _AlimentacionPageState extends State<AlimentacionPage> with SingleTickerPr
                   String? videoEnlace;
                   if (plan.detalles.isNotEmpty) {
                     final firstDetail = plan.detalles.first;
-                    instruccion = firstDetail.detalle;
+                    instruccion = '${firstDetail.elalimento}: ${firstDetail.detalle}';
                     fechaDesde = firstDetail.fechadesde;
                     fechaHasta = firstDetail.fechahasta;
                     videoEnlace = firstDetail.videoEnlace;
