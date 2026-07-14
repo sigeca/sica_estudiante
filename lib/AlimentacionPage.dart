@@ -173,7 +173,7 @@ class _AlimentacionPageState extends State<AlimentacionPage> with SingleTickerPr
                 String? detailThumbUrl = _getYouTubeThumbnail(d.videoEnlace);
                 return ListTile(
                   dense: true,
-                  title: Text(d.detalle, style: TextStyle(fontSize: 12)),
+                  title: Text('${d.elalimento}: ${d.detalle}', style: TextStyle(fontSize: 12)),
                   subtitle: Text("Ingrediente / Instrucción", style: TextStyle(fontSize: 10, color: Colors.grey)),
                   trailing: d.videoEnlace != null && d.videoEnlace!.isNotEmpty
                     ? InkWell(
