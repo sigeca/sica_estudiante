@@ -29,20 +29,6 @@ class _SaludPageState extends State<SaludPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: SicaAppBar(
-        idpersona: widget.idpersona,
-        cedula: widget.cedula,
-        title: "Gestión de Salud",
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.favorite, color: Colors.redAccent),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => SignosVitalesPage(idpersona: widget.idpersona)),
-            ),
-          )
-        ],
-      ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16),
         child: Column(

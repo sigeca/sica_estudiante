@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Requerido para reconocer preguntas por voz para el chatbot.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Requerido para capturar audio para el chatbot.</string>
 </dict>
 </plist>

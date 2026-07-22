@@ -7,12 +7,15 @@
 #include "generated_plugin_registrant.h"
 
 #include <local_auth_windows/local_auth_plugin.h>
+#include <speech_to_text_windows/speech_to_text_windows.h>
 #include <syncfusion_pdfviewer_windows/syncfusion_pdfviewer_windows_plugin.h>
 #include <url_launcher_windows/url_launcher_windows.h>
 
 void RegisterPlugins(flutter::PluginRegistry* registry) {
   LocalAuthPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("LocalAuthPlugin"));
+  SpeechToTextWindowsRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("SpeechToTextWindows"));
   SyncfusionPdfviewerWindowsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("SyncfusionPdfviewerWindowsPlugin"));
   UrlLauncherWindowsRegisterWithRegistrar(

@@ -214,8 +214,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
             // 3. Inicializar _pages después de obtener los datos
             _pages = <Widget>[
-              EventoPage(
-                  idpersona: widget.idpersona, cedula: _personaInfo!.cedula),
+              const ChatbotScreen(),
               ComUniTiPage(
                   idpersona: widget.idpersona, cedula: _personaInfo!.cedula),
               SaludPage(
@@ -238,7 +237,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _perfilSeleccionado = Perfil(idperfil: '0', nombre: 'Invitado');
           // Inicializar _pages con un valor por defecto o la idpersona si falla la cédula
           _pages = <Widget>[
-            EventoPage(idpersona: widget.idpersona, cedula: widget.idpersona),
+            const ChatbotScreen(),
             ComUniTiPage(idpersona: widget.idpersona, cedula: widget.idpersona),
             SaludPage(idpersona: widget.idpersona, cedula: widget.idpersona),
             PerfilUsuarioPage(
@@ -399,20 +398,9 @@ class _HomeScreenState extends State<HomeScreen> {
           Expanded(child: _pages[_selectedIndex]),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const ChatbotScreen()),
-          );
-        },
-        backgroundColor: Colors.blueAccent,
-        child: const Icon(Icons.smart_toy, color: Colors.white),
-        tooltip: 'Chatbot Reglamentos',
-      ),
       bottomNavigationBar: BottomNavigationBar(
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.event), label: 'Inicio'),
+          BottomNavigationBarItem(icon: Icon(Icons.smart_toy), label: 'Chatbot'),
           BottomNavigationBarItem(
               icon: Icon(Icons.storefront), label: 'ComUniTi'),
           BottomNavigationBarItem(
